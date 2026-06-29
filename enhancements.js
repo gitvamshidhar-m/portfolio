@@ -55,7 +55,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
 
   ready(() => {
     injectHeroMeshBlobs();
-    animateHeroName();
+    
     injectHireBeacon();
     injectROICalculator();
     injectAIChat();
@@ -88,29 +88,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   /* ════════════════════════════════════════════════════════
      2. HERO NAME LETTER-HOVER ANIMATION
      ════════════════════════════════════════════════════════ */
-  function animateHeroName() {
-    const highlight = document.querySelector('.hero-title .highlight');
-    if (!highlight) return;
-    const text = highlight.textContent.trim();
-    const wrapper = document.createElement('span');
-    wrapper.className = 'hero-name-animated';
-    wrapper.setAttribute('aria-label', text);
-
-    text.split('').forEach((ch) => {
-      const span = document.createElement('span');
-      if (ch === ' ') {
-        span.className = 'char-space';
-        span.innerHTML = '&nbsp;';
-      } else {
-        span.className = 'char';
-        span.textContent = ch;
-      }
-      wrapper.appendChild(span);
-    });
-
-    highlight.textContent = '';
-    highlight.appendChild(wrapper);
-  }
+  
 
   /* ════════════════════════════════════════════════════════
      3. HIRE BEACON — replaces the plain badge in hero
