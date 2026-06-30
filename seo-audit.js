@@ -72,7 +72,19 @@
 
     projects.parentNode.insertBefore(section, projects.nextSibling);
     document.getElementById('seoAuditForm').addEventListener('submit', handleSubmit);
+
+    // Close button handler (delegated since the button is rendered dynamically)
+    document.getElementById('seoAuditResults').addEventListener('click', function(e) {
+      if (e.target.closest('#seoAuditCloseBtn')) {
+        const results = document.getElementById('seoAuditResults');
+        results.hidden = true;
+        results.innerHTML = '';
+        document.getElementById('seoAuditUrl').value = '';
+        document.getElementById('seoAuditUrl').focus();
+      }
+    });
   }
+
 
   async function handleSubmit(e) {
     e.preventDefault();
