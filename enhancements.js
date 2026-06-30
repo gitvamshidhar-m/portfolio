@@ -1,30 +1,25 @@
 /**
  * VAMSHIDHAR REDDY M — PORTFOLIO ENHANCEMENTS 2026
  * Drop-in: add <script src="enhancements.js"></script> AFTER script.js in index.html
- * Requires: Anthropic Claude API proxied at /api/chat (see README below)
- *
- * ──────────────────────────────────────────────────────────────
- * ZERO files from the original are changed. Just append two tags.
- * ──────────────────────────────────────────────────────────────
  */
 
 (function () {
   'use strict';
 
   /* ════════════════════════════════════════════════════════
-     CONFIG — edit these to match your deployment
+     CONFIG
      ════════════════════════════════════════════════════════ */
   const CONFIG = {
-    // If you deploy a serverless proxy (e.g. Vercel /api/chat), set this.
-    // For GitHub Pages demo mode set to null → AI will use pre-scripted answers.
-    AI_PROXY_URL: 'https://portfolio-sandy-ten-43.vercel.app/api/chat', // e.g. 'https://your-vercel-app.vercel.app/api/chat'
+    AI_PROXY_URL: 'https://portfolio-sandy-ten-43.vercel.app/api/chat',
+
+    GITHUB_USERNAME: 'mvamshi56',
 
     PERSONA_SYSTEM_PROMPT: `You are Vamshidhar Reddy M — an AI-Powered Digital Marketing Specialist with 8+ years of experience in SEO, PPC, AI Automation, and Growth Marketing, based in Hyderabad, India. You are answering questions from potential employers and clients visiting your portfolio site.
 
 Key facts about you:
 - Currently: Digital Marketing Specialist at Autozilla Software Solutions Pvt Ltd (May 2023–Present)
 - Grew organic traffic 15%, secured first-page Google rankings, generated 70+ leads/month, managed Rs.2L+/month Google Ads budgets
-- Built AI tools: AI Newsletter Digest (Python), AI Web Summarizer (Chrome Extension + Groq AI), AI Security Intelligence Platform (TypeScript + Gemini AI + MCP)
+- Built three AI tools: AI SEO Agent (TypeScript + Gemini AI + Playwright, live on Google AI Studio), AI Web Summarizer (Chrome Extension + Groq AI), AI Security Intelligence Platform (TypeScript + Gemini AI + MCP Server)
 - Skills: SEO, Google Ads, LinkedIn Ads, PPC, GA4, Looker Studio, Prompt Engineering, TypeScript, JavaScript, Node.js
 - Education: M.Tech Power Electronics (VTU), B.E. ECE (VTU)
 - Certifications: Generative AI Mastermind (Outskill), Advanced SEO (LinkedIn Learning)
@@ -34,16 +29,30 @@ Key facts about you:
 
 Be warm, concise, and confident. If asked about salary, say you're open to discussing based on scope and fit. Keep answers to 2–4 sentences max. Always end with a light invitation to connect.`,
 
-    // Pre-scripted fallback answers for GitHub Pages (no backend needed)
     SCRIPTED_ANSWERS: {
       default: "Great question! I bring 8+ years of digital marketing expertise fused with hands-on AI development — a rare combo that turns strategy into measurable growth. I'd love to walk you through my work. Feel free to email me at digitalVamshidhar@gmail.com or connect on LinkedIn!",
       experience: "I'm currently a Digital Marketing Specialist at Autozilla Software Solutions, where I've driven a 15% traffic lift, secured first-page rankings for competitive keywords, and generate 70+ qualified leads every month on a Rs.2L+ monthly ad budget. Before that, I've worked across campaign management and technical SEO at Pranathi Software Services and FAMA Technologies.",
-      ai: "I've built several AI tools from scratch — an AI Newsletter Digest in Python, a Chrome extension powered by Groq AI that summarizes any web page in real-time, and an AI Security Intelligence Platform using TypeScript and Gemini AI with MCP server architecture. These aren't side projects — they're tools I use to give my marketing work a real edge.",
+      ai: "I've built three AI tools from scratch — the AI SEO Agent (TypeScript + Gemini AI with Playwright crawling, live on Google AI Studio), a Chrome extension powered by Groq AI that summarizes any web page in real-time, and an AI Security Intelligence Platform built on the MCP server architecture. These aren't side projects — they're tools I use to give my marketing work a real edge.",
       seo: "SEO is where I started and where I consistently deliver results. At Autozilla I run structured SEO audits, keyword gap analysis, and technical fixes that have landed us on page one for high-value terms. I layer GA4 data and Looker Studio dashboards on top so every decision is tied to real numbers.",
-      hire: "I'm actively open to new opportunities — roles where I can bring AI thinking into a marketing team (or vice versa). I'm comfortable leading strategy independently and collaborating closely with dev teams. Want to start a conversation? Drop me a line at digitalVamshidhar@gmail.com 🚀",
-      skills: "My core stack spans SEO, Google Ads, LinkedIn Ads, CRO, GA4, and Looker Studio on the marketing side — plus TypeScript, JavaScript, Node.js, Prompt Engineering, and AI tool development on the tech side. That dual fluency is what lets me build automation workflows most marketers can only dream of.",
+      hire: "I'm actively open to new opportunities — roles where I can bring AI thinking into a marketing team (or vice versa). I'm comfortable leading strategy independently and collaborating closely with dev teams. Want to start a conversation? Drop me a line at digitalVamshidhar@gmail.com →",
+      skills: "My core stack spans SEO, Google Ads, LinkedIn Ads, CRO, GA4, and Looker Studio on the marketing side — plus TypeScript, JavaScript, Node.js, Prompt Engineering, and AI tool development on the tech side. That dual fluency is what lets me build automation workflows most marketers can only dream of."
     }
   };
+
+  /* ════════════════════════════════════════════════════════
+     UTILITIES
+     ════════════════════════════════════════════════════════ */
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = String(s == null ? '' : s);
+    return div.innerHTML;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function reinitTilt() {
+    if (typeof window.__reinitTilt === 'function') window.__reinitTilt();
+  }
 
   /* ════════════════════════════════════════════════════════
      WAIT FOR DOM
@@ -56,12 +65,12 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   ready(() => {
     injectHeroMeshBlobs();
     injectHireBeacon();
+    injectGitHubStats();
     injectROICalculator();
     injectAIChat();
     initWordReveals();
-    injectScrollProgress();
-    injectVisitorBadge();
     injectCaseStudyModals();
+    reinitTilt();
   });
 
   /* ════════════════════════════════════════════════════════
@@ -72,10 +81,9 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     if (!heroBg) return;
     const mesh = document.createElement('div');
     mesh.className = 'hero-mesh';
-    mesh.innerHTML = `<div class="mesh-blob"></div><div class="mesh-blob"></div><div class="mesh-blob"></div>`;
+    mesh.innerHTML = '<div class="mesh-blob"></div><div class="mesh-blob"></div><div class="mesh-blob"></div>';
     heroBg.prepend(mesh);
 
-    // Subtle mouse-parallax for the mesh
     document.addEventListener('mousemove', (e) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 24;
       const y = (e.clientY / window.innerHeight - 0.5) * 16;
@@ -88,20 +96,173 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   }
 
   /* ════════════════════════════════════════════════════════
-     2. HERO NAME LETTER-HOVER ANIMATION (removed)
-     ════════════════════════════════════════════════════════ */
-
-  /* ════════════════════════════════════════════════════════
-     3. HIRE BEACON — replaces the plain badge in hero
+     2. HIRE BEACON — replaces the plain hero badge entirely
      ════════════════════════════════════════════════════════ */
   function injectHireBeacon() {
     const badge = document.querySelector('.hero-badge');
     if (!badge) return;
-    badge.innerHTML = `
-      <span class="hire-beacon">
-        <span class="beacon-ring"></span>
-        Available for Opportunities — Let's talk!
-      </span>`;
+    const beacon = document.createElement('span');
+    beacon.className = 'hire-beacon';
+    beacon.setAttribute('data-animate', 'fade-in');
+    beacon.setAttribute('data-delay', '200');
+    beacon.innerHTML = '<span class="beacon-ring"></span>Available for Opportunities — Let\'s talk!';
+    badge.replaceWith(beacon);
+  }
+
+  /* ════════════════════════════════════════════════════════
+     3. LIVE GITHUB STATS
+     ════════════════════════════════════════════════════════ */
+  function injectGitHubStats() {
+    const USERNAME = CONFIG.GITHUB_USERNAME;
+    const CACHE_KEY = 'github_stats_v1';
+    const CACHE_TTL = 60 * 60 * 1000;
+
+    const impactSection = document.getElementById('impact');
+    if (!impactSection) {
+      console.warn('[GitHub Stats] #impact section not found');
+      return;
+    }
+
+    // Inject skeleton immediately
+    const section = document.createElement('section');
+    section.className = 'github-stats-section';
+    section.id = 'github-stats';
+    section.setAttribute('data-animate', 'fade-up');
+    section.innerHTML = `
+      <div class="container">
+        <div class="github-stats-header">
+          <span class="github-stats-tag">
+            <i class="fab fa-github"></i>
+            Live from GitHub
+            <span class="live-dot"></span>
+          </span>
+          <h3 class="github-stats-title">Real-time activity from my repositories</h3>
+        </div>
+        <div class="github-stats-grid" id="ghStatsGrid">
+          <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+          <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+          <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+          <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+        </div>
+      </div>`;
+    impactSection.parentNode.insertBefore(section, impactSection.nextSibling);
+
+    // Now fetch & render
+    fetchAndRender();
+
+    async function fetchAndRender() {
+      try {
+        // Try cache first
+        let data = null;
+        try {
+          const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+          if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+            data = cached.data;
+          }
+        } catch (e) { /* ignore */ }
+
+        if (!data) {
+          const [userRes, reposRes] = await Promise.all([
+            fetch(`https://api.github.com/users/${USERNAME}`),
+            fetch(`https://api.github.com/users/${USERNAME}/repos?per_page=100&sort=pushed`)
+          ]);
+          if (!userRes.ok || !reposRes.ok) throw new Error('GitHub API error');
+          const user = await userRes.json();
+          const repos = await reposRes.json();
+
+          const totalStars = repos.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
+          const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+          const recentlyActive = repos.filter(r => new Date(r.pushed_at).getTime() > thirtyDaysAgo).length;
+
+          let lastCommitRepo = repos[0] || null;
+          let lastCommitTime = 0;
+          repos.forEach(r => {
+            const t = new Date(r.pushed_at).getTime();
+            if (t > lastCommitTime) {
+              lastCommitTime = t;
+              lastCommitRepo = r;
+            }
+          });
+
+          data = {
+            repos: user.public_repos,
+            stars: totalStars,
+            recentlyActive,
+            lastCommitTime,
+            lastCommitRepoName: lastCommitRepo ? lastCommitRepo.name : null
+          };
+
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
+          } catch (e) { /* ignore */ }
+        }
+
+        renderGitHubStats(data);
+      } catch (err) {
+        console.error('[GitHub Stats] Failed:', err);
+        renderGitHubError();
+      }
+    }
+
+    function renderGitHubStats(stats) {
+      const grid = document.getElementById('ghStatsGrid');
+      if (!grid) return;
+
+      const lastCommitHref = stats.lastCommitRepoName
+        ? `https://github.com/${USERNAME}/${stats.lastCommitRepoName}`
+        : `https://github.com/${USERNAME}`;
+      const lastCommitSub = stats.lastCommitRepoName
+        ? `<span class="gh-stat-sublabel">→ ${escapeHtml(stats.lastCommitRepoName)}</span>`
+        : '';
+
+      grid.innerHTML = `
+        <a href="https://github.com/${USERNAME}?tab=repositories" target="_blank" rel="noopener noreferrer" class="github-stat-card">
+          <div class="gh-stat-icon"><i class="fas fa-code-branch"></i></div>
+          <div class="gh-stat-value">${stats.repos}</div>
+          <div class="gh-stat-label">Public Repos</div>
+        </a>
+        <a href="https://github.com/${USERNAME}" target="_blank" rel="noopener noreferrer" class="github-stat-card">
+          <div class="gh-stat-icon"><i class="fas fa-star"></i></div>
+          <div class="gh-stat-value">${stats.stars}</div>
+          <div class="gh-stat-label">Stars Earned</div>
+        </a>
+        <div class="github-stat-card">
+          <div class="gh-stat-icon"><i class="fas fa-fire"></i></div>
+          <div class="gh-stat-value">${stats.recentlyActive}</div>
+          <div class="gh-stat-label">Active in 30 Days</div>
+        </div>
+        <a href="${lastCommitHref}" target="_blank" rel="noopener noreferrer" class="github-stat-card">
+          <div class="gh-stat-icon"><i class="fas fa-clock"></i></div>
+          <div class="gh-stat-value">${relativeTime(stats.lastCommitTime)}</div>
+          <div class="gh-stat-label">Last Commit ${lastCommitSub}</div>
+        </a>`;
+    }
+
+    function renderGitHubError() {
+      const grid = document.getElementById('ghStatsGrid');
+      if (!grid) return;
+      grid.innerHTML = `
+        <div class="github-stat-error">
+          <i class="fab fa-github"></i>
+          <span>View my repositories directly on
+            <a href="https://github.com/${USERNAME}" target="_blank" rel="noopener noreferrer">GitHub →</a>
+          </span>
+        </div>`;
+    }
+
+    function relativeTime(timestamp) {
+      if (!timestamp) return '—';
+      const diff = Date.now() - timestamp;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      if (minutes < 1) return 'just now';
+      if (minutes < 60) return minutes + 'm ago';
+      if (hours < 24) return hours + 'h ago';
+      if (days < 30) return days + 'd ago';
+      const months = Math.floor(days / 30);
+      return months + 'mo ago';
+    }
   }
 
   /* ════════════════════════════════════════════════════════
@@ -173,7 +334,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
               <a href="mailto:digitalVamshidhar@gmail.com" class="btn btn-primary magnetic-btn" style="flex:1;justify-content:center;">
                 <i class="fas fa-envelope"></i> Let's Discuss
               </a>
-              <a href="https://linkedin.com/in/vamshidharreddym" target="_blank" class="btn btn-secondary magnetic-btn" style="flex:1;justify-content:center;">
+              <a href="https://linkedin.com/in/vamshidharreddym" target="_blank" rel="noopener noreferrer" class="btn btn-secondary magnetic-btn" style="flex:1;justify-content:center;">
                 <i class="fab fa-linkedin"></i> Connect
               </a>
             </div>
@@ -183,7 +344,6 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
 
     skillsSection.parentNode.insertBefore(section, skillsSection);
 
-    // Wiring
     const roiVisits  = document.getElementById('roiVisits');
     const roiConv    = document.getElementById('roiConv');
     const roiRevenue = document.getElementById('roiRevenue');
@@ -203,11 +363,11 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       document.getElementById('roiRevenueDisplay').textContent = fmt(revenue);
       document.getElementById('roiBudgetDisplay').textContent  = fmt(budget);
 
-      const trafficLift  = visits * 0.15;
-      const leadsGain    = trafficLift * conv;
-      const croLift      = visits * (conv * 1.12 - conv) * revenue;
-      const roasLift     = budget * 0.25;
-      const total        = leadsGain * revenue + croLift + roasLift;
+      const trafficLift = visits * 0.15;
+      const leadsGain   = trafficLift * conv;
+      const croLift     = visits * (conv * 1.12 - conv) * revenue;
+      const roasLift    = budget * 0.25;
+      const total       = leadsGain * revenue + croLift + roasLift;
 
       document.getElementById('roiTrafficLift').textContent = fmtNum(trafficLift);
       document.getElementById('roiLeadsGain').textContent   = fmtNum(leadsGain);
@@ -215,7 +375,6 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       document.getElementById('roiRoasLift').textContent    = fmt(roasLift);
       document.getElementById('roiTotal').textContent       = fmt(total);
 
-      // Update slider fill track visual
       [roiVisits, roiConv, roiRevenue, roiBudget].forEach(sl => {
         const pct = ((sl.value - sl.min) / (sl.max - sl.min)) * 100;
         sl.style.background = `linear-gradient(to right, #6366f1 ${pct}%, var(--bg-tertiary) ${pct}%)`;
@@ -245,6 +404,8 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     const panel = document.createElement('div');
     panel.className = 'ai-chat-panel';
     panel.id = 'aiChatPanel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', "Chat with Vamshidhar's AI assistant");
     panel.innerHTML = `
       <div class="chat-panel-header">
         <div class="chat-avatar">VR</div>
@@ -265,33 +426,38 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
         <input type="text" class="chat-input" id="chatInput" placeholder="Ask Vamshidhar anything…" maxlength="300" autocomplete="off">
         <button class="chat-send" id="chatSend" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
       </div>
-      <div class="chat-powered-by">Powered by Groq AI · Always verify important info directly</div>`;
+      <div class="chat-powered-by">AI-Powered Assistant · Always verify important info directly</div>`;
     document.body.appendChild(panel);
 
-    const trigger   = document.getElementById('aiChatTrigger');
-    const closeBtn  = document.getElementById('aiChatClose');
-    const chatInput = document.getElementById('chatInput');
-    const sendBtn   = document.getElementById('chatSend');
-    const messagesEl= document.getElementById('chatMessages');
-    const quickEl   = document.getElementById('chatQuickReplies');
+    const trigger    = document.getElementById('aiChatTrigger');
+    const closeBtn   = document.getElementById('aiChatClose');
+    const chatInput  = document.getElementById('chatInput');
+    const sendBtn    = document.getElementById('chatSend');
+    const messagesEl = document.getElementById('chatMessages');
+    const quickEl    = document.getElementById('chatQuickReplies');
 
     let isOpen = false;
     let isThinking = false;
     const history = [];
 
-    // Open / Close
     trigger.addEventListener('click', () => togglePanel());
     closeBtn.addEventListener('click', () => togglePanel(false));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen) togglePanel(false);
+    });
 
     function togglePanel(forceState) {
       isOpen = forceState !== undefined ? forceState : !isOpen;
       panel.classList.toggle('open', isOpen);
-      if (isOpen && messagesEl.children.length === 0) {
-        addBotMessage("Hi! I'm Vamshidhar's AI assistant. Ask me about my experience, AI projects, or why I'd be a great fit for your team 👋");
+      if (isOpen) {
+        if (messagesEl.children.length === 0) {
+          addBotMessage("Hi! I'm Vamshidhar's AI assistant. Ask me about my experience, AI projects, or why I'd be a great fit for your team 👋");
+        }
+        setTimeout(() => { try { chatInput.focus(); } catch (_) {} }, 200);
       }
     }
 
-    // Quick replies
     quickEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.chat-quick-reply');
       if (!btn) return;
@@ -299,13 +465,13 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       quickEl.style.display = 'none';
     });
 
-    // Send
     sendBtn.addEventListener('click', () => {
       const text = chatInput.value.trim();
       if (text) { sendMessage(text); chatInput.value = ''; }
     });
+
     chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter') {
         e.preventDefault();
         const text = chatInput.value.trim();
         if (text) { sendMessage(text); chatInput.value = ''; }
@@ -313,22 +479,32 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     });
 
     function addBotMessage(text) {
-      const div = document.createElement('div');
-      div.className = 'chat-msg bot';
-      div.innerHTML = `
-        <div class="chat-msg-avatar">VR</div>
-        <div class="chat-msg-bubble">${text}</div>`;
-      messagesEl.appendChild(div);
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-msg bot';
+      const avatar = document.createElement('div');
+      avatar.className = 'chat-msg-avatar';
+      avatar.textContent = 'VR';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-msg-bubble';
+      bubble.textContent = text;
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
     function addUserMessage(text) {
-      const div = document.createElement('div');
-      div.className = 'chat-msg user';
-      div.innerHTML = `
-        <div class="chat-msg-avatar"><i class="fas fa-user" style="font-size:0.75rem"></i></div>
-        <div class="chat-msg-bubble">${escapeHtml(text)}</div>`;
-      messagesEl.appendChild(div);
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-msg user';
+      const avatar = document.createElement('div');
+      avatar.className = 'chat-msg-avatar';
+      avatar.innerHTML = '<i class="fas fa-user" style="font-size:0.75rem"></i>';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-msg-bubble';
+      bubble.textContent = text;
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
@@ -380,39 +556,42 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     }
 
     async function fetchAIReply(msgs) {
-      const res = await fetch(CONFIG.AI_PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: CONFIG.PERSONA_SYSTEM_PROMPT,
-          messages: msgs,
-          max_tokens: 200
-        })
-      });
-      if (!res.ok) throw new Error('API error');
-      const data = await res.json();
-      // Support both direct Anthropic and proxy responses
-      if (data.content && data.content[0]) return data.content[0].text;
-      if (data.reply) return data.reply;
-      throw new Error('Unexpected response format');
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(() => ctrl.abort(), 15000);
+      try {
+        const res = await fetch(CONFIG.AI_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system: CONFIG.PERSONA_SYSTEM_PROMPT,
+            messages: msgs,
+            max_tokens: 200
+          }),
+          signal: ctrl.signal
+        });
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error('API error: ' + res.status);
+        const data = await res.json();
+        if (data && data.content && data.content[0] && data.content[0].text) return data.content[0].text;
+        if (data && typeof data.reply === 'string') return data.reply;
+        if (typeof data === 'string') return data;
+        throw new Error('Unexpected response format');
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
     }
 
     async function mockAIReply(text) {
-      // Simulate network latency
       await sleep(900 + Math.random() * 600);
       const lower = text.toLowerCase();
       const s = CONFIG.SCRIPTED_ANSWERS;
       if (/experience|work|job|company|career|background/.test(lower)) return s.experience;
-      if (/ai|artificial|tool|build|built|automat|python|chrome|extension/.test(lower)) return s.ai;
+      if (/ai|artificial|tool|build|built|automat|chrome|extension|seo agent|web summarizer|security/.test(lower)) return s.ai;
       if (/seo|search|rank|organic|keyword|traffic/.test(lower)) return s.seo;
       if (/hire|why you|skills overview|what can you|capabilities/.test(lower)) return s.hire;
       if (/skill|tech|stack|google ads|ppc|analytics|looker|typescript/.test(lower)) return s.skills;
       return s.default;
-    }
-
-    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-    function escapeHtml(s) {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
   }
 
@@ -422,14 +601,13 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   function initWordReveals() {
     document.querySelectorAll('.section-desc').forEach((el) => {
       el.classList.add('word-reveal');
-      el.setAttribute('data-animate', 'word-reveal');
       const words = el.textContent.trim().split(/\s+/);
       el.textContent = '';
       words.forEach((w, i) => {
         const span = document.createElement('span');
         span.className = 'word';
         span.textContent = w;
-        span.style.transitionDelay = `${i * 0.04}s`;
+        span.style.transitionDelay = (i * 0.04) + 's';
         el.appendChild(span);
         if (i < words.length - 1) {
           el.appendChild(document.createTextNode(' '));
@@ -437,7 +615,6 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       });
     });
 
-    // Wire into existing IntersectionObserver pattern
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -451,81 +628,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   }
 
   /* ════════════════════════════════════════════════════════
-     7. SCROLL PROGRESS BAR
-     ════════════════════════════════════════════════════════ */
-  function injectScrollProgress() {
-    const bar = document.createElement('div');
-    bar.className = 'scroll-progress-bar';
-    bar.id = 'scrollProgressBar';
-    document.body.appendChild(bar);
-
-    let ticking = false;
-    function updateProgress() {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      bar.style.width = pct + '%';
-      ticking = false;
-    }
-
-    window.addEventListener('scroll', () => {
-      if (!ticking) {
-        requestAnimationFrame(updateProgress);
-        ticking = true;
-      }
-    }, { passive: true });
-
-    updateProgress();
-  }
-
-  /* ════════════════════════════════════════════════════════
-     8. VISITOR ANALYTICS BADGE
-     ════════════════════════════════════════════════════════ */
-  function injectVisitorBadge() {
-    const heroBadgeContainer = document.querySelector('.hero-badge');
-    if (!heroBadgeContainer) return;
-
-    // Derive a believable, stable-per-day visitor count.
-    // Uses a deterministic seed (date + a fixed base) so the number
-    // doesn't jump around on every refresh, and slowly grows over time.
-    const STORAGE_KEY = 'portfolio_visit_stats_v1';
-    const today = new Date();
-    const dayKey = today.toISOString().slice(0, 10);
-
-    let stats;
-    try {
-      stats = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    } catch (e) {
-      stats = null;
-    }
-
-    // Seed: launch date anchors the growth curve so the count feels earned over time.
-    const LAUNCH_DATE = new Date('2026-01-01T00:00:00Z');
-    const daysSinceLaunch = Math.max(1, Math.floor((today - LAUNCH_DATE) / 86400000));
-    const baseCount = 80 + daysSinceLaunch * 3; // organic-feeling growth
-
-    if (!stats || stats.day !== dayKey) {
-      // New day: roll forward, add a small random daily bump for realism
-      const previousTotal = stats ? stats.total : baseCount;
-      const bump = Math.floor(Math.random() * 6) + 2; // +2 to +7 per day
-      const newTotal = Math.max(previousTotal + bump, baseCount);
-      stats = { day: dayKey, total: newTotal, viewedToday: 1 };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); } catch (e) {}
-    } else {
-      stats.viewedToday = (stats.viewedToday || 0) + 1;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); } catch (e) {}
-    }
-
-    const badge = document.createElement('div');
-    badge.className = 'visitor-badge';
-    badge.innerHTML = `
-      <i class="fas fa-eye"></i>
-      <span><strong>${stats.total.toLocaleString('en-IN')}</strong> people viewed this profile this month</span>`;
-    heroBadgeContainer.insertAdjacentElement('afterend', badge);
-  }
-
-  /* ════════════════════════════════════════════════════════
-     9. CASE STUDY DEEP-DIVE MODALS
+     7. CASE STUDY DEEP-DIVE MODALS
      ════════════════════════════════════════════════════════ */
   const CASE_STUDIES = {
     'AI SEO Agent': {
@@ -534,7 +637,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       approach: "Built a full-stack audit tool combining Gemini AI's reasoning with real crawling infrastructure. Playwright handles headless browser crawling to capture real rendered pages (not just raw HTML), while a TypeScript + Node.js backend orchestrates the crawl, stores results in SQLite for persistence, and feeds page data to Gemini AI for analysis. The AI evaluates on-page SEO factors (titles, meta descriptions, heading structure, content depth, internal linking) and generates prioritized, actionable recommendations rather than a generic checklist.",
       result: "Delivered as a live, working web application on Google AI Studio — not just a local script. Demonstrates the full product lifecycle: architecture, data persistence, AI integration, and deployment. Directly applies skills from 8+ years of hands-on SEO work, now automated into a tool other marketers and agencies could use.",
       tech: ['TypeScript', 'Gemini AI', 'Node.js', 'SQLite', 'Playwright', 'Vite'],
-      link: 'https://github.com/mvamshi56/seoagent',
+      link: 'https://github.com/mvamshi56/seoagent'
     },
     'AI Web Summarizer': {
       icon: 'fa-file-alt',
@@ -542,7 +645,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       approach: "Built a lightweight Chrome extension that works directly inside the browser, using Groq AI's extremely fast inference to summarize whatever page the user is currently viewing — no tab-switching, no copy-pasting. Deliberately optimized for low-RAM systems so it stays fast and unobtrusive even on older hardware, with a clean popup UI offering configurable summary options.",
       result: "Published as an open-source MIT-licensed project with a clear, extensible structure (popup, content script, and options modules separated cleanly). Solves a real daily friction point in content-heavy research and competitive analysis work, and is built to be picked up and extended by other developers.",
       tech: ['JavaScript', 'HTML', 'Groq AI', 'Chrome Extension'],
-      link: 'https://github.com/mvamshi56/AI-Web-Summarizer',
+      link: 'https://github.com/mvamshi56/AI-Web-Summarizer'
     },
     'AI Security Intelligence Platform': {
       icon: 'fa-shield-alt',
@@ -550,20 +653,19 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       approach: "Designed and built an AI-powered platform using an MCP (Model Context Protocol) server architecture — the same emerging standard used to let AI models interact with external tools and structured data sources. A dedicated AI-driven security analysis server handles vulnerability assessment and risk analysis logic, while a TypeScript client manages communication between components in a clean client-server model.",
       result: "Demonstrates the ability to design and build intelligent, modular automated systems beyond marketing-specific use cases — applying the same systems-thinking and structured-analysis instincts from SEO and campaign work to a completely different domain. Built to production-ready standards, not just a proof of concept.",
       tech: ['TypeScript', 'Gemini AI', 'MCP Server', 'Node.js'],
-      link: 'https://github.com/mvamshi56/AI-SECURITY',
-    },
+      link: 'https://github.com/mvamshi56/AI-SECURITY'
+    }
   };
 
   function injectCaseStudyModals() {
     const cards = document.querySelectorAll('.project-card');
     if (!cards.length) return;
 
-    // Build modal shell once
     const overlay = document.createElement('div');
     overlay.className = 'case-study-overlay';
     overlay.id = 'caseStudyOverlay';
     overlay.innerHTML = `
-      <div class="case-study-modal" role="dialog" aria-modal="true">
+      <div class="case-study-modal" role="dialog" aria-modal="true" aria-labelledby="csTitle">
         <button class="case-study-close" id="caseStudyClose" aria-label="Close case study"><i class="fas fa-times"></i></button>
         <div class="case-study-content" id="caseStudyContent"></div>
       </div>`;
@@ -592,8 +694,8 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       card.classList.add('has-case-study');
       const cta = document.createElement('button');
       cta.className = 'case-study-trigger';
-      cta.innerHTML = `View case study <i class="fas fa-arrow-right"></i>`;
-      cta.setAttribute('aria-label', `View case study for ${title}`);
+      cta.innerHTML = 'View case study <i class="fas fa-arrow-right"></i>';
+      cta.setAttribute('aria-label', 'View case study for ' + title);
 
       const footer = card.querySelector('.project-footer');
       if (footer) footer.appendChild(cta);
@@ -608,25 +710,25 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
       const content = document.getElementById('caseStudyContent');
       content.innerHTML = `
         <div class="cs-header">
-          <div class="cs-icon"><i class="fas ${study.icon}"></i></div>
-          <h2 class="cs-title">${title}</h2>
+          <div class="cs-icon"><i class="fas ${escapeHtml(study.icon)}"></i></div>
+          <h2 class="cs-title" id="csTitle">${escapeHtml(title)}</h2>
         </div>
         <div class="cs-tech-row">
-          ${study.tech.map(t => `<span class="cs-tech-tag">${t}</span>`).join('')}
+          ${study.tech.map(t => '<span class="cs-tech-tag">' + escapeHtml(t) + '</span>').join('')}
         </div>
         <div class="cs-section">
           <div class="cs-section-label"><i class="fas fa-exclamation-circle"></i> The problem</div>
-          <p class="cs-section-text">${study.problem}</p>
+          <p class="cs-section-text">${escapeHtml(study.problem)}</p>
         </div>
         <div class="cs-section">
           <div class="cs-section-label"><i class="fas fa-cogs"></i> The approach</div>
-          <p class="cs-section-text">${study.approach}</p>
+          <p class="cs-section-text">${escapeHtml(study.approach)}</p>
         </div>
         <div class="cs-section">
           <div class="cs-section-label"><i class="fas fa-trophy"></i> The result</div>
-          <p class="cs-section-text">${study.result}</p>
+          <p class="cs-section-text">${escapeHtml(study.result)}</p>
         </div>
-        <a href="${study.link}" target="_blank" class="cs-github-link">
+        <a href="${escapeHtml(study.link)}" target="_blank" rel="noopener noreferrer" class="cs-github-link">
           <i class="fab fa-github"></i> View source on GitHub
         </a>`;
       overlay.classList.add('open');
