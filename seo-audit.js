@@ -14,7 +14,7 @@
   'use strict';
 
   // Paste your Google API key here for unlimited usage (optional)
-  const PSI_API_KEY = '';
+  const PSI_API_KEY = 'AIzaSyCHD7HOurPKj1S4J2brZSaTKaIL7BTPIAk';
 
   const PSI_API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
   const CACHE_KEY = 'seo_audit_cache_v1';
