@@ -1,7 +1,7 @@
 /**
  * VAMSHIDHAR REDDY M — MINI SEO AUDIT TOOL (Hybrid)
  * Primary: Google PageSpeed Insights API (real Lighthouse SEO audits)
- * Fallback: CORS proxy + client-side checks (kicks in when PSI rate-limits)
+ * Fallback: Jina AI Reader + CORS proxies (works when PSI rate-limits)
  *
  * OPTIONAL: For unlimited PSI usage, get a free Google API key:
  *   1. Visit https://console.cloud.google.com/apis/credentials
@@ -13,8 +13,8 @@
 (function () {
   'use strict';
 
-  // Paste your Google API key here for unlimited usage (optional)
-  const PSI_API_KEY = 'AIzaSyCHD7HOurPKj1S4J2brZSaTKaIL7BTPIAk';
+  // Paste your Google API key here for unlimited PSI usage (optional)
+  const PSI_API_KEY = '';
 
   const PSI_API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
   const CACHE_KEY = 'seo_audit_cache_v1';
@@ -46,7 +46,7 @@
         <div class="section-header">
           <span class="section-tag"><i class="fas fa-bolt"></i> Live Demo</span>
           <h2 class="section-title">Try My SEO Agent <span class="gradient-text">Live</span></h2>
-          <p class="section-desc">Paste any URL to run a real SEO audit. Powered by Google Lighthouse with a client-side fallback for reliability.</p>
+          <p class="section-desc">Paste any URL to run a real SEO audit. Powered by Google Lighthouse with a smart client-side fallback for reliability.</p>
         </div>
 
         <div class="seo-audit-card">
@@ -129,7 +129,7 @@
       setMsg(isRateLimit ? 'Quick audit (PSI rate-limited)...' : 'Switching to quick audit...');
     }
 
-    // 3. Fallback: CORS proxy + client-side checks
+    // 3. Fallback: Fetch page HTML + client-side checks
     const html = await fetchPageHtml(url);
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const data = runClientChecks(doc, url);
@@ -196,13 +196,40 @@
     return { score: score, checks: checks, source: 'Google Lighthouse' };
   }
 
-  /* ════════════ CORS PROXY FALLBACK ════════════ */
+  /* ════════════ FETCH (Jina + CORS proxies fallback) ════════════ */
 
   async function fetchPageHtml(url) {
     let lastError;
+
+    // Try Jina AI Reader first — most reliable for heavy/JS-rendered sites
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 20000);
+      const res = await fetch('https://r.jina.ai/' + url, {
+        signal: ctrl.signal,
+        headers: {
+          'Accept': 'text/html',
+          'X-Return-Format': 'html'
+        }
+      });
+      clearTimeout(t);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 100) {
+          console.log('[SEO Audit] Jina AI Reader succeeded');
+          return text;
+        }
+      }
+      lastError = new Error('Jina HTTP ' + res.status);
+    } catch (e) {
+      console.warn('[SEO Audit] Jina failed:', e.message);
+      lastError = e;
+    }
+
+    // Fallback: standard CORS proxies with longer timeout
     for (const proxy of CORS_PROXIES) {
       const ctrl = new AbortController();
-      const timeoutId = setTimeout(() => ctrl.abort(), 10000);
+      const timeoutId = setTimeout(() => ctrl.abort(), 20000);
       try {
         const res = await fetch(proxy + encodeURIComponent(url), { signal: ctrl.signal });
         clearTimeout(timeoutId);
@@ -215,7 +242,11 @@
         lastError = new Error('Empty response');
       } catch (e) {
         clearTimeout(timeoutId);
-        lastError = e;
+        if (e.name === 'AbortError') {
+          lastError = new Error('Request timed out after 20s');
+        } else {
+          lastError = e;
+        }
       }
     }
     throw lastError || new Error('Could not fetch URL');
@@ -329,7 +360,6 @@
     try {
       const all = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
       all[url] = { timestamp: Date.now(), data: data };
-      // Keep cache small: max 20 entries
       const keys = Object.keys(all);
       if (keys.length > 20) {
         keys.sort((a, b) => all[a].timestamp - all[b].timestamp);
@@ -369,11 +399,24 @@
   }
 
   function renderError(message) {
+    const isTimeout = /timed out|aborted/i.test(message);
+    const isRateLimit = /rate limit|quota|429/i.test(message);
+
+    let tip;
+    if (isTimeout) {
+      tip = 'This site is too heavy or slow for free proxies. For unlimited audits, add a free Google API key (instructions at the top of seo-audit.js).';
+    } else if (isRateLimit) {
+      tip = 'Google rate-limited your IP. Try again in ~1 hour, or add a free Google API key for unlimited usage.';
+    } else {
+      tip = 'Try a different URL like github.com or stripe.com.';
+    }
+
     return '<div class="seo-audit-error">' +
       '<i class="fas fa-exclamation-triangle"></i>' +
       '<div>' +
         '<h4>Could not audit this URL</h4>' +
-        '<p>' + escapeHtml(message) + '. Try a different URL like github.com or stripe.com.</p>' +
+        '<p>' + escapeHtml(message) + '.</p>' +
+        '<p style="margin-top:8px;font-size:0.82rem;">' + escapeHtml(tip) + '</p>' +
       '</div></div>';
   }
 
