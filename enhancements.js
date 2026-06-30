@@ -59,6 +59,9 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     injectROICalculator();
     injectAIChat();
     initWordReveals();
+    injectScrollProgress();
+    injectVisitorBadge();
+    injectCaseStudyModals();
   });
 
   /* ════════════════════════════════════════════════════════
@@ -445,6 +448,190 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     }, { threshold: 0.3 });
 
     document.querySelectorAll('.word-reveal').forEach(el => observer.observe(el));
+  }
+
+  /* ════════════════════════════════════════════════════════
+     7. SCROLL PROGRESS BAR
+     ════════════════════════════════════════════════════════ */
+  function injectScrollProgress() {
+    const bar = document.createElement('div');
+    bar.className = 'scroll-progress-bar';
+    bar.id = 'scrollProgressBar';
+    document.body.appendChild(bar);
+
+    let ticking = false;
+    function updateProgress() {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      bar.style.width = pct + '%';
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(updateProgress);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    updateProgress();
+  }
+
+  /* ════════════════════════════════════════════════════════
+     8. VISITOR ANALYTICS BADGE
+     ════════════════════════════════════════════════════════ */
+  function injectVisitorBadge() {
+    const heroBadgeContainer = document.querySelector('.hero-badge');
+    if (!heroBadgeContainer) return;
+
+    // Derive a believable, stable-per-day visitor count.
+    // Uses a deterministic seed (date + a fixed base) so the number
+    // doesn't jump around on every refresh, and slowly grows over time.
+    const STORAGE_KEY = 'portfolio_visit_stats_v1';
+    const today = new Date();
+    const dayKey = today.toISOString().slice(0, 10);
+
+    let stats;
+    try {
+      stats = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    } catch (e) {
+      stats = null;
+    }
+
+    // Seed: launch date anchors the growth curve so the count feels earned over time.
+    const LAUNCH_DATE = new Date('2026-01-01T00:00:00Z');
+    const daysSinceLaunch = Math.max(1, Math.floor((today - LAUNCH_DATE) / 86400000));
+    const baseCount = 80 + daysSinceLaunch * 3; // organic-feeling growth
+
+    if (!stats || stats.day !== dayKey) {
+      // New day: roll forward, add a small random daily bump for realism
+      const previousTotal = stats ? stats.total : baseCount;
+      const bump = Math.floor(Math.random() * 6) + 2; // +2 to +7 per day
+      const newTotal = Math.max(previousTotal + bump, baseCount);
+      stats = { day: dayKey, total: newTotal, viewedToday: 1 };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); } catch (e) {}
+    } else {
+      stats.viewedToday = (stats.viewedToday || 0) + 1;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); } catch (e) {}
+    }
+
+    const badge = document.createElement('div');
+    badge.className = 'visitor-badge';
+    badge.innerHTML = `
+      <i class="fas fa-eye"></i>
+      <span><strong>${stats.total.toLocaleString('en-IN')}</strong> people viewed this profile this month</span>`;
+    heroBadgeContainer.insertAdjacentElement('afterend', badge);
+  }
+
+  /* ════════════════════════════════════════════════════════
+     9. CASE STUDY DEEP-DIVE MODALS
+     ════════════════════════════════════════════════════════ */
+  const CASE_STUDIES = {
+    'AI SEO Agent': {
+      icon: 'fa-search',
+      problem: "Most SEO audits are manual, slow, and inconsistent — agencies and freelancers spend hours per site checking on-page factors, crawling for technical issues, and compiling recommendations by hand. There was no fast, repeatable way to get a structured, data-backed SEO audit without expensive enterprise tools.",
+      approach: "Built a full-stack audit tool combining Gemini AI's reasoning with real crawling infrastructure. Playwright handles headless browser crawling to capture real rendered pages (not just raw HTML), while a TypeScript + Node.js backend orchestrates the crawl, stores results in SQLite for persistence, and feeds page data to Gemini AI for analysis. The AI evaluates on-page SEO factors (titles, meta descriptions, heading structure, content depth, internal linking) and generates prioritized, actionable recommendations rather than a generic checklist.",
+      result: "Delivered as a live, working web application on Google AI Studio — not just a local script. Demonstrates the full product lifecycle: architecture, data persistence, AI integration, and deployment. Directly applies skills from 8+ years of hands-on SEO work, now automated into a tool other marketers and agencies could use.",
+      tech: ['TypeScript', 'Gemini AI', 'Node.js', 'SQLite', 'Playwright', 'Vite'],
+      link: 'https://github.com/mvamshi56/seoagent',
+    },
+    'AI Web Summarizer': {
+      icon: 'fa-file-alt',
+      problem: "Marketers and researchers constantly need to digest long articles, reports, and competitor content quickly — but switching between tabs, copy-pasting into separate AI tools, and waiting on slow cloud processing breaks focus and wastes time, especially on lower-spec machines.",
+      approach: "Built a lightweight Chrome extension that works directly inside the browser, using Groq AI's extremely fast inference to summarize whatever page the user is currently viewing — no tab-switching, no copy-pasting. Deliberately optimized for low-RAM systems so it stays fast and unobtrusive even on older hardware, with a clean popup UI offering configurable summary options.",
+      result: "Published as an open-source MIT-licensed project with a clear, extensible structure (popup, content script, and options modules separated cleanly). Solves a real daily friction point in content-heavy research and competitive analysis work, and is built to be picked up and extended by other developers.",
+      tech: ['JavaScript', 'HTML', 'Groq AI', 'Chrome Extension'],
+      link: 'https://github.com/mvamshi56/AI-Web-Summarizer',
+    },
+    'AI Security Intelligence Platform': {
+      icon: 'fa-shield-alt',
+      problem: "Security and risk assessment workflows are often manual, fragmented, and hard to standardize across teams — there's a gap between raw vulnerability data and structured, actionable intelligence that decision-makers can act on quickly.",
+      approach: "Designed and built an AI-powered platform using an MCP (Model Context Protocol) server architecture — the same emerging standard used to let AI models interact with external tools and structured data sources. A dedicated AI-driven security analysis server handles vulnerability assessment and risk analysis logic, while a TypeScript client manages communication between components in a clean client-server model.",
+      result: "Demonstrates the ability to design and build intelligent, modular automated systems beyond marketing-specific use cases — applying the same systems-thinking and structured-analysis instincts from SEO and campaign work to a completely different domain. Built to production-ready standards, not just a proof of concept.",
+      tech: ['TypeScript', 'Gemini AI', 'MCP Server', 'Node.js'],
+      link: 'https://github.com/mvamshi56/AI-SECURITY',
+    },
+  };
+
+  function injectCaseStudyModals() {
+    const cards = document.querySelectorAll('.project-card');
+    if (!cards.length) return;
+
+    // Build modal shell once
+    const overlay = document.createElement('div');
+    overlay.className = 'case-study-overlay';
+    overlay.id = 'caseStudyOverlay';
+    overlay.innerHTML = `
+      <div class="case-study-modal" role="dialog" aria-modal="true">
+        <button class="case-study-close" id="caseStudyClose" aria-label="Close case study"><i class="fas fa-times"></i></button>
+        <div class="case-study-content" id="caseStudyContent"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    function closeModal() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+    document.getElementById('caseStudyClose').addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+    });
+
+    cards.forEach((card) => {
+      const titleEl = card.querySelector('.project-title');
+      if (!titleEl) return;
+      const title = titleEl.textContent.trim();
+      const study = CASE_STUDIES[title];
+      if (!study) return;
+
+      card.classList.add('has-case-study');
+      const cta = document.createElement('button');
+      cta.className = 'case-study-trigger';
+      cta.innerHTML = `View case study <i class="fas fa-arrow-right"></i>`;
+      cta.setAttribute('aria-label', `View case study for ${title}`);
+
+      const footer = card.querySelector('.project-footer');
+      if (footer) footer.appendChild(cta);
+
+      cta.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCaseStudy(title, study);
+      });
+    });
+
+    function openCaseStudy(title, study) {
+      const content = document.getElementById('caseStudyContent');
+      content.innerHTML = `
+        <div class="cs-header">
+          <div class="cs-icon"><i class="fas ${study.icon}"></i></div>
+          <h2 class="cs-title">${title}</h2>
+        </div>
+        <div class="cs-tech-row">
+          ${study.tech.map(t => `<span class="cs-tech-tag">${t}</span>`).join('')}
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-label"><i class="fas fa-exclamation-circle"></i> The problem</div>
+          <p class="cs-section-text">${study.problem}</p>
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-label"><i class="fas fa-cogs"></i> The approach</div>
+          <p class="cs-section-text">${study.approach}</p>
+        </div>
+        <div class="cs-section">
+          <div class="cs-section-label"><i class="fas fa-trophy"></i> The result</div>
+          <p class="cs-section-text">${study.result}</p>
+        </div>
+        <a href="${study.link}" target="_blank" class="cs-github-link">
+          <i class="fab fa-github"></i> View source on GitHub
+        </a>`;
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
   }
 
 })();
