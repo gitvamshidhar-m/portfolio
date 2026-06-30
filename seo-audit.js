@@ -7,10 +7,12 @@
 (function () {
   'use strict';
 
+  // Reordered: allorigins is most reliable, codetabs is solid backup,
+  // corsproxy.io kept as final fallback (has been rate-limiting lately).
   const CORS_PROXIES = [
-    'https://corsproxy.io/?',
     'https://api.allorigins.win/raw?url=',
-    'https://api.codetabs.com/v1/proxy/?quest='
+    'https://api.codetabs.com/v1/proxy/?quest=',
+    'https://corsproxy.io/?'
   ];
 
   const ready = (fn) => {
@@ -83,6 +85,7 @@
       const checks = runChecks(doc, url);
       results.innerHTML = renderResults(checks, url);
     } catch (err) {
+      console.error('[SEO Audit] Failed:', err);
       results.innerHTML = renderError(err.message || 'Unknown error');
     } finally {
       btn.disabled = false;
@@ -93,16 +96,36 @@
   async function fetchPageHtml(url) {
     let lastError;
     for (const proxy of CORS_PROXIES) {
+      const proxyUrl = proxy + encodeURIComponent(url);
+      const proxyName = new URL(proxy).hostname;
+      console.log('[SEO Audit] Trying proxy:', proxyName);
+
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(() => ctrl.abort(), 12000);
+
       try {
-        const proxyUrl = proxy + encodeURIComponent(url);
-        const res = await fetch(proxyUrl);
-        if (!res.ok) { lastError = new Error('HTTP ' + res.status); continue; }
+        const res = await fetch(proxyUrl, { signal: ctrl.signal });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          console.warn('[SEO Audit] ' + proxyName + ' returned HTTP ' + res.status);
+          lastError = new Error('HTTP ' + res.status);
+          continue;
+        }
+
         const text = await res.text();
-        if (text && text.length > 100) return text;
+        if (text && text.length > 100) {
+          console.log('[SEO Audit] Success via ' + proxyName + ' (' + text.length + ' bytes)');
+          return text;
+        }
         lastError = new Error('Empty response');
-      } catch (e) { lastError = e; }
+      } catch (e) {
+        clearTimeout(timeoutId);
+        console.warn('[SEO Audit] ' + proxyName + ' error:', e.message);
+        lastError = e;
+      }
     }
-    throw lastError || new Error('All CORS proxies failed');
+    throw lastError || new Error('All proxies failed');
   }
 
   function runChecks(doc, url) {
@@ -216,7 +239,7 @@
       '<i class="fas fa-exclamation-triangle"></i>' +
       '<div>' +
         '<h4>Could not audit this URL</h4>' +
-        '<p>' + escapeHtml(message) + '. Some sites block external crawlers. Try github.com or stripe.com instead.</p>' +
+        '<p>' + escapeHtml(message) + '. The CORS proxy may be rate-limited. Try refreshing in a minute, or test with a different URL like github.com or stripe.com.</p>' +
       '</div></div>';
   }
 
