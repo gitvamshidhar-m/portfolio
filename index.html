@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <!-- Cache control: HTML always fetches fresh -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 
@@ -71,8 +77,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="enhancements.css">
+
+    <!-- Auto cache-busting for local CSS (changes every minute) -->
+    <script>
+      (function() {
+        var v = '?v=' + Math.floor(Date.now() / 60000);
+        window.__cacheBust = v;
+        document.write('<link rel="stylesheet" href="style.css' + v + '">');
+        document.write('<link rel="stylesheet" href="enhancements.css' + v + '">');
+      })();
+    </script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -790,7 +804,7 @@
                 <div class="skill-category tilt-card" data-animate="fade-up" data-delay="200">
                     <div class="skill-cat-header">
                         <div class="skill-cat-icon"><i class="fas fa-bullhorn"></i></div>
-                        <h3>Paid Media &amp; Performance</h3>
+                        <h3>Paid Media & Performance</h3>
                     </div>
                     <div class="skill-tags">
                         <span class="skill-tag">Google Ads</span>
@@ -983,9 +997,14 @@
 
     <button class="back-to-top" id="backToTop" aria-label="Back to top"><i class="fas fa-arrow-up"></i></button>
 
-        <script src="script.js"></script>
-        <script src="enhancements.js"></script>
-        <script src="seo-audit.js"></script>
-
+    <!-- Auto cache-busting for local JS (same cache key as CSS in <head>) -->
+    <script>
+      (function() {
+        var v = window.__cacheBust || ('?v=' + Math.floor(Date.now() / 60000));
+        document.write('<script src="script.js' + v + '"><\/script>');
+        document.write('<script src="enhancements.js' + v + '"><\/script>');
+        document.write('<script src="seo-audit.js' + v + '"><\/script>');
+      })();
+    </script>
 </body>
 </html>
