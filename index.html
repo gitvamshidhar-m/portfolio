@@ -153,18 +153,23 @@
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
         <div class="loading-content">
-            <div class="loading-hexagon">
-                <svg viewBox="0 0 100 100" class="hexagon-svg">
+            <div class="loading-diamond">
+                <svg viewBox="0 0 100 100" class="diamond-svg">
                     <defs>
-                        <linearGradient id="loadHexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#6366f1"/>
-                            <stop offset="50%" style="stop-color:#8b5cf6"/>
-                            <stop offset="100%" style="stop-color:#ec4899"/>
+                        <linearGradient id="loadDiamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1"/>
+                            <stop offset="50%" stop-color="#8b5cf6"/>
+                            <stop offset="100%" stop-color="#ec4899"/>
                         </linearGradient>
                     </defs>
-                    <polygon points="50,5 93,27.5 93,72.5 50,95 7,72.5 7,27.5"
-                             fill="none" stroke="url(#loadHexGrad)" stroke-width="2.5" class="hex-border-load"/>
-                    <text x="50" y="56" text-anchor="middle" fill="url(#loadHexGrad)"
+                    <polygon points="50,3 90,50 50,97 10,50"
+                             fill="none" stroke="url(#loadDiamGrad)" stroke-width="2.5"/>
+                    <polygon points="50,3 50,50 10,50 30,26" fill="url(#loadDiamGrad)" opacity="0.15"/>
+                    <polygon points="50,3 70,26 90,50 50,50" fill="url(#loadDiamGrad)" opacity="0.12"/>
+                    <polygon points="10,50 30,74 50,97 50,50" fill="url(#loadDiamGrad)" opacity="0.1"/>
+                    <polygon points="90,50 50,50 50,97 70,74" fill="url(#loadDiamGrad)" opacity="0.1"/>
+                    <polygon points="50,3 62,18 50,32 38,18" fill="white" opacity="0.15"/>
+                    <text x="50" y="58" text-anchor="middle" fill="url(#loadDiamGrad)"
                           font-family="'Space Grotesk', sans-serif" font-weight="800"
                           font-size="26" letter-spacing="-0.5">MVR</text>
                 </svg>
@@ -194,37 +199,55 @@
     <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
             <a href="#home" class="nav-logo">
-                <div class="logo-hexagon">
-                    <svg viewBox="0 0 100 100" class="hexagon-svg">
+                <div class="logo-diamond">
+                    <svg viewBox="0 0 100 100" class="diamond-svg">
                         <defs>
-                            <linearGradient id="hexGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#6366f1"/>
-                                <stop offset="50%" style="stop-color:#8b5cf6"/>
-                                <stop offset="100%" style="stop-color:#ec4899"/>
+                            <linearGradient id="diamTop" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#818cf8"/>
+                                <stop offset="100%" stop-color="#6366f1"/>
                             </linearGradient>
-                            <linearGradient id="hexGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#ec4899"/>
-                                <stop offset="50%" style="stop-color:#8b5cf6"/>
-                                <stop offset="100%" style="stop-color:#6366f1"/>
+                            <linearGradient id="diamLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#a78bfa"/>
+                                <stop offset="100%" stop-color="#6366f1"/>
                             </linearGradient>
-                            <clipPath id="hexClip">
-                                <polygon points="50,5 93,27.5 93,72.5 50,95 7,72.5 7,27.5"/>
+                            <linearGradient id="diamRight" x1="100%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#f472b6"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                            <linearGradient id="diamBottom" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#8b5cf6"/>
+                                <stop offset="100%" stop-color="#ec4899"/>
+                            </linearGradient>
+                            <linearGradient id="diamCenter" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#a78bfa"/>
+                            </linearGradient>
+                            <filter id="diamondGlow">
+                                <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#6366f1" flood-opacity="0.4"/>
+                            </filter>
+                            <clipPath id="diamClip">
+                                <polygon points="50,3 90,50 50,97 10,50"/>
                             </clipPath>
                         </defs>
-                        <polygon points="50,5 93,27.5 93,72.5 50,95 7,72.5 7,27.5"
-                                 fill="none" stroke="url(#hexGrad1)" stroke-width="2.5" class="hex-border"/>
-                        <g clip-path="url(#hexClip)">
-                            <rect x="0" y="0" width="100" height="100" fill="rgba(99,102,241,0.06)"/>
-                            <circle cx="50" cy="5" r="2.5" fill="url(#hexGrad1)"/>
-                            <circle cx="93" cy="27.5" r="2.5" fill="url(#hexGrad2)"/>
-                            <circle cx="93" cy="72.5" r="2.5" fill="url(#hexGrad1)"/>
-                            <circle cx="50" cy="95" r="2.5" fill="url(#hexGrad2)"/>
-                            <circle cx="7" cy="72.5" r="2.5" fill="url(#hexGrad1)"/>
-                            <circle cx="7" cy="27.5" r="2.5" fill="url(#hexGrad2)"/>
-                        </g>
-                        <text x="50" y="56" text-anchor="middle" fill="url(#hexGrad1)"
+                        <!-- Main diamond body -->
+                        <polygon points="50,3 90,50 50,97 10,50" fill="url(#diamTop)" stroke="url(#diamRight)" stroke-width="1.5" filter="url(#diamondGlow)"/>
+                        <!-- Upper-left facet -->
+                        <polygon points="50,3 50,50 10,50 30,26" fill="url(#diamLeft)" opacity="0.6"/>
+                        <!-- Upper-right facet -->
+                        <polygon points="50,3 70,26 90,50 50,50" fill="url(#diamRight)" opacity="0.6"/>
+                        <!-- Lower-left facet -->
+                        <polygon points="10,50 30,74 50,97 50,50" fill="url(#diamBottom)" opacity="0.5"/>
+                        <!-- Lower-right facet -->
+                        <polygon points="90,50 50,50 50,97 70,74" fill="url(#diamCenter)" opacity="0.5"/>
+                        <!-- Center band -->
+                        <polygon points="10,50 30,26 50,50 30,74" fill="url(#diamLeft)" opacity="0.3"/>
+                        <polygon points="90,50 70,26 50,50 70,74" fill="url(#diamRight)" opacity="0.3"/>
+                        <!-- Shine highlight -->
+                        <polygon points="50,3 62,18 50,32 38,18" fill="white" opacity="0.25"/>
+                        <!-- MVR text -->
+                        <text x="50" y="58" text-anchor="middle" fill="white"
                               font-family="'Space Grotesk', sans-serif" font-weight="800"
-                              font-size="26" letter-spacing="-0.5">MVR</text>
+                              font-size="24" letter-spacing="-0.5">MVR</text>
                     </svg>
                 </div>
                 <div class="logo-text-wrap">
@@ -1016,20 +1039,19 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <a href="#home" class="footer-logo">
-                        <div class="logo-hexagon">
-                            <svg viewBox="0 0 100 100" class="hexagon-svg">
+                        <div class="logo-diamond">
+                            <svg viewBox="0 0 100 100" class="diamond-svg">
                                 <defs>
-                                    <linearGradient id="hexGradFooter" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" style="stop-color:#6366f1"/>
-                                        <stop offset="50%" style="stop-color:#8b5cf6"/>
-                                        <stop offset="100%" style="stop-color:#ec4899"/>
+                                    <linearGradient id="diamFooter" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#6366f1"/>
+                                        <stop offset="50%" stop-color="#8b5cf6"/>
+                                        <stop offset="100%" stop-color="#ec4899"/>
                                     </linearGradient>
                                 </defs>
-                                <polygon points="50,5 93,27.5 93,72.5 50,95 7,72.5 7,27.5"
-                                         fill="none" stroke="url(#hexGradFooter)" stroke-width="2.5" class="hex-border"/>
-                                <text x="50" y="56" text-anchor="middle" fill="url(#hexGradFooter)"
+                                <polygon points="50,3 90,50 50,97 10,50" fill="none" stroke="url(#diamFooter)" stroke-width="2" filter="url(#diamondGlow)"/>
+                                <text x="50" y="58" text-anchor="middle" fill="url(#diamFooter)"
                                       font-family="'Space Grotesk', sans-serif" font-weight="800"
-                                      font-size="26" letter-spacing="-0.5">MVR</text>
+                                      font-size="24" letter-spacing="-0.5">MVR</text>
                             </svg>
                         </div>
                         <span class="logo-text">MVR</span>
