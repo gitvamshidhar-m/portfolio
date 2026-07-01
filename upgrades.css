@@ -403,7 +403,29 @@ a:focus-visible {
 }
 
 /* ───────────────────────────────────────────
-   9. RESPONSIVE IMPROVEMENTS
+   8. PROFILE IMAGE OPTIMIZATION
+   ─────────────────────────────────────────── */
+.profile-image {
+  object-fit: cover;
+  object-position: center 30%;
+  transform: scale(1.4);
+}
+
+/* Better circular crop */
+.profile-image-wrapper {
+  overflow: hidden;
+}
+
+/* Alternative: If you want even more zoom */
+@media (min-width: 768px) {
+  .profile-image {
+    transform: scale(1.5);
+    object-position: center 25%;
+  }
+}
+
+/* ───────────────────────────────────────────
+   10. RESPONSIVE IMPROVEMENTS
    ─────────────────────────────────────────── */
 @media (max-width: 768px) {
   .theme-toggle {
@@ -433,7 +455,7 @@ a:focus-visible {
 }
 
 /* ───────────────────────────────────────────
-   10. PRINT STYLES
+   11. PRINT STYLES
    ─────────────────────────────────────────── */
 @media print {
   .theme-toggle,
