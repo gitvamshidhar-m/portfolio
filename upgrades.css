@@ -413,25 +413,33 @@ a:focus-visible {
   clip-path: circle(50% at center);
 }
 
-/* Make the wrapper perfectly circular */
+/* Make the wrapper perfectly circular - DON'T hide overflow for rings */
 .profile-image-wrapper {
-  overflow: hidden;
   border-radius: 50% !important;
   position: relative;
+  /* Removed overflow: hidden to show rings */
 }
 
-/* Ensure the card itself has proper circular clipping */
-.profile-card .profile-image-wrapper,
-.hero-visual .profile-image-wrapper {
+/* Allow space for decorative rings around the card */
+.profile-card {
+  padding: 30px !important;
+}
+
+.hero-visual .profile-card {
+  padding: 40px !important;
+}
+
+/* Ensure image itself clips but wrapper doesn't */
+.profile-card .profile-image-wrapper .profile-image,
+.hero-visual .profile-image-wrapper .profile-image {
   border-radius: 50% !important;
-  overflow: hidden;
 }
 
-/* Enhanced decorative rotating ring */
+/* Enhanced decorative rotating ring - VISIBLE OUTSIDE */
 .profile-ring {
   position: absolute !important;
-  inset: -15px !important;
-  border: 3px dashed rgba(99, 102, 241, 0.5) !important;
+  inset: -20px !important;
+  border: 3px dashed rgba(99, 102, 241, 0.6) !important;
   border-radius: 50% !important;
   opacity: 1 !important;
   animation: rotate360 20s linear infinite !important;
@@ -442,7 +450,7 @@ a:focus-visible {
 /* Enhanced glow effect */
 .profile-glow {
   position: absolute !important;
-  inset: -40px !important;
+  inset: -50px !important;
   background: radial-gradient(circle, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2), transparent) !important;
   opacity: 0.8 !important;
   filter: blur(40px) !important;
@@ -455,9 +463,9 @@ a:focus-visible {
 .profile-image-wrapper::before {
   content: '';
   position: absolute;
-  inset: -8px;
+  inset: -10px;
   border-radius: 50%;
-  border: 2px solid rgba(139, 92, 246, 0.4);
+  border: 2px solid rgba(139, 92, 246, 0.5);
   pointer-events: none;
   z-index: 1;
   animation: pulse 3s ease-in-out infinite;
@@ -471,7 +479,7 @@ a:focus-visible {
   }
   50% {
     opacity: 0.8;
-    transform: scale(1.02);
+    transform: scale(1.03);
   }
 }
 
@@ -493,8 +501,12 @@ a:focus-visible {
   }
   
   .profile-ring {
-    inset: -20px !important;
+    inset: -25px !important;
     border-width: 4px !important;
+  }
+  
+  .profile-card {
+    padding: 50px !important;
   }
 }
 
