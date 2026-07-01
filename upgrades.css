@@ -528,37 +528,26 @@ a:focus-visible {
     width: 180px !important;
     height: 180px !important;
   }
-  
+
   .profile-ring {
     width: 220px !important;
     height: 220px !important;
     top: 12px !important;
     border-width: 2.5px !important;
   }
-  
+
   .profile-card {
     padding: 32px 24px !important;
   }
-}
 
-/* ───────────────────────────────────────────
-   9. RESPONSIVE IMPROVEMENTS
-   ─────────────────────────────────────────── */
-@media (max-width: 768px) {
-  
   .toast-container {
     left: 10px;
     right: 10px;
   }
-  
+
   .toast {
     min-width: auto;
     width: 100%;
-  }
-  
-  .skip-to-content:focus {
-    top: 10px;
-    left: 10px;
   }
 }
 
@@ -567,7 +556,6 @@ a:focus-visible {
    ─────────────────────────────────────────── */
 @media print {
   .toast-container,
-  .skip-to-content,
   nav {
     display: none !important;
   }
@@ -579,11 +567,6 @@ a:focus-visible {
   
   a {
     text-decoration: underline;
-  }
-  
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
   }
 }
 /* ───────────────────────────────────────────

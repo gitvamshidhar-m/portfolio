@@ -971,6 +971,8 @@ img { max-width: 100%; height: auto; display: block; }
     .exp-company-info { flex-direction: column; gap: 12px; }
     .exp-meta-row { flex-direction: column; gap: 6px; }
     .exp-date, .exp-loc { justify-content: flex-start; }
+    .project-filters { overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .filter-btn { white-space: nowrap; }
 }
 
 @media (max-width: 480px) {
@@ -986,6 +988,15 @@ img { max-width: 100%; height: auto; display: block; }
     .achievement-badge { flex-direction: column; text-align: center; gap: 6px; }
     .achievement-badge div { align-items: center; }
     .exp-list li { font-size: 0.85rem; }
+    .project-filters { gap: 6px; overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .filter-btn { font-size: 0.8rem; padding: 6px 14px; white-space: nowrap; }
+    .milestone { min-width: 60px; }
+    .milestone .milestone-dot { width: 36px; height: 36px; }
+    .nav-logo-text { display: none; }
+    .logo-text-wrap { display: none; }
+    .hero-badge { font-size: 0.75rem; padding: 6px 14px; }
+    .section-desc { font-size: 0.9rem; }
+    .footer-logo .logo-text { display: none; }
 }
 
 ::selection { background: var(--accent-primary); color: white; }
