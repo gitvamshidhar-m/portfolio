@@ -605,8 +605,6 @@ html.theme-transitioning .progress-ring-fill {
 
 .hero-subtitle { font-size: 1.15rem; color: var(--text-secondary); max-width: 540px; margin-bottom: 32px; line-height: 1.7; }
 .hero-cta { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
-.hero-resume-row { display: flex; gap: 8px; }
-.hero-resume-row .btn { flex: 1; justify-content: center; white-space: nowrap; }
 
 .btn {
     display: inline-flex; align-items: center; gap: 8px;
@@ -1059,7 +1057,6 @@ html.theme-transitioning .progress-ring-fill {
     .hero-title { font-size: 2rem; }
     .typewriter { font-size: 1.2rem; }
     .hero-cta { flex-direction: column; }
-    .hero-resume-row { flex-direction: column; }
     .btn { width: 100%; justify-content: center; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .stat-number { font-size: 1.5rem; }
