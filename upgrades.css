@@ -411,7 +411,8 @@ a:focus-visible {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover;
-  object-position: center;
+  object-position: center 35%;
+  transform: scale(1.55);
   border-radius: 50% !important;
   background: transparent;
   display: block;
@@ -545,6 +546,11 @@ a:focus-visible {
     margin-bottom: 28px !important;
   }
   
+  .profile-image {
+    transform: scale(1.6);
+    object-position: center 32%;
+  }
+  
   .profile-ring {
     inset: -28px !important;
     border-width: 3.5px !important;
@@ -568,6 +574,11 @@ a:focus-visible {
   .profile-image-wrapper {
     width: 180px !important;
     height: 180px !important;
+  }
+  
+  .profile-image {
+    transform: scale(1.5);
+    object-position: center 38%;
   }
   
   .profile-ring {
