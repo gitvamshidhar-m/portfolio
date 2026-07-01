@@ -411,7 +411,7 @@ a:focus-visible {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover;
-  object-position: center 40%;
+  object-position: center 50%;
   border-radius: 50% !important;
   background: transparent;
   display: block;
