@@ -45,11 +45,24 @@
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
     if (!isTouchDevice && cursorDot && cursorRing) {
+        let cursorStarted = false;
+
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
             cursorDot.style.left = mouseX + 'px';
             cursorDot.style.top = mouseY + 'px';
+
+            if (!cursorStarted) {
+                // First real mouse position we've seen — snap the ring straight
+                // to it (instead of lerping in from the stale 0,0 origin) and
+                // reveal both elements now that they have a real position.
+                cursorStarted = true;
+                ringX = mouseX;
+                ringY = mouseY;
+                cursorDot.classList.add('active');
+                cursorRing.classList.add('active');
+            }
         });
 
         const animateRing = () => {

@@ -688,3 +688,18 @@ a:focus-visible {
     font-size: 0.8em;
   }
 }
+/* ───────────────────────────────────────────
+   FIX: seal off profile-card text block so no
+   stray/overlapping element (from any source)
+   can render on top of or behind the name,
+   title, and location text. Does NOT touch the
+   photo, dashed ring, glow, or floating cards.
+   ─────────────────────────────────────────── */
+.profile-card .profile-info {
+  position: relative;
+  isolation: isolate;
+  z-index: 20;
+  background: var(--bg-card);
+  border-radius: var(--radius-md, 12px);
+  padding: 4px 8px;
+}
