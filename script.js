@@ -189,12 +189,17 @@
     };
 
     const setTheme = (theme) => {
+        document.documentElement.classList.add('theme-transitioning');
         document.documentElement.setAttribute('data-theme', theme);
         try { localStorage.setItem('theme', theme); } catch (e) { /* localStorage may be unavailable */ }
         if (themeToggle) {
             const icon = themeToggle.querySelector('i');
             if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
+        clearTimeout(window._themeTransitionTimer);
+        window._themeTransitionTimer = setTimeout(() => {
+            document.documentElement.classList.remove('theme-transitioning');
+        }, 400);
     };
 
     if (themeToggle) {
@@ -288,11 +293,17 @@
     if (typewriter) setTimeout(typeWriter, 1500);
 
     // ===== SCROLL PROGRESS =====
+    const progressRing = document.querySelector('.progress-ring-fill');
     const updateScrollProgress = () => {
         if (!scrollProgress) return;
         const scrollTop = window.scrollY;
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        scrollProgress.style.width = docHeight > 0 ? (scrollTop / docHeight) * 100 + '%' : '0%';
+        const pct = docHeight > 0 ? (scrollTop / docHeight) : 0;
+        scrollProgress.style.width = (pct * 100) + '%';
+        if (progressRing) {
+            const circumference = 2 * Math.PI * 20; // r=20
+            progressRing.style.strokeDashoffset = circumference * (1 - pct);
+        }
     };
 
     // ===== COUNTERS =====
@@ -486,6 +497,57 @@
         });
     };
 
+    // ===== CASE STUDY TOGGLE =====
+    const initCaseStudies = () => {
+        document.querySelectorAll('.case-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const card = btn.closest('.case-card');
+                card.classList.toggle('open');
+                btn.querySelector('.case-toggle-text').textContent = 
+                    card.classList.contains('open') ? 'Hide Details' : 'View Details';
+            });
+        });
+    };
+
+    // ===== TESTIMONIALS CAROUSEL =====
+    const initTestimonials = () => {
+        const track = document.getElementById('testimonialsTrack');
+        const dotsContainer = document.getElementById('testimonialDots');
+        if (!track || !dotsContainer) return;
+        const cards = track.querySelectorAll('.testimonial-card');
+        if (cards.length < 2) return;
+        let current = 0;
+
+        cards.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.className = 'testimonial-dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => goTo(i));
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = dotsContainer.querySelectorAll('.testimonial-dot');
+
+        const goTo = (index) => {
+            current = index;
+            track.scrollTo({ left: track.offsetWidth * index, behavior: 'smooth' });
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        };
+
+        document.querySelector('.testimonial-arrow.next')?.addEventListener('click', () => {
+            goTo((current + 1) % cards.length);
+        });
+
+        document.querySelector('.testimonial-arrow.prev')?.addEventListener('click', () => {
+            goTo((current - 1 + cards.length) % cards.length);
+        });
+
+        let autoplay = setInterval(() => goTo((current + 1) % cards.length), 5000);
+        track.addEventListener('mouseenter', () => clearInterval(autoplay));
+        track.addEventListener('mouseleave', () => {
+            autoplay = setInterval(() => goTo((current + 1) % cards.length), 5000);
+        });
+    };
+
     // ===== INIT ALL =====
     const init = () => {
         handleNavbarScroll();
@@ -502,6 +564,8 @@
         initTiltCards();
         initTimelineMilestones();
         initProjectFilters();
+        initCaseStudies();
+        initTestimonials();
     };
 
     const initAnimations = () => {
