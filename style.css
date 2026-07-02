@@ -737,8 +737,8 @@ html.theme-transitioning .progress-ring-fill {
 .tag-ai { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
 .case-card-title { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 10px; }
 .case-card-preview { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin-bottom: 16px; flex-grow: 1; }
-.case-card-details { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-.case-card.open .case-card-details { max-height: 800px; }
+.case-card-details { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.case-card.open .case-card-details { max-height: 3000px; }
 .case-detail { margin-bottom: 16px; padding: 14px; background: var(--bg-hover); border-radius: var(--radius-md); border-left: 3px solid var(--accent-primary); }
 .case-detail-label { font-size: 0.8rem; font-weight: 700; color: var(--accent-primary); display: flex; align-items: center; gap: 6px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
 .case-detail-label i { font-size: 0.75rem; }
