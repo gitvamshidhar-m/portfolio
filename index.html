@@ -150,6 +150,22 @@
 
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <svg width="72" height="72" viewBox="0 0 50 50">
+            <defs>
+                <linearGradient id="loadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#6366f1"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                </linearGradient>
+            </defs>
+            <circle cx="25" cy="25" r="22" fill="none" stroke="url(#loadGrad)" stroke-width="1.5" stroke-dasharray="138" stroke-dashoffset="138">
+                <animate attributeName="stroke-dashoffset" from="138" to="0" dur="0.6s" fill="freeze"/>
+            </circle>
+            <text x="25" y="32" text-anchor="middle" fill="white" font-family="'Space Grotesk', sans-serif" font-weight="800" font-size="14">MVR</text>
+        </svg>
+    </div>
+
     <!-- Noise Overlay -->
     <div class="noise-overlay" id="noiseOverlay"></div>
 

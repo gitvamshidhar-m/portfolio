@@ -30,6 +30,13 @@
     };
 
     const dismissLoading = () => {
+        const loader = document.getElementById('loadingScreen');
+        if (loader) {
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                setTimeout(() => loader.remove(), 500);
+            }, 400);
+        }
         initAnimations();
         scrollToHash();
     };
