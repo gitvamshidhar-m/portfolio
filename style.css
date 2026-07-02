@@ -645,7 +645,7 @@ html.theme-transitioning .progress-ring-fill {
 /* ============================================
    ABOUT SECTION
    ============================================ */
-.about { padding: 100px 0; background: var(--bg-secondary); }
+.about { padding: 80px 0; background: var(--bg-secondary); }
 .about-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 60px; align-items: start; }
 .about-text .lead { font-size: 1.2rem; color: var(--text-primary); margin-bottom: 20px; line-height: 1.7; }
 .about-text p { color: var(--text-secondary); margin-bottom: 16px; line-height: 1.7; }
@@ -700,7 +700,7 @@ html.theme-transitioning .progress-ring-fill {
 /* ============================================
    PROJECTS SECTION
    ============================================ */
-.projects { padding: 100px 0; background: var(--bg-secondary); }
+.projects { padding: 80px 0; background: var(--bg-secondary); }
 /* Project filters */
 .project-filters { display: flex; gap: 10px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap; }
 .filter-btn { padding: 8px 20px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all var(--transition-fast); }
@@ -709,7 +709,7 @@ html.theme-transitioning .progress-ring-fill {
 .project-card.hidden { display: none; }
 
 /* ===== CASE STUDIES ===== */
-.case-studies { padding: 100px 0; }
+.case-studies { padding: 80px 0; }
 .case-studies-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .case-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 28px; transition: all var(--transition-fast); display: flex; flex-direction: column; }
 .case-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-xl); border-color: var(--accent-primary); }
@@ -737,7 +737,7 @@ html.theme-transitioning .progress-ring-fill {
 .case-toggle i { transition: transform 0.3s ease; }
 
 /* ===== SERVICES ===== */
-.services { padding: 100px 0; }
+.services { padding: 80px 0; }
 .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .service-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 28px; transition: all var(--transition-fast); position: relative; overflow: hidden; }
 .service-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-xl); border-color: var(--accent-primary); }
@@ -758,7 +758,7 @@ html.theme-transitioning .progress-ring-fill {
 .result-bar-fill.after { background: var(--accent-gradient); }
 
 /* ===== ARTICLES ===== */
-.articles { padding: 100px 0; background: var(--bg-secondary); }
+.articles { padding: 80px 0; background: var(--bg-secondary); }
 .articles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; min-height: 200px; }
 .articles-error { grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px 0; }
 .articles-skeleton { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
@@ -777,7 +777,7 @@ html.theme-transitioning .progress-ring-fill {
 .article-card .article-meta { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; }
 .article-card .article-link { color: var(--accent-primary); font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .article-card .article-link:hover { gap: 10px; }
-.testimonials { padding: 100px 0; background: var(--bg-secondary); }
+.testimonials { padding: 80px 0; background: var(--bg-secondary); }
 .testimonials-carousel { max-width: 700px; margin: 0 auto; position: relative; }
 .testimonials-track { display: flex; overflow: hidden; scroll-snap-type: x mandatory; }
 .testimonial-card { min-width: 100%; scroll-snap-align: start; padding: 0 10px; box-sizing: border-box; }
@@ -961,7 +961,7 @@ html.theme-transitioning .progress-ring-fill {
 /* ============================================
    CONTACT SECTION
    ============================================ */
-.contact { padding: 100px 0; background: var(--bg-primary); }
+.contact { padding: 80px 0; background: var(--bg-primary); }
 .contact-wrapper { display: grid; grid-template-columns: 1.2fr 1fr; gap: 60px; align-items: center; }
 .contact-info .section-header { margin-bottom: 40px; }
 .contact-info .section-header p { color: var(--text-secondary); font-size: 1.1rem; margin-top: 12px; }
