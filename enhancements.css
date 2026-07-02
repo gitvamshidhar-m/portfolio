@@ -53,7 +53,7 @@
    2. ROI CALCULATOR SECTION
    ─────────────────────────────────────────── */
 #roi-calculator {
-  padding: 100px 0;
+  padding: 24px 0;
   position: relative;
   overflow: hidden;
 }
@@ -861,7 +861,7 @@
    10. LIVE GITHUB STATS
    ─────────────────────────────────────────── */
 .github-stats-section {
-  padding: 60px 0;
+  padding: 24px 0;
   background: var(--bg-primary);
   position: relative;
 }
@@ -1090,7 +1090,7 @@ a.github-stat-card:hover::before {
    12. MINI SEO AUDIT TOOL (Live Demo)
    ─────────────────────────────────────────── */
 .seo-audit-section {
-  padding: 100px 0;
+  padding: 24px 0;
   background: var(--bg-secondary);
 }
 
@@ -1357,7 +1357,7 @@ a.github-stat-card:hover::before {
 .seo-audit-footer .btn { flex-shrink: 0; white-space: nowrap; }
 
 @media (max-width: 768px) {
-  .seo-audit-section { padding: 60px 0; }
+  .seo-audit-section { padding: 24px 0; }
   .seo-audit-card { padding: 24px; border-radius: 18px; }
   .seo-audit-form { flex-direction: column; }
   .seo-audit-btn { width: 100%; justify-content: center; }
