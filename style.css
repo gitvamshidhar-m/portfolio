@@ -692,10 +692,6 @@ html.theme-transitioning .progress-ring-fill {
 .tools-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tool-tag { padding: 4px 10px; background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); transition: all var(--transition-fast); }
 .tool-tag:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
-.about-quick-stats { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.quick-stat-item { background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
-.quick-stat-num { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--accent-primary); }
-.quick-stat-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
 .timeline-title { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 24px; }
 .timeline { position: relative; padding-left: 24px; }
 .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: var(--border-color); }
