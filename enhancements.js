@@ -179,8 +179,8 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   ready(() => {
     injectHeroMeshBlobs();
     injectHireBeacon();
-    injectGitHubStats();
-    injectROICalculator();
+    // injectGitHubStats();      // disabled - not rendering on live site
+    // injectROICalculator();    // disabled - not rendering on live site
     injectAIChat();
     initWordReveals();
     injectCaseStudyModals();
