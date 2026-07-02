@@ -142,66 +142,6 @@
 
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
-        <div class="loading-content">
-            <div class="loading-diamond">
-                <svg viewBox="0 0 100 100" class="diamond-svg">
-                    <defs>
-                        <linearGradient id="ldTop" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#e0f8ff"/>
-                            <stop offset="100%" stop-color="#22d3ee"/>
-                        </linearGradient>
-                        <linearGradient id="ldUL" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#93c5fd"/>
-                            <stop offset="100%" stop-color="#3b82f6"/>
-                        </linearGradient>
-                        <linearGradient id="ldUR" x1="100%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#f9a8d4"/>
-                            <stop offset="100%" stop-color="#d946ef"/>
-                        </linearGradient>
-                        <linearGradient id="ldML" x1="0%" y1="50%" x2="100%" y2="50%">
-                            <stop offset="0%" stop-color="#4338ca"/>
-                            <stop offset="100%" stop-color="#3730a3"/>
-                        </linearGradient>
-                        <linearGradient id="ldMR" x1="100%" y1="50%" x2="0%" y2="50%">
-                            <stop offset="0%" stop-color="#be185d"/>
-                            <stop offset="100%" stop-color="#9d174d"/>
-                        </linearGradient>
-                        <linearGradient id="ldLL" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#4c1d95"/>
-                            <stop offset="100%" stop-color="#2e1065"/>
-                        </linearGradient>
-                        <linearGradient id="ldLR" x1="100%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#881337"/>
-                            <stop offset="100%" stop-color="#4c0519"/>
-                        </linearGradient>
-                    </defs>
-                    <polygon points="50,3 90,50 50,97 10,50" fill="#0a0a1a" stroke="#22d3ee" stroke-width="2"/>
-                    <polygon points="50,3 72,26 28,26" fill="url(#ldTop)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="28,26 8,50 50,50" fill="url(#ldUL)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="72,26 50,50 92,50" fill="url(#ldUR)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="8,50 28,74 50,50" fill="url(#ldML)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="92,50 50,50 72,74" fill="url(#ldMR)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="28,74 50,97 50,50" fill="url(#ldLL)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="72,74 50,50 50,97" fill="url(#ldLR)" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-                    <polygon points="50,3 66,22 50,30 34,22" fill="white" opacity="0.5"/>
-                    <polygon points="42,14 54,14 50,22 46,22" fill="white" opacity="0.7"/>
-                    <text x="50" y="59" text-anchor="middle" fill="white"
-                          font-family="'Space Grotesk', sans-serif" font-weight="800"
-                          font-size="26" letter-spacing="-0.5">MVR</text>
-                </svg>
-            </div>
-            <div class="loading-text">
-                <span class="loading-label">Loading</span>
-                <span class="loading-dots"><span></span><span></span><span></span></span>
-            </div>
-            <div class="loading-bar">
-                <div class="loading-bar-fill" id="loadingBarFill"></div>
-            </div>
-        </div>
-    </div>
-
     <!-- Noise Overlay -->
     <div class="noise-overlay" id="noiseOverlay"></div>
 
@@ -363,7 +303,7 @@
                     </div>
                     <div class="profile-ring"></div>
                     <div class="profile-info">
-                        <h3>Vamshidhar Reddy M</h3>
+                        <p class="profile-name">Vamshidhar Reddy M</p>
                         <p>AI Powered Digital Marketing Specialist</p>
                         <div class="profile-location">
                             <i class="fas fa-map-marker-alt"></i> Hyderabad, India

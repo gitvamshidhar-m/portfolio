@@ -15,8 +15,6 @@
     const scrollProgress = document.getElementById('scrollProgress');
     const profileImage = document.getElementById('profileImage');
     const profileFallback = document.getElementById('profileFallback');
-    const loadingScreen = document.getElementById('loadingScreen');
-    const loadingBarFill = document.getElementById('loadingBarFill');
     const particleCanvas = document.getElementById('particleCanvas');
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
@@ -32,11 +30,8 @@
     };
 
     const dismissLoading = () => {
-        setTimeout(() => {
-            if (loadingScreen) loadingScreen.classList.add('hidden');
-            initAnimations();
-            scrollToHash();
-        }, 2000);
+        initAnimations();
+        scrollToHash();
     };
 
     // ===== PARTICLE SYSTEM =====
