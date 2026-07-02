@@ -34,51 +34,19 @@
   ready(injectSEOAuditTool);
 
   function injectSEOAuditTool() {
-    const projects = document.getElementById('projects');
-    if (!projects) return;
+    const form = document.getElementById('seoAuditForm');
+    if (!form) return;
 
-    const section = document.createElement('section');
-    section.id = 'seo-audit-demo';
-    section.className = 'seo-audit-section';
-    section.setAttribute('data-animate', 'fade-up');
-    section.innerHTML = `
-      <div class="container">
-        <div class="section-header">
-          <span class="section-tag"><i class="fas fa-bolt"></i> Live Demo</span>
-          <h2 class="section-title">Try My SEO Agent <span class="gradient-text">Live</span></h2>
-          <p class="section-desc">Paste any URL to run a real SEO audit. Powered by Google Lighthouse with a smart client-side fallback for reliability.</p>
-        </div>
-
-        <div class="seo-audit-card">
-          <form class="seo-audit-form" id="seoAuditForm">
-            <div class="seo-input-wrap">
-              <i class="fas fa-globe seo-input-icon"></i>
-              <input type="text" id="seoAuditUrl" placeholder="example.com or https://example.com" autocomplete="off" spellcheck="false" />
-            </div>
-            <button type="submit" class="btn btn-primary seo-audit-btn" id="seoAuditBtn">
-              <i class="fas fa-play"></i>
-              <span class="seo-audit-btn-text">Run Audit</span>
-            </button>
-          </form>
-
-          <div class="seo-audit-hint">
-            <i class="fas fa-info-circle"></i> Try github.com, stripe.com, or your own site
-          </div>
-
-          <div class="seo-audit-results" id="seoAuditResults" hidden></div>
-        </div>
-      </div>
-    `;
-
-    projects.parentNode.insertBefore(section, projects.nextSibling);
-    document.getElementById('seoAuditForm').addEventListener('submit', handleSubmit);
+    form.addEventListener('submit', handleSubmit);
 
     // Close button handler (delegated since the button is rendered dynamically)
-    document.getElementById('seoAuditResults').addEventListener('click', function(e) {
+    const results = document.getElementById('seoAuditResults');
+    if (!results) return;
+    results.addEventListener('click', function(e) {
       if (e.target.closest('#seoAuditCloseBtn')) {
-        const results = document.getElementById('seoAuditResults');
-        results.hidden = true;
-        results.innerHTML = '';
+        const resultsEl = document.getElementById('seoAuditResults');
+        resultsEl.hidden = true;
+        resultsEl.innerHTML = '';
         document.getElementById('seoAuditUrl').value = '';
         document.getElementById('seoAuditUrl').focus();
       }

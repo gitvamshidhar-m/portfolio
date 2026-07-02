@@ -231,26 +231,8 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     const CACHE_KEY = 'github_stats_v1';
     const CACHE_TTL = 6 * 60 * 60 * 1000;
 
-    const impactSection = document.getElementById('impact');
-    if (!impactSection) return;
-
-    const section = document.createElement('section');
-    section.className = 'github-stats-section';
-    section.id = 'github-stats';
-    section.setAttribute('data-animate', 'fade-up');
-    section.innerHTML = '<div class="container">' +
-      '<div class="github-stats-header">' +
-        '<span class="github-stats-tag"><i class="fab fa-github"></i> Live from GitHub <span class="live-dot"></span></span>' +
-        '<h3 class="github-stats-title">Real-time activity from my repositories</h3>' +
-      '</div>' +
-      '<div class="github-stats-grid" id="ghStatsGrid">' +
-        '<div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>' +
-        '<div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>' +
-        '<div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>' +
-        '<div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>' +
-      '</div>' +
-    '</div>';
-    impactSection.parentNode.insertBefore(section, impactSection.nextSibling);
+    const grid = document.getElementById('ghStatsGrid');
+    if (!grid) return;
 
     fetchAndRender();
 
@@ -392,79 +374,13 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
      4. ROI IMPACT CALCULATOR
      ════════════════════════════════════════════════════════ */
   function injectROICalculator() {
-    const skillsSection = document.getElementById('skills');
-    if (!skillsSection) return;
-
-    const section = document.createElement('section');
-    section.id = 'roi-calculator';
-    section.setAttribute('data-animate', 'fade-up');
-    section.innerHTML =
-      '<div class="container">' +
-        '<div class="section-header">' +
-          '<span class="section-tag">ROI Calculator</span>' +
-          '<h2 class="section-title">What Would Hiring Me <span class="gradient-text">Return?</span></h2>' +
-          '<p class="section-desc">Adjust the sliders to model the potential business impact — based on real results I have delivered.</p>' +
-        '</div>' +
-        '<div class="roi-wrapper">' +
-          '<div class="roi-controls tilt-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:36px;">' +
-            '<div class="roi-input-group">' +
-              '<label>Monthly Website Visits</label>' +
-              '<div class="roi-value-display" id="roiVisitsDisplay">50,000</div>' +
-              '<input type="range" class="roi-slider" id="roiVisits" min="5000" max="500000" step="5000" value="50000">' +
-            '</div>' +
-            '<div class="roi-input-group">' +
-              '<label>Current Lead Conversion Rate (%)</label>' +
-              '<div class="roi-value-display" id="roiConvDisplay">1.5%</div>' +
-              '<input type="range" class="roi-slider" id="roiConv" min="0.5" max="8" step="0.1" value="1.5">' +
-            '</div>' +
-            '<div class="roi-input-group">' +
-              '<label>Average Revenue per Lead (₹)</label>' +
-              '<div class="roi-value-display" id="roiRevenueDisplay">₹25,000</div>' +
-              '<input type="range" class="roi-slider" id="roiRevenue" min="1000" max="200000" step="1000" value="25000">' +
-            '</div>' +
-            '<div class="roi-input-group">' +
-              '<label>Monthly Paid Ads Budget (₹)</label>' +
-              '<div class="roi-value-display" id="roiBudgetDisplay">₹1,00,000</div>' +
-              '<input type="range" class="roi-slider" id="roiBudget" min="10000" max="1000000" step="10000" value="100000">' +
-            '</div>' +
-          '</div>' +
-          '<div class="roi-results">' +
-            '<div class="roi-results-title">Projected Monthly Impact</div>' +
-            '<div class="roi-metric">' +
-              '<div class="roi-metric-label"><i class="fas fa-chart-line"></i> Organic Traffic Lift (15%)</div>' +
-              '<div class="roi-metric-value" id="roiTrafficLift">+7,500</div>' +
-            '</div>' +
-            '<div class="roi-metric">' +
-              '<div class="roi-metric-label"><i class="fas fa-users"></i> Additional Leads / Month</div>' +
-              '<div class="roi-metric-value" id="roiLeadsGain">+113</div>' +
-            '</div>' +
-            '<div class="roi-metric">' +
-              '<div class="roi-metric-label"><i class="fas fa-funnel-dollar"></i> CRO Uplift (12% conversion gain)</div>' +
-              '<div class="roi-metric-value" id="roiCroLift">₹5,04,000</div>' +
-            '</div>' +
-            '<div class="roi-metric">' +
-              '<div class="roi-metric-label"><i class="fas fa-ad"></i> Paid Ads ROAS Improvement (25%)</div>' +
-              '<div class="roi-metric-value" id="roiRoasLift">₹25,000</div>' +
-            '</div>' +
-            '<div class="roi-metric" style="border-top:2px solid var(--accent-primary);margin-top:8px;padding-top:20px;">' +
-              '<div class="roi-metric-label" style="font-weight:700;color:var(--text-primary);"><i class="fas fa-trophy"></i> Total Monthly Revenue Impact</div>' +
-              '<div class="roi-metric-value big" id="roiTotal">₹5,29,000</div>' +
-            '</div>' +
-            '<div class="roi-disclaimer">Projections are based on conservative benchmarks from Vamshidhar\'s real-world results: 15% organic traffic growth, 12% conversion rate improvement via CRO/A-B testing, and 25% ROAS improvement through paid media optimization.</div>' +
-            '<div class="roi-cta-row">' +
-              '<a href="mailto:digitalVamshidhar@gmail.com" class="btn btn-primary magnetic-btn" style="flex:1;justify-content:center;"><i class="fas fa-envelope"></i> Let\'s Discuss</a>' +
-              '<a href="https://linkedin.com/in/vamshidharreddym" target="_blank" rel="noopener noreferrer" class="btn btn-secondary magnetic-btn" style="flex:1;justify-content:center;"><i class="fab fa-linkedin"></i> Connect</a>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    skillsSection.parentNode.insertBefore(section, skillsSection);
-
-    const roiVisits  = document.getElementById('roiVisits');
-    const roiConv    = document.getElementById('roiConv');
+    const roiVisits = document.getElementById('roiVisits');
+    if (!roiVisits) return;
+    const roiConv = document.getElementById('roiConv');
     const roiRevenue = document.getElementById('roiRevenue');
-    const roiBudget  = document.getElementById('roiBudget');
+    const roiBudget = document.getElementById('roiBudget');
+
+    if (!roiConv || !roiRevenue || !roiBudget) return;
 
     const fmt = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
     const fmtNum = (n) => '+' + Math.round(n).toLocaleString('en-IN');

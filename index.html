@@ -76,19 +76,19 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"></noscript>
 
-    <link rel="preload" as="style" href="style.css?v=1.8">
-    <link rel="stylesheet" href="style.css?v=1.8" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="style.css?v=1.8"></noscript>
+    <link rel="preload" as="style" href="style.css?v=1.9">
+    <link rel="stylesheet" href="style.css?v=1.9" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="style.css?v=1.9"></noscript>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
 
     <link rel="preload" href="assets/vamshi.png" as="image">
 
-    <link rel="stylesheet" href="enhancements.css?v=1.8" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="enhancements.css?v=1.8"></noscript>
-    <link rel="stylesheet" href="upgrades.css?v=1.8" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="upgrades.css?v=1.8"></noscript>
+    <link rel="stylesheet" href="enhancements.css?v=1.9" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="enhancements.css?v=1.9"></noscript>
+    <link rel="stylesheet" href="upgrades.css?v=1.9" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="upgrades.css?v=1.9"></noscript>
 
     <!-- SEO Enhancements: Additional Structured Data -->
     <script type="application/ld+json">
@@ -547,6 +547,22 @@
         </div>
     </section>
 
+    <!-- GitHub Stats Section -->
+    <section id="github-stats" class="github-stats-section" data-animate="fade-up">
+        <div class="container">
+            <div class="github-stats-header">
+                <span class="github-stats-tag"><i class="fab fa-github"></i> Live from GitHub <span class="live-dot"></span></span>
+                <h3 class="github-stats-title">Real-time activity from my repositories</h3>
+            </div>
+            <div class="github-stats-grid" id="ghStatsGrid">
+                <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+                <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+                <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+                <div class="github-stat-card loading"><div class="gh-stat-skeleton"></div></div>
+            </div>
+        </div>
+    </section>
+
     <!-- Projects Section -->
     <section id="projects" class="projects" data-animate="fade-up">
         <div class="container">
@@ -630,6 +646,33 @@
                         <span class="project-status"><span class="status-dot"></span> Production Ready</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEO Audit Tool Section -->
+    <section id="seo-audit-demo" class="seo-audit-section" data-animate="fade-up">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag"><i class="fas fa-bolt"></i> Live Demo</span>
+                <h2 class="section-title">Try My SEO Agent <span class="gradient-text">Live</span></h2>
+                <p class="section-desc">Paste any URL to run a real SEO audit. Powered by Google Lighthouse with a smart client-side fallback for reliability.</p>
+            </div>
+            <div class="seo-audit-card">
+                <form class="seo-audit-form" id="seoAuditForm">
+                    <div class="seo-input-wrap">
+                        <i class="fas fa-globe seo-input-icon"></i>
+                        <input type="text" id="seoAuditUrl" placeholder="example.com or https://example.com" autocomplete="off" spellcheck="false">
+                    </div>
+                    <button type="submit" class="btn btn-primary seo-audit-btn" id="seoAuditBtn">
+                        <i class="fas fa-play"></i>
+                        <span class="seo-audit-btn-text">Run Audit</span>
+                    </button>
+                </form>
+                <div class="seo-audit-hint">
+                    <i class="fas fa-info-circle"></i> Try github.com, stripe.com, or your own site
+                </div>
+                <div class="seo-audit-results" id="seoAuditResults" hidden></div>
             </div>
         </div>
     </section>
@@ -1038,6 +1081,69 @@
         </div>
     </section>
 
+    <!-- ROI Calculator Section -->
+    <section id="roi-calculator" data-animate="fade-up">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">ROI Calculator</span>
+                <h2 class="section-title">What Would Hiring Me <span class="gradient-text">Return?</span></h2>
+                <p class="section-desc">Adjust the sliders to model the potential business impact — based on real results I have delivered.</p>
+            </div>
+            <div class="roi-wrapper">
+                <div class="roi-controls tilt-card" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:36px;">
+                    <div class="roi-input-group">
+                        <label>Monthly Website Visits</label>
+                        <div class="roi-value-display" id="roiVisitsDisplay">50,000</div>
+                        <input type="range" class="roi-slider" id="roiVisits" min="5000" max="500000" step="5000" value="50000">
+                    </div>
+                    <div class="roi-input-group">
+                        <label>Current Lead Conversion Rate (%)</label>
+                        <div class="roi-value-display" id="roiConvDisplay">1.5%</div>
+                        <input type="range" class="roi-slider" id="roiConv" min="0.5" max="8" step="0.1" value="1.5">
+                    </div>
+                    <div class="roi-input-group">
+                        <label>Average Revenue per Lead (&amp;#8377;)</label>
+                        <div class="roi-value-display" id="roiRevenueDisplay">₹25,000</div>
+                        <input type="range" class="roi-slider" id="roiRevenue" min="1000" max="200000" step="1000" value="25000">
+                    </div>
+                    <div class="roi-input-group">
+                        <label>Monthly Paid Ads Budget (&amp;#8377;)</label>
+                        <div class="roi-value-display" id="roiBudgetDisplay">₹1,00,000</div>
+                        <input type="range" class="roi-slider" id="roiBudget" min="10000" max="1000000" step="10000" value="100000">
+                    </div>
+                </div>
+                <div class="roi-results">
+                    <div class="roi-results-title">Projected Monthly Impact</div>
+                    <div class="roi-metric">
+                        <div class="roi-metric-label"><i class="fas fa-chart-line"></i> Organic Traffic Lift (15%)</div>
+                        <div class="roi-metric-value" id="roiTrafficLift">+7,500</div>
+                    </div>
+                    <div class="roi-metric">
+                        <div class="roi-metric-label"><i class="fas fa-users"></i> Additional Leads / Month</div>
+                        <div class="roi-metric-value" id="roiLeadsGain">+113</div>
+                    </div>
+                    <div class="roi-metric">
+                        <div class="roi-metric-label"><i class="fas fa-funnel-dollar"></i> CRO Uplift (12% conversion gain)</div>
+                        <div class="roi-metric-value" id="roiCroLift">₹5,04,000</div>
+                    </div>
+                    <div class="roi-metric">
+                        <div class="roi-metric-label"><i class="fas fa-ad"></i> Paid Ads ROAS Improvement (25%)</div>
+                        <div class="roi-metric-value" id="roiRoasLift">₹25,000</div>
+                    </div>
+                    <div class="roi-metric" style="border-top:2px solid var(--accent-primary);margin-top:8px;padding-top:20px;">
+                        <div class="roi-metric-label" style="font-weight:700;color:var(--text-primary);"><i class="fas fa-trophy"></i> Total Monthly Revenue Impact</div>
+                        <div class="roi-metric-value big" id="roiTotal">₹5,29,000</div>
+                    </div>
+                    <div class="roi-disclaimer">Projections are based on conservative benchmarks from Vamshidhar&amp;#39;s real-world results: 15% organic traffic growth, 12% conversion rate improvement via CRO/A-B testing, and 25% ROAS improvement through paid media optimization.</div>
+                    <div class="roi-cta-row">
+                        <a href="mailto:digitalVamshidhar@gmail.com" class="btn btn-primary magnetic-btn" style="flex:1;justify-content:center;"><i class="fas fa-envelope"></i> Let&amp;#39;s Discuss</a>
+                        <a href="https://linkedin.com/in/vamshidharreddym" target="_blank" rel="noopener noreferrer" class="btn btn-secondary magnetic-btn" style="flex:1;justify-content:center;"><i class="fab fa-linkedin"></i> Connect</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Skills Section -->
     <section id="skills" class="skills" data-animate="fade-up">
         <div class="container">
@@ -1421,9 +1527,9 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 
-    <script src="script.js?v=1.8" defer></script>
-    <script src="enhancements.js?v=1.8" defer></script>
-    <script src="seo-audit.js?v=1.8" defer></script>
-    <script src="upgrades.js?v=1.8" defer></script>
+    <script src="script.js?v=1.9" defer></script>
+    <script src="enhancements.js?v=1.9" defer></script>
+    <script src="seo-audit.js?v=1.9" defer></script>
+    <script src="upgrades.js?v=1.9" defer></script>
 </body>
 </html>
