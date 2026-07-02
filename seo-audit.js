@@ -31,7 +31,7 @@
     else document.addEventListener('DOMContentLoaded', fn);
   };
 
-  // ready(injectSEOAuditTool); // disabled - not rendering on live site
+  ready(injectSEOAuditTool);
 
   function injectSEOAuditTool() {
     const projects = document.getElementById('projects');
