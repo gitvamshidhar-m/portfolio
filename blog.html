@@ -47,6 +47,10 @@
         .blog-post-footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center; }
         .blog-loading { text-align: center; padding: 80px 0; color: var(--text-muted); }
         .blog-error { text-align: center; padding: 80px 0; color: var(--text-muted); }
+        .blog-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 20px 0; }
+        .pagination-btn { padding: 8px 18px; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all var(--transition-fast); }
+        .pagination-btn:hover { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+        .pagination-info { font-size: 0.85rem; color: var(--text-muted); }
         @media (max-width: 768px) {
             .blog-header h1 { font-size: 1.8rem; }
             .blog-post-header h1 { font-size: 1.4rem; }
@@ -183,14 +187,36 @@
             });
 
             function renderListing(posts) {
-                app.innerHTML = '<div class="blog-header"><h1>Blog</h1><p>Thoughts on AI marketing, SEO, PPC, and digital strategy.</p></div><div class="blog-listing">' +
-                    posts.map(p => '<div class="blog-card" onclick="window.location.hash=\'#/' + p.id + '\'">' +
-                        '<div class="blog-card-meta"><span>' + p.date + '</span><span>' + p.readTime + '</span></div>' +
-                        '<h2>' + p.title + '</h2>' +
-                        '<p>' + p.description + '</p>' +
-                        '<span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>' +
-                    '</div>').join('') +
-                    '</div>';
+                var page = parseInt(new URLSearchParams(window.location.search).get('page')) || 1;
+                var perPage = 10;
+                var totalPages = Math.ceil(posts.length / perPage);
+                if (page < 1) page = 1;
+                if (page > totalPages) page = totalPages;
+                var start = (page - 1) * perPage;
+                var pagePosts = posts.slice(start, start + perPage);
+
+                var paginationHTML = '';
+                if (totalPages > 1) {
+                    paginationHTML = '<div class="blog-pagination">';
+                    if (page > 1) paginationHTML += '<a href="blog.html?page=' + (page - 1) + '" class="pagination-btn">&laquo; Prev</a>';
+                    paginationHTML += '<span class="pagination-info">Page ' + page + ' of ' + totalPages + '</span>';
+                    if (page < totalPages) paginationHTML += '<a href="blog.html?page=' + (page + 1) + '" class="pagination-btn">Next &raquo;</a>';
+                    paginationHTML += '</div>';
+                }
+
+                app.innerHTML = '<div class="blog-header"><h1>Blog</h1><p>Thoughts on AI marketing, SEO, PPC, and digital strategy.</p></div>' +
+                    paginationHTML +
+                    '<div class="blog-listing">' +
+                    pagePosts.map(function(p) {
+                        return '<div class="blog-card" onclick="window.location.hash=\'#/' + p.id + '\'">' +
+                            '<div class="blog-card-meta"><span>' + p.date + '</span><span>' + p.readTime + '</span></div>' +
+                            '<h2>' + p.title + '</h2>' +
+                            '<p>' + p.description + '</p>' +
+                            '<span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>' +
+                        '</div>';
+                    }).join('') +
+                    '</div>' +
+                    paginationHTML;
             }
 
             function renderPost(posts, id) {
