@@ -30,17 +30,17 @@ Key facts about you:
 - Education: M.Tech Power Electronics (VTU), B.E. ECE (VTU)
 - Certifications: Generative AI Mastermind (Outskill), Advanced SEO (LinkedIn Learning)
 - Languages: English (Professional), Hindi (Fluent), Telugu (Native), Kannada (Fluent)
-- Email: digitalVamshidhar@gmail.com | LinkedIn: vamshidharreddym | GitHub: mvamshi56
+- Email: geovamshidhar@gmail.com | LinkedIn: vamshidharreddym | GitHub: mvamshi56
 - Available for: Full-time roles, consulting, AI+marketing projects
 
 Be warm, concise, and confident. If asked about salary, say you're open to discussing based on scope and fit. Keep answers to 2-4 sentences max. Always end with a light invitation to connect. When you have access to specific project context below, use it to give precise technical answers.`,
 
     SCRIPTED_ANSWERS: {
-      default: "Great question! I bring 8+ years of digital marketing expertise fused with hands-on AI development — a rare combo that turns strategy into measurable growth. I'd love to walk you through my work. Feel free to email me at digitalVamshidhar@gmail.com or connect on LinkedIn!",
+      default: "Great question! I bring 8+ years of digital marketing expertise fused with hands-on AI development — a rare combo that turns strategy into measurable growth. I'd love to walk you through my work. Feel free to email me at geovamshidhar@gmail.com or connect on LinkedIn!",
       experience: "I'm currently a Digital Marketing Specialist at Autozilla Software Solutions, where I've driven a 15% traffic lift, secured first-page rankings for competitive keywords, and generate 70+ qualified leads every month on a Rs.2L+ monthly ad budget. Before that, I've worked across campaign management and technical SEO at Pranathi Software Services and FAMA Technologies.",
       ai: "I've built three AI tools from scratch — the AI SEO Agent (TypeScript + Gemini AI with Playwright crawling, live on Google AI Studio), a Chrome extension powered by Groq AI that summarizes any web page in real-time, and an AI Security Intelligence Platform built on the MCP server architecture. These aren't side projects — they're tools I use to give my marketing work a real edge.",
       seo: "SEO is where I started and where I consistently deliver results. At Autozilla I run structured SEO audits, keyword gap analysis, and technical fixes that have landed us on page one for high-value terms. I layer GA4 data and Looker Studio dashboards on top so every decision is tied to real numbers.",
-      hire: "I'm actively open to new opportunities — roles where I can bring AI thinking into a marketing team (or vice versa). I'm comfortable leading strategy independently and collaborating closely with dev teams. Want to start a conversation? Drop me a line at digitalVamshidhar@gmail.com →",
+      hire: "I'm actively open to new opportunities — roles where I can bring AI thinking into a marketing team (or vice versa). I'm comfortable leading strategy independently and collaborating closely with dev teams. Want to start a conversation? Drop me a line at geovamshidhar@gmail.com →",
       skills: "My core stack spans SEO, Google Ads, LinkedIn Ads, CRO, GA4, and Looker Studio on the marketing side — plus TypeScript, JavaScript, Node.js, Prompt Engineering, and AI tool development on the tech side. That dual fluency is what lets me build automation workflows most marketers can only dream of."
     }
   };
@@ -620,7 +620,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
           reply = await mockAIReply(text);
         }
       } catch (err) {
-        reply = "Sorry, I hit a snag! Please email digitalVamshidhar@gmail.com directly — I'll respond promptly 🙂";
+        reply = "Sorry, I hit a snag! Please email geovamshidhar@gmail.com directly — I'll respond promptly 🙂";
         sourcesUsed = [];
       }
 
