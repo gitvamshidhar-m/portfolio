@@ -208,11 +208,12 @@
                     paginationHTML +
                     '<div class="blog-listing">' +
                     pagePosts.map(function(p) {
-                        return '<div class="blog-card" onclick="window.location.hash=\'#/' + p.id + '\'">' +
-                            '<div class="blog-card-meta"><span>' + p.date + '</span><span>' + p.readTime + '</span></div>' +
+                        var clickAction = p.url ? 'window.open(\'' + p.url + '\', \'_blank\')' : 'window.location.hash=\'#/' + p.id + '\'';
+                        return '<div class="blog-card" onclick="' + clickAction + '">' +
+                            '<div class="blog-card-meta"><span>' + p.date + '</span><span>' + p.readTime + '</span>' + (p.url ? '<span style="color:var(--accent-primary);font-size:0.75rem;"><i class="fab fa-linkedin"></i> LinkedIn</span>' : '') + '</div>' +
                             '<h2>' + p.title + '</h2>' +
                             '<p>' + p.description + '</p>' +
-                            '<span class="read-more">Read more <i class="fas fa-arrow-right"></i></span>' +
+                            '<span class="read-more">' + (p.url ? 'Read on LinkedIn' : 'Read more') + ' <i class="fas ' + (p.url ? 'fa-external-link-alt' : 'fa-arrow-right') + '"></i></span>' +
                         '</div>';
                     }).join('') +
                     '</div>' +
@@ -220,8 +221,13 @@
             }
 
             function renderPost(posts, id) {
-                const post = posts.find(p => p.id === id);
+                var post = posts.find(function(p) { return p.id === id; });
                 if (!post) { renderListing(posts); return; }
+                if (post.url && !post.content) {
+                    window.open(post.url, '_blank');
+                    renderListing(posts);
+                    return;
+                }
                 app.innerHTML = '<div class="blog-post">' +
                     '<a href="blog.html" class="blog-post-back" onclick="window.location.hash=\'\';return false;"><i class="fas fa-arrow-left"></i> Back to all posts</a>' +
                     '<div class="blog-post-header">' +

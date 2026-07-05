@@ -1,0 +1,58 @@
+name: Add Blog Article
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Article title'
+        required: true
+      description:
+        description: 'Short description (1-2 sentences)'
+        required: true
+      date:
+        description: 'Date (e.g. June 2025)'
+        required: true
+      readTime:
+        description: 'Read time (e.g. 4 min read)'
+        required: true
+        default: '3 min read'
+      url:
+        description: 'LinkedIn article URL'
+        required: true
+      content:
+        description: 'Full article HTML (leave empty for LinkedIn links)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  add-article:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add article to blog.json
+        run: |
+          TITLE=$(jq -rR '.' <<< "${{ inputs.title }}")
+          DESC=$(jq -rR '.' <<< "${{ inputs.description }}")
+          DATE=$(jq -rR '.' <<< "${{ inputs.date }}")
+          READTIME=$(jq -rR '.' <<< "${{ inputs.readTime }}")
+          URL=$(jq -rR '.' <<< "${{ inputs.url }}")
+          CONTENT=$(jq -rR '.' <<< "${{ inputs.content }}")
+
+          ID="post-$(date +%s)"
+
+          jq --arg id "$ID" --arg title "$TITLE" --arg desc "$DESC" --arg date "$DATE" --arg read "$READTIME" --arg url "$URL" --arg content "$CONTENT" \
+            '. = [{"id": $id, "title": $title, "description": $desc, "date": $date, "readTime": $read, "url": $url, "content": $content}] + .' \
+            blog.json > blog-tmp.json && mv blog-tmp.json blog.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "Blog Updater"
+          git config user.email "blog@portfolio.local"
+          git add blog.json
+          git commit -m "Add article: ${{ inputs.title }}" || true
+          git push
