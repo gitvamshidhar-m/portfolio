@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} | Blog</title>
+    <link rel="canonical" href="{{ page.url | absolute_url }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'">
+    <link rel="preload" as="style" href="{{ '/style.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="{{ '/style.css' | relative_url }}"></noscript>
+    <link rel="canonical" href="{{ page.url | absolute_url }}">
+    <style>
+        .blog-post-wrap { max-width: 720px; margin: 0 auto; padding: 80px 20px; }
+        .blog-post-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; margin-bottom: 24px; }
+        .blog-post-back:hover { color: var(--accent-primary); }
+        .blog-post-title { font-family: var(--font-display); font-size: 2rem; margin-bottom: 8px; color: var(--text-primary); }
+        .blog-post-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 32px; }
+        .blog-post-content { font-size: 1rem; line-height: 1.8; color: var(--text-primary); }
+        .blog-post-content h2 { font-family: var(--font-display); font-size: 1.4rem; margin: 32px 0 12px; color: var(--text-primary); }
+        .blog-post-content h3 { font-family: var(--font-display); font-size: 1.15rem; margin: 24px 0 10px; color: var(--text-primary); }
+        .blog-post-content p { margin-bottom: 16px; color: var(--text-secondary); }
+        .blog-post-content ul { margin: 12px 0; padding-left: 24px; }
+        .blog-post-content li { margin-bottom: 8px; color: var(--text-secondary); }
+        .blog-post-content strong { color: var(--text-primary); }
+        .blog-post-content code { background: var(--bg-hover); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+        .blog-post-content pre { background: var(--bg-hover); padding: 16px; border-radius: var(--radius-md); overflow-x: auto; margin: 16px 0; border: 1px solid var(--border-color); }
+        .blog-post-content pre code { background: none; padding: 0; }
+        .blog-post-content a { color: var(--accent-primary); text-decoration: underline; }
+        .blog-post-content blockquote { border-left: 3px solid var(--accent-primary); margin: 16px 0; padding: 8px 16px; color: var(--text-secondary); background: var(--bg-hover); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+        .blog-post-content img { max-width: 100%; border-radius: var(--radius-md); margin: 16px 0; }
+        @media (max-width: 768px) { .blog-post-title { font-size: 1.5rem; } .blog-post-wrap { padding: 60px 16px; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+            <a href="{{ '/' | relative_url }}" class="nav-logo">
+                <div class="logo-diamond">
+                    <svg viewBox="0 0 100 100" class="diamond-svg">
+                        <defs>
+                            <linearGradient id="tTop" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#e0f8ff"/><stop offset="100%" stop-color="#22d3ee"/>
+                            </linearGradient>
+                            <linearGradient id="tUL" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#93c5fd"/><stop offset="100%" stop-color="#3b82f6"/>
+                            </linearGradient>
+                            <linearGradient id="tUR" x1="100%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#f9a8d4"/><stop offset="100%" stop-color="#d946ef"/>
+                            </linearGradient>
+                            <linearGradient id="tML" x1="0%" y1="50%" x2="100%" y2="50%">
+                                <stop offset="0%" stop-color="#4338ca"/><stop offset="100%" stop-color="#3730a3"/>
+                            </linearGradient>
+                            <linearGradient id="tMR" x1="100%" y1="50%" x2="0%" y2="50%">
+                                <stop offset="0%" stop-color="#be185d"/><stop offset="100%" stop-color="#9d174d"/>
+                            </linearGradient>
+                            <linearGradient id="tLL" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#2e1065"/>
+                            </linearGradient>
+                            <linearGradient id="tLR" x1="100%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#881337"/><stop offset="100%" stop-color="#4c0519"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="50,3 90,50 50,97 10,50" fill="#0a0a1a" stroke="#22d3ee" stroke-width="1.5"/>
+                        <polygon points="50,3 72,26 28,26" fill="url(#tTop)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="28,26 8,50 50,50" fill="url(#tUL)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="72,26 50,50 92,50" fill="url(#tUR)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="8,50 28,74 50,50" fill="url(#tML)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="92,50 50,50 72,74" fill="url(#tMR)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="28,74 50,97 50,50" fill="url(#tLL)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="72,74 50,50 50,97" fill="url(#tLR)" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                        <polygon points="50,3 66,22 50,30 34,22" fill="white" opacity="0.5"/>
+                        <text x="50" y="59" text-anchor="middle" fill="white" font-family="'Space Grotesk', sans-serif" font-weight="800" font-size="22">MVR</text>
+                    </svg>
+                </div>
+                <div class="logo-text-wrap">
+                    <span class="logo-name">Vamshidhar Reddy</span>
+                    <span class="logo-tagline">AI Powered Digital Marketing Specialist</span>
+                </div>
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="{{ '/' | relative_url }}" class="nav-link" data-text="Home">Home</a></li>
+                <li><a href="{{ '/blog/' | relative_url }}" class="nav-link active" data-text="Blog">Blog</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main id="main-content">
+        <div class="blog-post-wrap">
+            <a href="{{ '/blog/' | relative_url }}" class="blog-post-back"><i class="fas fa-arrow-left"></i> Back to all posts</a>
+            <h1 class="blog-post-title">{{ page.title }}</h1>
+            <div class="blog-post-meta">{{ page.date | date: "%B %d, %Y" }}</div>
+            <div class="blog-post-content">
+                {{ content }}
+            </div>
+        </div>
+    </main>
+    <footer class="footer" style="margin-top:40px">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="{{ '/' | relative_url }}" class="footer-logo">
+                        <svg viewBox="0 0 100 100" class="diamond-svg" style="width:40px;height:40px">
+                            <polygon points="50,3 90,50 50,97 10,50" fill="#0a0a1a" stroke="#22d3ee" stroke-width="1.5"/>
+                            <polygon points="50,3 72,26 28,26" fill="#e0f8ff" stroke="white" stroke-width="2"/>
+                            <polygon points="28,26 8,50 50,50" fill="#93c5fd" stroke="white" stroke-width="2"/>
+                            <polygon points="72,26 50,50 92,50" fill="#f9a8d4" stroke="white" stroke-width="2"/>
+                            <polygon points="8,50 28,74 50,50" fill="#4338ca" stroke="white" stroke-width="2"/>
+                            <polygon points="92,50 50,50 72,74" fill="#be185d" stroke="white" stroke-width="2"/>
+                            <polygon points="28,74 50,97 50,50" fill="#4c1d95" stroke="white" stroke-width="2"/>
+                            <polygon points="72,74 50,50 50,97" fill="#881337" stroke="white" stroke-width="2"/>
+                            <text x="50" y="59" text-anchor="middle" fill="white" font-family="'Space Grotesk', sans-serif" font-weight="800" font-size="22">MVR</text>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vamshidhar Reddy M. Strategy. Code. Results.</p>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" defer></script>
+</body>
+</html>

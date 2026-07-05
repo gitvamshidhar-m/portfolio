@@ -1,0 +1,20 @@
+baseurl: "/portfolio-site"
+title: "Vamshidhar Reddy M"
+description: "AI-Powered Digital Marketing Portfolio"
+permalink: /blog/:year/:month/:day/:title/
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+paginate: 10
+paginate_path: "/blog/page:num/"
+plugins:
+  - jekyll-paginate
+exclude:
+  - "Gemfile"
+  - "Gemfile.lock"
+  - "node_modules"
+  - "vendor"
+  - ".gitignore"
