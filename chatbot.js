@@ -96,26 +96,6 @@
   }
 
   /* ============================================================
-     API CALL — send questions to Render backend for AI answers
-     ============================================================ */
-  var API_URL = 'https://portfolio-chat-api.onrender.com';
-
-  async function fetchReply(messages, context) {
-    var system = "You are Vamshidhar Reddy M — an AI-Powered Digital Marketing Specialist. Answer as if you are him — first person, warm, concise. Keep to 2-4 sentences. End with a light invitation to connect. Use RELEVANT CONTEXT naturally if provided.";
-    if (context) system += '\n\nRELEVANT CONTEXT:\n' + context;
-
-    var res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: system, messages: messages, max_tokens: 300 }),
-    });
-    if (!res.ok) throw new Error('API error: ' + res.status);
-    var data = await res.json();
-    if (typeof data.reply === 'string') return data.reply;
-    throw new Error('Unexpected response');
-  }
-
-  /* ============================================================
      CHAT UI
      ============================================================ */
   function escapeHtml(str) {
@@ -214,16 +194,8 @@
       history.push({ role: 'user', content: text });
       showTyping();
 
-      try {
-        var context = '';
-        var best = findBestAnswer(text);
-        if (best) context = best;
-        var reply = await fetchReply(history, context);
-      } catch (err) {
-        console.warn('[ChatBot] API failed, using local:', err);
-        await new Promise(function (r) { setTimeout(r, 300 + Math.random() * 400); });
-        var reply = getReply(text);
-      }
+      await new Promise(function (r) { setTimeout(r, 300 + Math.random() * 400); });
+      var reply = getReply(text);
 
       hideTyping();
       addMsg(reply, 'bot');
