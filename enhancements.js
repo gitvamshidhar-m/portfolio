@@ -10,7 +10,7 @@
      CONFIG
      ════════════════════════════════════════════════════════ */
   const CONFIG = {
-    AI_PROXY_URL: 'https://portfolio-sandy-ten-43.vercel.app/api/chat',
+    AI_PROXY_URL: '/.netlify/functions/chat',
 
     GITHUB_USERNAME: 'mvamshi56',
 
