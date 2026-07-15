@@ -10,7 +10,7 @@
      CONFIG
      ════════════════════════════════════════════════════════ */
   const CONFIG = {
-    AI_PROXY_URL: '/.netlify/functions/chat',
+    AI_PROXY_URL: '/api/chat',
 
     GITHUB_USERNAME: 'mvamshi56',
 
@@ -174,6 +174,36 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
   const ready = (fn) => {
     if (document.readyState !== 'loading') fn();
     else document.addEventListener('DOMContentLoaded', fn);
+  };
+
+  /* ════════════════════════════════════════════════════════
+     CASE STUDIES DATA (must be defined before use)
+     ════════════════════════════════════════════════════════ */
+  const CASE_STUDIES = {
+    'AI SEO Agent': {
+      icon: 'fa-search',
+      problem: "Most SEO audits are manual, slow, and inconsistent — agencies and freelancers spend hours per site checking on-page factors, crawling for technical issues, and compiling recommendations by hand. There was no fast, repeatable way to get a structured, data-backed SEO audit without expensive enterprise tools.",
+      approach: "Built a full-stack audit tool combining Gemini AI's reasoning with real crawling infrastructure. Playwright handles headless browser crawling to capture real rendered pages (not just raw HTML), while a TypeScript + Node.js backend orchestrates the crawl, stores results in SQLite for persistence, and feeds page data to Gemini AI for analysis. The AI evaluates on-page SEO factors (titles, meta descriptions, heading structure, content depth, internal linking) and generates prioritized, actionable recommendations rather than a generic checklist.",
+      result: "Delivered as a live, working web application on Google AI Studio — not just a local script. Demonstrates the full product lifecycle: architecture, data persistence, AI integration, and deployment. Directly applies skills from 8+ years of hands-on SEO work, now automated into a tool other marketers and agencies could use.",
+      tech: ['TypeScript', 'Gemini AI', 'Node.js', 'SQLite', 'Playwright', 'Vite'],
+      link: 'https://github.com/mvamshi56/seoagent'
+    },
+    'AI Web Summarizer': {
+      icon: 'fa-file-alt',
+      problem: "Marketers and researchers constantly need to digest long articles, reports, and competitor content quickly — but switching between tabs, copy-pasting into separate AI tools, and waiting on slow cloud processing breaks focus and wastes time, especially on lower-spec machines.",
+      approach: "Built a lightweight Chrome extension that works directly inside the browser, using Groq AI's extremely fast inference to summarize whatever page the user is currently viewing — no tab-switching, no copy-pasting. Deliberately optimized for low-RAM systems so it stays fast and unobtrusive even on older hardware, with a clean popup UI offering configurable summary options.",
+      result: "Published as an open-source MIT-licensed project with a clear, extensible structure (popup, content script, and options modules separated cleanly). Solves a real daily friction point in content-heavy research and competitive analysis work, and is built to be picked up and extended by other developers.",
+      tech: ['JavaScript', 'HTML', 'Groq AI', 'Chrome Extension'],
+      link: 'https://github.com/mvamshi56/AI-Web-Summarizer'
+    },
+    'AI Security Intelligence Platform': {
+      icon: 'fa-shield-alt',
+      problem: "Security and risk assessment workflows are often manual, fragmented, and hard to standardize across teams — there's a gap between raw vulnerability data and structured, actionable intelligence that decision-makers can act on quickly.",
+      approach: "Designed and built an AI-powered platform using an MCP (Model Context Protocol) server architecture — the same emerging standard used to let AI models interact with external tools and structured data sources. A dedicated AI-driven security analysis server handles vulnerability assessment and risk analysis logic, while a TypeScript client manages communication between components in a clean client-server model.",
+      result: "Demonstrates the ability to design and build intelligent, modular automated systems beyond marketing-specific use cases — applying the same systems-thinking and structured-analysis instincts from SEO and campaign work to a completely different domain. Built to production-ready standards, not just a proof of concept.",
+      tech: ['TypeScript', 'Gemini AI', 'MCP Server', 'Node.js'],
+      link: 'https://github.com/mvamshi56/AI-SECURITY'
+    }
   };
 
   ready(() => {
@@ -714,36 +744,6 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
 
     document.querySelectorAll('.word-reveal').forEach(el => observer.observe(el));
   }
-
-  /* ════════════════════════════════════════════════════════
-     7. CASE STUDY DEEP-DIVE MODALS
-     ════════════════════════════════════════════════════════ */
-  const CASE_STUDIES = {
-    'AI SEO Agent': {
-      icon: 'fa-search',
-      problem: "Most SEO audits are manual, slow, and inconsistent — agencies and freelancers spend hours per site checking on-page factors, crawling for technical issues, and compiling recommendations by hand. There was no fast, repeatable way to get a structured, data-backed SEO audit without expensive enterprise tools.",
-      approach: "Built a full-stack audit tool combining Gemini AI's reasoning with real crawling infrastructure. Playwright handles headless browser crawling to capture real rendered pages (not just raw HTML), while a TypeScript + Node.js backend orchestrates the crawl, stores results in SQLite for persistence, and feeds page data to Gemini AI for analysis. The AI evaluates on-page SEO factors (titles, meta descriptions, heading structure, content depth, internal linking) and generates prioritized, actionable recommendations rather than a generic checklist.",
-      result: "Delivered as a live, working web application on Google AI Studio — not just a local script. Demonstrates the full product lifecycle: architecture, data persistence, AI integration, and deployment. Directly applies skills from 8+ years of hands-on SEO work, now automated into a tool other marketers and agencies could use.",
-      tech: ['TypeScript', 'Gemini AI', 'Node.js', 'SQLite', 'Playwright', 'Vite'],
-      link: 'https://github.com/mvamshi56/seoagent'
-    },
-    'AI Web Summarizer': {
-      icon: 'fa-file-alt',
-      problem: "Marketers and researchers constantly need to digest long articles, reports, and competitor content quickly — but switching between tabs, copy-pasting into separate AI tools, and waiting on slow cloud processing breaks focus and wastes time, especially on lower-spec machines.",
-      approach: "Built a lightweight Chrome extension that works directly inside the browser, using Groq AI's extremely fast inference to summarize whatever page the user is currently viewing — no tab-switching, no copy-pasting. Deliberately optimized for low-RAM systems so it stays fast and unobtrusive even on older hardware, with a clean popup UI offering configurable summary options.",
-      result: "Published as an open-source MIT-licensed project with a clear, extensible structure (popup, content script, and options modules separated cleanly). Solves a real daily friction point in content-heavy research and competitive analysis work, and is built to be picked up and extended by other developers.",
-      tech: ['JavaScript', 'HTML', 'Groq AI', 'Chrome Extension'],
-      link: 'https://github.com/mvamshi56/AI-Web-Summarizer'
-    },
-    'AI Security Intelligence Platform': {
-      icon: 'fa-shield-alt',
-      problem: "Security and risk assessment workflows are often manual, fragmented, and hard to standardize across teams — there's a gap between raw vulnerability data and structured, actionable intelligence that decision-makers can act on quickly.",
-      approach: "Designed and built an AI-powered platform using an MCP (Model Context Protocol) server architecture — the same emerging standard used to let AI models interact with external tools and structured data sources. A dedicated AI-driven security analysis server handles vulnerability assessment and risk analysis logic, while a TypeScript client manages communication between components in a clean client-server model.",
-      result: "Demonstrates the ability to design and build intelligent, modular automated systems beyond marketing-specific use cases — applying the same systems-thinking and structured-analysis instincts from SEO and campaign work to a completely different domain. Built to production-ready standards, not just a proof of concept.",
-      tech: ['TypeScript', 'Gemini AI', 'MCP Server', 'Node.js'],
-      link: 'https://github.com/mvamshi56/AI-SECURITY'
-    }
-  };
 
   function injectCaseStudyModals() {
     const cards = document.querySelectorAll('.project-card');

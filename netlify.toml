@@ -1,5 +1,11 @@
 [build]
-  functions = "netlify/functions"
+  publish = "."
 
-[dev]
-  framework = "#static"
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/chat"
+  to = "/.netlify/functions/chat"
+  status = 200
+  force = true
