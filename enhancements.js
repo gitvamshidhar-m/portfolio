@@ -211,7 +211,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
     injectHireBeacon();
     injectGitHubStats();
     injectROICalculator();
-    injectAIChat();
+
     initWordReveals();
     injectCaseStudyModals();
     reinitTilt();

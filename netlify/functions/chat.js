@@ -38,7 +38,7 @@ exports.handler = async (event) => {
         Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-120b',
+        model: 'llama-3.1-8b-instant',
         max_tokens,
         messages: [{ role: 'system', content: system || '' }, ...messages],
       }),
