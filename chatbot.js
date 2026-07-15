@@ -138,7 +138,11 @@
           var df = 0;
           for (var di = 0; di < KB.length; di++) {
             var dBody = (KB[di].topic + ' ' + KB[di].content).toLowerCase();
-            if ((isBigram ? dBody : tokenize(dBody).map(stem)).some(function (t) { return t === gram; })) df++;
+            if (isBigram) {
+              if (dBody.indexOf(gram) >= 0) df++;
+            } else {
+              if (tokenize(dBody).map(stem).indexOf(gram) >= 0) df++;
+            }
           }
           if (df > 0) weight *= Math.log((numDocs + 1) / (df + 0.5));
           score += weight * count;
