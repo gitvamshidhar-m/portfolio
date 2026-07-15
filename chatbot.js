@@ -89,7 +89,7 @@
 
   function tokenize(str) {
     return str.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(function (t) {
-      return t.length > 2 && !STOP_WORDS[t];
+      return t.length >= 2 && !STOP_WORDS[t];
     });
   }
 
