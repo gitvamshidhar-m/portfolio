@@ -620,6 +620,7 @@ Be warm, concise, and confident. If asked about salary, say you're open to discu
           reply = await mockAIReply(text);
         }
       } catch (err) {
+        console.error('[Chat] Error:', err);
         reply = "Sorry, I hit a snag! Please email geovamshidhar@gmail.com directly — I'll respond promptly 🙂";
         sourcesUsed = [];
       }
