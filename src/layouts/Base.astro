@@ -108,6 +108,8 @@ const jsonLd = JSON.stringify({
   {links.map(([href, label]) => <a href={href}>{label}</a>)}
 </div>
 
+{!(variant === 'index') && <div id="progress" aria-hidden="true"></div>}
+
 <main id="main">
   <slot />
   <footer>
@@ -136,6 +138,12 @@ const jsonLd = JSON.stringify({
       document.querySelectorAll('a[aria-label="LinkedIn"]').forEach(x => x.addEventListener('click', () => ea('social', 'linkedin')));
       document.querySelectorAll('a[aria-label="GitHub"]').forEach(x => x.addEventListener('click', () => ea('social', 'github')));
       function clock2() { const e = document.getElementById('clock2'); if (e) { e.textContent = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }); } } clock2(); setInterval(clock2, 1000);
+      const prog = document.getElementById('progress');
+      if (prog && !window.__hasProgress) {
+        window.__hasProgress = true;
+        const onScroll = () => { const h = document.documentElement, st = h.scrollTop, doc = h.scrollHeight - h.clientHeight; prog.style.width = (doc > 0 ? (st / doc) * 100 : 0) + '%'; };
+        addEventListener('scroll', onScroll, { passive: true }); onScroll();
+      }
     </script>
   )
 }
