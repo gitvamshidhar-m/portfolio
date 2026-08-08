@@ -32,6 +32,23 @@ const subLinks = [
 ];
 const links = variant === 'index' ? indexLinks : subLinks;
 
+// Breadcrumb trail for sub pages
+const crumbLabel = (() => {
+  if (isBlogPage) return 'Blog';
+  if (/blog\.html$/.test(canonical)) return 'Blog';
+  if (/admin\.html$/.test(canonical)) return 'Dashboard';
+  if (/resume\.html$/.test(canonical)) return 'Resume';
+  const map = { about: 'About', projects: 'Projects', skills: 'Skills', experience: 'Experience', faq: 'FAQ', contact: 'Contact' };
+  const key = canonical.match(/\/([a-z-]+)\.html$/);
+  return (key && map[key[1]]) || title;
+})();
+
+const crumbItems = variant === 'sub' ? [
+  { label: 'Home', url: site + '/' },
+  ...(isBlogPage ? [{ label: 'Blog', url: site + '/blog.html' }] : []),
+  { label: crumbLabel, url }
+] : [];
+
 const jsonLd = JSON.stringify({
   '@context': 'https://schema.org', '@type': 'Person',
   name: 'Vamshidhar Reddy M', url: site + '/',
@@ -80,6 +97,17 @@ const jsonLd = JSON.stringify({
   <span class="rp-txt">Hiring for SEO · Paid Media · AI Automation roles?</span>
   <a href="https://vamshidharm.vercel.app/Vamshidhar_Reddy_M_CV.docx" download="Vamshidhar_Reddy_M_CV.docx">Resume →</a><a href="/#projects">Portfolio</a><a href={variant === 'index' ? '/#contact' : '/contact.html'}>Contact</a>
 </div>
+
+{(variant === 'sub' && crumbItems.length > 0) && (
+  <nav class="crumbs" aria-label="Breadcrumb">
+    {crumbItems.map((c, i) => (
+      <span class="crumb">
+        {i > 0 && <span class="crumb-sep" aria-hidden="true">›</span>}
+        {i < crumbItems.length - 1 ? <a href={c.url}>{c.label}</a> : <span class="crumb-current" aria-current="page">{c.label}</span>}
+      </span>
+    ))}
+  </nav>
+)}
 
 <nav>
   <div class="wrap">
