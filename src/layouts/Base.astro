@@ -72,6 +72,14 @@ const jsonLd = JSON.stringify({
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="dns-prefetch" href="https://api.qrserver.com" />
+<link rel="preconnect" href="https://api.qrserver.com" crossorigin />
+<link rel="dns-prefetch" href="https://hook-ai-marketing-engine.vercel.app" />
+<link rel="dns-prefetch" href="https://mvamshi56-creative-predictor.static.hf.space" />
+<link rel="dns-prefetch" href="https://strategy-generator-kwdf-beta.vercel.app" />
 <meta property="og:type" content={isBlogPage ? 'article' : 'website'} />
 <meta property="og:site_name" content="Vamshidharm" />
 <meta property="og:title" content={title} />
@@ -180,6 +188,10 @@ const jsonLd = JSON.stringify({
         window.__hasProgress = true;
         const onScroll = () => { const h = document.documentElement, st = h.scrollTop, doc = h.scrollHeight - h.clientHeight; prog.style.width = (doc > 0 ? (st / doc) * 100 : 0) + '%'; };
         addEventListener('scroll', onScroll, { passive: true }); onScroll();
+      }
+      if ('serviceWorker' in navigator && !window.__swRegistered) {
+        window.__swRegistered = true;
+        addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
       }
     </script>
   )
