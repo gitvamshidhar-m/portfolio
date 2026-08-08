@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Search from '../components/Search.astro';
 
 interface Props {
   title: string;
@@ -135,6 +136,7 @@ const jsonLd = JSON.stringify({
         </>
       )}
       <button id="themeBtn" class="icon-btn" title="Toggle theme (t)" aria-label="Toggle theme">🌙</button>
+      {variant !== 'index' && <button id="searchBtn" class="icon-btn" title="Search posts (Ctrl+K)" aria-label="Search blog posts" onclick="window.__bsOpen&&window.__bsOpen()">🔍</button>}
       <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
     </div>
   </div>
@@ -158,8 +160,7 @@ const jsonLd = JSON.stringify({
 {
   mixin && (
     <script is:inline>
-      const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const tb = document.getElementById('themeBtn'), html = document.documentElement;
+      const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;      const tb = document.getElementById('themeBtn'), html = document.documentElement;
       function toggleTheme() { const d = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; html.setAttribute('data-theme', d); if (tb) tb.textContent = d === 'dark' ? '🌙' : '☀️'; try { localStorage.setItem('don-theme', d); } catch (e) {} }
       if (tb) { tb.addEventListener('click', toggleTheme); tb.textContent = html.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️'; }
       const mb = document.getElementById('menuBtn'), mm = document.getElementById('mmenu');
@@ -183,5 +184,6 @@ const jsonLd = JSON.stringify({
     </script>
   )
 }
+{variant !== 'index' && <Search />}
 </body>
 </html>

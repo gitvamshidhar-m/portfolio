@@ -1,0 +1,85 @@
+---
+---
+<div id="blogSearch" role="dialog" aria-modal="true" aria-label="Search blog posts" hidden>
+  <div class="bs-box">
+    <div class="bs-input">
+      <span class="bs-ico">🔍</span>
+      <input id="bsInput" type="text" placeholder="Search posts, topics, keywords… (Esc to close)" autocomplete="off" aria-label="Search posts" />
+      <kbd>Esc</kbd>
+    </div>
+    <div class="bs-filters" id="bsFilters"></div>
+    <div class="bs-results" id="bsResults">
+      <p class="bs-empty">Type to search all posts — by title, tag, or keywords.</p>
+    </div>
+  </div>
+</div>
+<script is:inline>
+(function () {
+  if (document.getElementById('blogSearch') && window.__bsInit) return;
+  window.__bsInit = true;
+  var wrap = document.getElementById('blogSearch');
+  if (!wrap) return;
+  var input = document.getElementById('bsInput'), results = document.getElementById('bsResults'), filters = document.getElementById('bsFilters');
+  var POSTS = [], ALL_TAGS = [], activeTag = '';
+  var btn = document.getElementById('searchBtn');
+
+  function norm(s) { return String(s || '').toLowerCase().replace(/[^\w\s-]/g, ' '); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
+
+  function open() { wrap.hidden = false; document.body.classList.add('bs-open'); setTimeout(function(){ input.focus(); }, 20); }
+  function close() { wrap.hidden = true; document.body.classList.remove('bs-open'); input.value = ''; activeTag = ''; renderFilters(); render(); if (input) input.blur(); }
+  window.__bsOpen = open;
+  window.__bsClose = close;
+
+  function load() {
+    fetch('/blog.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      POSTS = j || [];
+      var seen = {};
+      ALL_TAGS = [];
+      POSTS.forEach(function (p) { if (p.tag && !seen[p.tag]) { seen[p.tag] = 1; ALL_TAGS.push(p.tag); } });
+      renderFilters(); render();
+    }).catch(function () {
+      results.innerHTML = '<p class="bs-empty">Search index unavailable.</p>';
+    });
+  }
+
+  function renderFilters() {
+    var chips = ['<button type="button" class="bs-chip' + (activeTag ? '' : ' on') + '" data-t="*">All</button>'];
+    ALL_TAGS.forEach(function (t) { chips.push('<button type="button" class="bs-chip' + (activeTag === t ? ' on' : '') + '" data-t="' + esc(t) + '">' + esc(t) + '</button>'); });
+    filters.innerHTML = chips.join('');
+    filters.querySelectorAll('.bs-chip').forEach(function (c) {
+      c.addEventListener('click', function () { activeTag = c.getAttribute('data-t') === '*' ? '' : c.getAttribute('data-t'); renderFilters(); render(); });
+    });
+  }
+
+  function render() {
+    var q = norm(input.value.trim());
+    var list = POSTS.filter(function (p) {
+      if (activeTag && p.tag !== activeTag) return false;
+      if (!q) return true;
+      var hay = norm(p.title + ' ' + p.tag + ' ' + p.excerpt + ' ' + (p.body || '').replace(/<[^>]+>/g, ' '));
+      return hay.indexOf(q) > -1;
+    });
+    if (!list.length) { results.innerHTML = '<p class="bs-empty">No matches for "' + esc(input.value.trim()) + '".</p>'; return; }
+    results.innerHTML = list.map(function (p) {
+      return '<a class="bs-item" href="/blog/' + esc(p.slug) + '.html">' +
+        '<div class="bs-meta">' + (p.tag ? '<b>' + esc(p.tag) + '</b>' : '') + (p.date ? '<span>' + esc(p.date) + '</span>' : '') + (p.read ? '<span>' + esc(p.read) + '</span>' : '') + '</div>' +
+        '<h3>' + esc(p.title) + '</h3>' +
+        (p.excerpt ? '<p>' + esc(p.excerpt) + '</p>' : '') +
+        '<span class="bs-go">Read →</span></a>';
+    }).join('');
+  }
+
+  addEventListener('open-search', open);
+  addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (document.getElementById('palette')) return; // index has its own palette
+      e.preventDefault(); wrap.hidden ? open() : close();
+    }
+    if (e.key === 'Escape' && !wrap.hidden) close();
+  });
+  if (input) input.addEventListener('input', render);
+  wrap.addEventListener('click', function (e) { if (e.target === wrap) close(); });
+  load();
+})();
+</script>
