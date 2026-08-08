@@ -1,0 +1,19 @@
+{
+  "stats": [
+    { "label": "Years Experience", "value": 10, "suffix": "+" },
+    { "label": "Organic Traffic Growth", "value": 15, "suffix": "%" },
+    { "label": "Qualified Leads / Mo", "value": 70, "suffix": "" },
+    { "label": "Monthly Ad Budget", "text": "Rs.2L+", "value": 0, "suffix": "" },
+    { "label": "Live AI Products", "value": 3, "suffix": "" }
+  ],
+  "ticker": [
+    "70+ qualified leads / month",
+    "15% organic traffic growth",
+    "Rs.2L+ monthly ad budget",
+    "3 live AI products shipped solo",
+    "3.2x → 5.5x client ROAS",
+    "Rs.1,100 → Rs.770 cost-per-lead"
+  ],
+  "testimonials": [
+  ]
+}

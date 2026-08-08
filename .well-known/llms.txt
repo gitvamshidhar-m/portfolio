@@ -1,0 +1,36 @@
+# M. Vamshidhar Reddy — performance marketer who builds AI tools
+
+> Vamshidhar Reddy M is a performance marketer who builds AI tools based in Hyderabad, India.
+> 10+ years in SEO, PPC, paid media, CRO and AI-powered marketing. He also builds and ships his own AI tools.
+> Contact: geovamshidhar@gmail.com · +91-7981719085.
+
+## Core facts
+- Name: Vamshidhar Reddy M
+- Role: performance marketer who builds AI tools ("marketer who builds")
+- Location: Hyderabad, India
+- Experience: 10+ years (plus an engineering/QA background 2007-2014)
+- Focus: SEO, Google Ads/PPC, paid media, CRO, A/B testing, AI marketing
+- Open to work: yes - digital marketing, SEO, paid media, performance roles
+- Email: geovamshidhar@gmail.com
+- Phone: +91-7981719085
+- LinkedIn: https://linkedin.com/in/vamshidharreddym
+- GitHub: https://github.com/gitvamshidhar-m
+
+## AI products (built and shipped solo, live)
+- [Hook AI - Marketing Copy Engine](https://hook-ai-marketing-engine.vercel.app)
+- [Creative Predictor - AI ad & CRO suite](https://mvamshi56-creative-predictor.static.hf.space)
+- [AI Growth Strategy Generator](https://strategy-generator-kwdf-beta.vercel.app)
+
+## Portfolio
+- [Home](https://vamshidharm.vercel.app/)
+- [Projects](https://vamshidharm.vercel.app/#projects)
+- [Skills](https://vamshidharm.vercel.app/#skills)
+- [Experience](https://vamshidharm.vercel.app/#experience)
+- [FAQ](https://vamshidharm.vercel.app/#faq)
+- [Contact](https://vamshidharm.vercel.app/#contact)
+
+## Machine-readable
+- [Structured resume (JSON)](https://vamshidharm.vercel.app/api/resume) - full career in JSON-LD format
+- [Resume page (print/PDF)](https://vamshidharm.vercel.app/resume.html)
+- [RSS feed](https://vamshidharm.vercel.app/feed.xml)
+- [Live stats (JSON)](https://vamshidharm.vercel.app/api/stats)
