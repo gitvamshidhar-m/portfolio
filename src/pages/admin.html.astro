@@ -41,6 +41,8 @@ const op = {
   <script is:inline>
     (function(){
       var token='', form=document.getElementById('adminLogin'), input=document.getElementById('adminToken'), status=document.getElementById('adminStatus'), data=document.getElementById('adminData');
+      var stored=''; try{stored=localStorage.getItem('vsh_admin_token')||'';}catch(e){}
+      function remember(){try{if(token)localStorage.setItem('vsh_admin_token',token);}catch(e){}}
       function esc(value){var d=document.createElement('div');d.textContent=String(value||'');return d.innerHTML;}
       function setStatus(text, bad){status.hidden=false;status.className='formmsg '+(bad?'err':'ok');status.textContent=text;}
       function load(){
@@ -65,8 +67,9 @@ const op = {
           return '<div class="trend-col" title="'+label+' · '+p.views+' views"><span class="trend-num">'+(p.views||'')+'</span><div class="trend-bar'+(isEmpty?' empty':'')+'" style="height:'+h+'%"></div><span class="trend-day">'+label+'</span></div>';
         }).join('');
       }
-      form.addEventListener('submit',function(e){e.preventDefault();token=input.value.trim();if(!token)return;load();});
+      form.addEventListener('submit',function(e){e.preventDefault();token=input.value.trim();if(!token)return;remember();load();});
       document.getElementById('adminRefresh').addEventListener('click',load);
+      if(stored){token=stored;input.value=stored;load();}
     })();
   </script>
 </Base>
