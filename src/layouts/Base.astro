@@ -49,6 +49,13 @@ const crumbItems = variant === 'sub' ? [
   { label: crumbLabel, url }
 ] : [];
 
+const breadcrumbLd = variant === 'sub' && crumbItems.length > 0
+  ? JSON.stringify({
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: crumbItems.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.label, item: c.url }))
+    })
+  : '';
+
 const jsonLd = JSON.stringify({
   '@context': 'https://schema.org', '@type': 'Person',
   name: 'Vamshidhar Reddy M', url: site + '/',
@@ -88,6 +95,7 @@ const jsonLd = JSON.stringify({
 <script is:inline>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script type="application/ld+json" set:html={jsonLd} />
+{breadcrumbLd && <script type="application/ld+json" set:html={breadcrumbLd} />}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
