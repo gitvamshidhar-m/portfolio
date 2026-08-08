@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "Experience — Vamshidhar Reddy | SEO to AI Marketing",
+  description: "Work history of Vamshidhar Reddy — from software test engineering (2007) to AI-powered marketing specialist across five companies.",
+  canonical: "https://vamshidharm.vercel.app/experience.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "experience.html",
+};
+const body = "<section>\n\n  <div class=\"wrap\">\n    <div class=\"sec-head reveal\">\n      <span class=\"tag\">Experience</span>\n      <h1>Professional Journey</h1>\n      <p>10+ years, from QA to AI-Powered Marketing specialist.</p>\n    </div>\n    <div class=\"grid2\" style=\"grid-template-columns:1.1fr .9fr;gap:26px\">\n      <div class=\"tl\">\n        <div class=\"titem reveal\"><span class=\"range\">May 2023 — Present</span><h3>Digital Marketing Specialist</h3><div class=\"co\">Autozilla Software Solutions</div><ul><li>Grew organic traffic <b style=\"color:var(--accent2)\">15%</b> via SEO audits &amp; technical fixes</li><li>Generated <b style=\"color:var(--accent2)\">70+ leads/mo</b></li><li>Managed <b style=\"color:var(--accent2)\">Rs.2L+</b> monthly ad spend</li></ul></div>\n        <div class=\"titem reveal\"><span class=\"range\">Jun 2022 — May 2023</span><h3>Campaign Specialist</h3><div class=\"co\">Pranathi Software Services</div><ul><li>LinkedIn Ads for B2B lead generation</li><li>Optimized bids to lift ROAS &amp; cut wasted spend</li></ul></div>\n        <div class=\"titem reveal\"><span class=\"range\">Feb 2021 — May 2022</span><h3>Digital Marketing Executive</h3><div class=\"co\">FAMA Technologies</div><ul><li>Integrated SEO, PPC &amp; content; A/B and CRO</li></ul></div>\n        <div class=\"titem reveal\"><span class=\"range\">Jun 2019 — Sep 2020</span><h3>Digital Marketing Executive</h3><div class=\"co\">E-Rad Imaging</div><ul><li>End-to-end SEO campaigns</li></ul></div>\n        <div class=\"titem reveal\"><span class=\"range\">Nov 2017 — May 2019</span><h3>SEO &amp; SMO Expert</h3><div class=\"co\">Promantra Synergies</div><ul><li>SEO + social, competitor benchmarking</li></ul></div>\n        <div class=\"titem reveal\"><span class=\"range\">Jan 2015 — Nov 2017</span><h3>SEO Executive</h3><div class=\"co\">Digital Way Soft</div><ul><li>Technical SEO, on-page, link building</li></ul></div>\n        <div class=\"titem reveal\"><span class=\"range\">May 2007 — Sep 2014</span><h3>Software / Junior Test Engineer</h3><div class=\"co\">Ainslee Software &amp; Corbz Data</div><ul><li>QA — the analytical foundation</li></ul></div>\n      </div>\n      <div class=\"reveal\">\n        <span class=\"tag\">The edge</span>\n        <div class=\"step\"><b style=\"color:var(--accent2)\">Both sides</b><p style=\"color:var(--muted)\">Most marketers can't code. Most developers don't understand funnels. I do both — so I ship what I plan.</p></div>\n        <div class=\"step\" style=\"margin-top:14px\"><b style=\"color:var(--accent2)\">My standard</b><p style=\"color:var(--muted)\">\"I don't just run reports — I build the pipelines that generate them.\"</p></div>\n      </div>\n    </div>\n  </div>\n\n</section>";
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  
+</Base>

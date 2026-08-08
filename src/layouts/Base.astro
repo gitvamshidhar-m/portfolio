@@ -1,0 +1,143 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  ogImage?: string;
+  variant?: 'index' | 'sub';
+  active?: string;
+  mixin?: boolean;
+}
+
+const {
+  title, description, canonical, ogImage = '/og.png',
+  variant = 'index', active = '', mixin = true,
+} = Astro.props;
+
+const site = 'https://vamshidharm.vercel.app';
+const url = canonical.startsWith('http') ? canonical : site + canonical;
+const pagePath = '/' + canonical.replace(/^https?:\/\/[^\/]+/, '').replace(/^\//, '');
+const isBlogPage = Boolean(canonical.match(/\/blog\/.+/));
+
+const indexLinks = [
+  ['about.html', 'About'], ['blog.html', 'Blog'], ['projects.html', 'Projects'],
+  ['#hooklab', 'Hook'], ['experience.html', 'Experience'], ['skills.html', 'Skills'],
+  ['faq.html', 'FAQ'], ['#insights', 'ROI'], ['contact.html', 'Contact'],
+];
+const subLinks = [
+  ['/', 'Home'], ['/about.html', 'About'], ['/blog.html', 'Blog'], ['/projects.html', 'Projects'],
+  ['/skills.html', 'Skills'], ['/experience.html', 'Experience'], ['/faq.html', 'FAQ'], ['/contact.html', 'Contact'],
+];
+const links = variant === 'index' ? indexLinks : subLinks;
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org', '@type': 'Person',
+  name: 'Vamshidhar Reddy M', url: site + '/',
+  jobTitle: 'Performance Marketer & AI Tool Builder',
+  email: 'geovamshidhar@gmail.com', telephone: '+91-7981719085',
+  address: { '@type': 'PostalAddress', addressLocality: 'Hyderabad', addressCountry: 'IN' },
+  sameAs: ['https://linkedin.com/in/vamshidharreddym', 'https://github.com/gitvamshidhar-m'],
+});
+---
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta property="og:type" content={isBlogPage ? 'article' : 'website'} />
+<meta property="og:site_name" content="Vamshidharm" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={url} />
+<meta property="og:image" content={site + ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={site + ogImage} />
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={url} />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="M Vamshidhar Reddy" />
+<meta name="theme-color" content="#0a0a12" />
+<meta name="keywords" content="Vamshidhar Reddy, Digital Marketing Specialist, SEO specialist, Google Ads, PPC, performance marketing, AI marketing, marketer, Hyderabad" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%238b7bff'/><stop offset='1' stop-color='%232ff3c0'/></linearGradient></defs><rect x='3' y='3' width='42' height='42' rx='12' fill='url(%23g)'/><path d='M16 13 L24 31 L32 13' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+<script is:inline>try{var _t=localStorage.getItem('don-theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+<script is:inline>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script type="application/ld+json" set:html={jsonLd} />
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="rpath">
+  <span class="rp-tag">Recruiting?</span>
+  <span class="rp-txt">Hiring for SEO · Paid Media · AI Automation roles?</span>
+  <a href="https://vamshidharm.vercel.app/Vamshidhar_Reddy_M_CV.docx" download="Vamshidhar_Reddy_M_CV.docx">Resume →</a><a href="/#projects">Portfolio</a><a href={variant === 'index' ? '/#contact' : '/contact.html'}>Contact</a>
+</div>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">
+      <a class="brand-link" href="/" aria-label="vamshidharm home"><svg class="logo" viewBox="0 0 48 48" role="img" aria-label="vamshidharm logo"><defs><linearGradient id="lgL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b7bff"/><stop offset="1" stop-color="#2ff3c0"/></linearGradient><radialGradient id="lgH" cx="0.32" cy="0.22" r="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".85"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".08"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient></defs><rect x="9" y="11" width="30" height="30" rx="10" fill="rgba(10,10,30,.45)"/><rect x="8" y="8" width="30" height="30" rx="10" fill="url(#lgL)"/><rect x="8" y="8" width="30" height="30" rx="10" fill="url(#lgH)"/><path d="M16.5 17 L23 30.5 L29.5 17" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="bt">vamshidharm</span></a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-links">
+        {links.map(([href, label]) => (
+          <a href={href} class:list={[href === active ? 'active' : '', href.startsWith('#') ? 'hash' : '']}>{label}</a>
+        ))}
+      </div>
+      {variant === 'index' && (
+        <>
+          <span class="pill"><span class="dot"></span><span>Open to 1 role · replies in 24h</span></span>
+          <span class="pill" id="clock" title="IST">⏱ --:--:--</span>
+        </>
+      )}
+      <button id="themeBtn" class="icon-btn" title="Toggle theme (t)" aria-label="Toggle theme">🌙</button>
+      <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<div id="mmenu">
+  {links.map(([href, label]) => <a href={href}>{label}</a>)}
+</div>
+
+<main id="main">
+  <slot />
+  <footer>
+    <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
+    <div class="wrap ft" style="margin-top:14px"><a href="/#hooklab">Hook Lab</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/resume.html">Resume</a></div>
+    <div class="wrap ft ft-seo">Built as proof, not just a demo — semantic HTML (&lt;1 h1) with a clean h2–h3 tree, Person + FAQPage JSON-LD, canonical URL, Open Graph/Twitter cards, RSS feed, sitemap.xml, robots.txt &amp; llms.txt.</div>
+  </footer>
+</main>
+
+{
+  mixin && (
+    <script is:inline>
+      const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const tb = document.getElementById('themeBtn'), html = document.documentElement;
+      function toggleTheme() { const d = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; html.setAttribute('data-theme', d); if (tb) tb.textContent = d === 'dark' ? '🌙' : '☀️'; try { localStorage.setItem('don-theme', d); } catch (e) {} }
+      if (tb) { tb.addEventListener('click', toggleTheme); tb.textContent = html.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️'; }
+      const mb = document.getElementById('menuBtn'), mm = document.getElementById('mmenu');
+      if (mb && mm) { mb.addEventListener('click', () => { const on = mm.classList.toggle('on'); mb.textContent = on ? '✕' : '☰'; mb.setAttribute('aria-label', on ? 'Close menu' : 'Open menu'); }); mm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { mm.classList.remove('on'); mb.textContent = '☰'; mb.setAttribute('aria-label', 'Open menu'); })); }
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); e.target.querySelectorAll('.count').forEach(c => { if (!c.dataset.done) { c.dataset.done = 1; countUp(c); } }); e.target.querySelectorAll('.bar i').forEach(b => { b.style.width = b.dataset.w + '%'; }); io.unobserve(e.target); } }), { threshold: .15 });
+      document.querySelectorAll('.reveal').forEach(x => io.observe(x));
+      function countUp(c) { const t = +(c.dataset.target), suf = c.dataset.suffix || ''; let n = 0; const step = Math.max(1, t / 60); const iv = setInterval(() => { n += step; if (n >= t) { n = t; clearInterval(iv); } c.textContent = Math.floor(n) + (suf || ''); }, 24); }
+      document.querySelectorAll('.status-badge').forEach(b => { fetch(b.dataset.url, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' }).then(() => { b.className = 'status-badge live'; b.innerHTML = '<span class="sdot"></span>Live'; }).catch(() => { b.className = 'status-badge down'; b.innerHTML = '<span class="sdot"></span>Unreachable'; }); });
+      function ea(name, label) { try { if (window.va) { window.va('event', { name: name, label: label || '' }); } } catch (e) {} }
+      document.querySelectorAll('a[href^="tel:"]').forEach(ph => { ph.addEventListener('click', function () { ea('phone_tap', ''); const n = ph.getAttribute('href').replace('tel:', ''); if (!/(iPhone|iPad|iPod|Android)/i.test(navigator.userAgent) && navigator.clipboard) { navigator.clipboard.writeText(n).then(() => { const old = ph.innerHTML; ph.innerHTML = '📋 Copied ' + n; setTimeout(() => { ph.innerHTML = old; }, 1600); }).catch(() => {}); } }); });
+      document.querySelectorAll('a[href^="https://mail.google.com/mail/"]').forEach(g => g.addEventListener('click', () => ea('gmail', 'compose')));
+      document.querySelectorAll('a[aria-label="LinkedIn"]').forEach(x => x.addEventListener('click', () => ea('social', 'linkedin')));
+      document.querySelectorAll('a[aria-label="GitHub"]').forEach(x => x.addEventListener('click', () => ea('social', 'github')));
+      function clock2() { const e = document.getElementById('clock2'); if (e) { e.textContent = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }); } } clock2(); setInterval(clock2, 1000);
+    </script>
+  )
+}
+</body>
+</html>

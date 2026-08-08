@@ -1,0 +1,19 @@
+{
+  "name": "vamshidharm",
+  "version": "2.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^7.2.0",
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/rss": "^4.0.19"
+  }
+}

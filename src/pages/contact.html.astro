@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "Contact — Vamshidhar Reddy | Performance Marketer",
+  description: "Contact Vamshidhar Reddy, AI-augmented performance marketer in Hyderabad. Email, phone, LinkedIn, or book a 15-min intro call. Open to performance marketing, SEO, AI marketing roles.",
+  canonical: "https://vamshidharm.vercel.app/contact.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "contact.html",
+};
+const body = "<section>\n\n  <div class=\"wrap\">\n    <div class=\"sec-head reveal\"><span class=\"tag\">Contact</span><h1>Let's Build Something Intelligent</h1></div>\n    <div class=\"reveal\" style=\"max-width:820px;margin:0 auto 26px\">\n      <p style=\"color:var(--muted);text-align:center\">Hyderabad (IST, UTC+5:30) · open to remote for the right team · <b style=\"color:var(--accent2)\">1-week notice</b> · usually replies within a business day.</p>\n      <div style=\"text-align:center;margin-top:14px\">\n        <a class=\"btn primary btn-lg\" href=\"https://mail.google.com/mail/?view=cm&fs=1&to=geovamshidhar@gmail.com&su=15%20min%20intro%20call&body=Hi%20Vamshidhar%2C%20let%27s%20find%2015%20minutes%20in%20the%20next%20few%20days.%20I%27m%20at%3A%20%0A%0AMy%20timezone%3A%20%0AMy%20open%20slots%3A%20\" target=\"_blank\" rel=\"noopener noreferrer\">📅 Book a 15-min intro call →</a>\n      </div>\n    </div>\n    <div class=\"contact\">\n      <div class=\"cinfo reveal\">\n        <a class=\"citem\" href=\"https://mail.google.com/mail/?view=cm&fs=1&to=geovamshidhar@gmail.com&su=Hello%20Vamshidhar\" target=\"_blank\" rel=\"noopener noreferrer\"><div class=\"ic\">✉️</div><div><b>Email me on Gmail</b><p>geovamshidhar@gmail.com</p></div></a>\n        <a class=\"citem\" href=\"tel:+917981719085\"><div class=\"ic\">📞</div><div><b>Phone</b><p>+91-7981719085</p></div></a>\n        <div class=\"citem\"><div class=\"ic\">📍</div><div><b>Location</b><p>Hyderabad, India</p></div></div>\n        <a class=\"citem\" href=\"https://linkedin.com/in/vamshidharreddym\" target=\"_blank\" rel=\"noopener noreferrer\"><div class=\"ic\">🔗</div><div><b>LinkedIn</b><p>/in/vamshidharreddym</p></div></a>\n      </div>\n<form class=\"reveal\" id=\"contactForm\">\n  <label class=\"hp\" aria-hidden=\"true\">Company website <input name=\"hp_three\" type=\"text\" tabindex=\"-1\" autocomplete=\"off\"></label>\n  <input type=\"hidden\" name=\"t\" id=\"fLoad\" value=\"0\">\n  <input name=\"name\" placeholder=\"Your name\" required>\n  <input name=\"email\" type=\"email\" placeholder=\"Your email\" required>\n  <input name=\"subject\" placeholder=\"Subject\" required>\n  <textarea name=\"message\" rows=\"4\" placeholder=\"Your message\" required></textarea>\n  <button class=\"btn primary\" type=\"submit\">Send Message</button>\n  <p id=\"formMsg\" class=\"formmsg\" hidden></p>\n  <div class=\"dl-row\">\n    <a class=\"btn\" href=\"https://vamshidharm.vercel.app/Vamshidhar_Reddy_M_CV.docx\" download=\"Vamshidhar_Reddy_M_CV.docx\" rel=\"noopener noreferrer\">📄 Download CV (.docx)</a>\n    <a class=\"btn\" href=\"https://vamshidharm.vercel.app/vamshidhar.vcf\" download=\"vamshidhar.vcf\" rel=\"noopener noreferrer\">👤 Save my contact (.vcf)</a>\n  </div>\n  <div class=\"recruit\">\n    <button class=\"btn recruit-toggle\" id=\"recruitToggle\" type=\"button\" aria-expanded=\"false\">⚡ Recruiter fast-track · intro → email (1 click)</button>\n    <div class=\"recruit-panel\" id=\"recruitPanel\">\n      <div>\n        <label>I'm hiring for</label>\n        <select id=\"rrRole\">\n          <option>SEO Manager / Specialist</option>\n          <option>PPC / Google Ads Specialist</option>\n          <option>Performance Marketing</option>\n          <option>AI / Product Marketing</option>\n          <option>Digital Marketing Manager</option>\n        </select>\n      </div>\n      <div>\n        <label>My team's go-to-market budget</label>\n        <select id=\"rrBudget\">\n          <option>Below ₹1L / month</option>\n          <option>₹1L–3L / month</option>\n          <option>₹3L+ / month</option>\n        </select>\n      </div>\n      <div class=\"recruit-actions\">\n        <a class=\"btn primary\" id=\"rrMail\" href=\"https://mail.google.com/mail/?view=cm&fs=1&to=geovamshidhar@gmail.com\" target=\"_blank\" rel=\"noopener noreferrer\">✉️ Open intro email on Gmail</a>\n        <button class=\"btn\" id=\"rrCopy\" type=\"button\">📋 Copy summary</button>\n      </div>\n      <textarea id=\"rrText\" readonly rows=\"5\"></textarea>\n      <div class=\"qr\"><img id=\"rrQR\" alt=\"QR code — my resume\" loading=\"lazy\" /><span style=\"font-size:12.5px;color:var(--muted)\">Scan → opens my resume. <br/>Unhurried — this whole page is the proof.</span></div>\n    </div>\n  </div>\n</form>\n\n    </div>\n  </div>\n\n</section>";
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script is:inline>(function(){
+  var f=document.getElementById('contactForm');if(!f)return;
+  var msg=document.getElementById('formMsg');
+  var fl=document.getElementById('fLoad');
+  var loadTime=Date.now();
+  if(fl)fl.value=loadTime;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var fl2=document.getElementById('fLoad');
+    if(fl2)fl2.value=String(Date.now()-loadTime);
+    var btn=f.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Sending…';
+    var body={};new FormData(f).forEach(function(v,k){body[k]=v;});
+    fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        msg.hidden=false;
+        if(j&&j.ok&&j.delivered){msg.className='formmsg ok';msg.textContent='Thanks — message received. I usually reply within a day.';f.reset();}
+        else{msg.className='formmsg err';msg.textContent='Message captured. For the fastest reply, email me directly: geovamshidhar@gmail.com';}
+      })
+      .catch(function(){msg.hidden=false;msg.className='formmsg err';msg.textContent='Network error — please email me directly: geovamshidhar@gmail.com';})
+      .then(function(){btn.disabled=false;btn.textContent='Send Message';});
+  });
+})();</script>
+</Base>

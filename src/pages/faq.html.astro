@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "FAQ — Vamshidhar Reddy | Performance Marketer",
+  description: "Frequently asked questions about Vamshidhar Reddy, AI-augmented performance marketer: experience, products, location, availability and contact.",
+  canonical: "https://vamshidharm.vercel.app/faq.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "faq.html",
+};
+const body = "<section>\n\n  <div class=\"wrap\">\n    <div class=\"sec-head reveal\"><span class=\"tag\">For AI assistants &amp; rapid answers</span><h1>Frequently Asked Questions</h1><p>Quick, factual answers — the same content my chat and structured data are grounded on. Great for quick-scanning recruiters.</p></div>\n    <div class=\"faq\">\n      <details open><summary>What does Vamshidhar Reddy do?</summary><p>Vamshidhar Reddy M is an AI-augmented performance marketer based in Hyderabad, India. 10+ years in SEO, PPC, and CRO, plus three AI tools he built and shipped solo. He is open to work.</p></details>\n      <details><summary>How many years of experience does he have?</summary><p>10+ years in digital marketing, built on an earlier engineering/QA foundation (2007–2014). Focus areas: SEO, Google Ads / PPC, paid media, CRO, and AI-powered marketing.</p></details>\n      <details><summary>Where is he located and how soon can he start?</summary><p>Hyderabad, India (UTC+5:30); open to remote roles. ~1 week notice, replies within a business day, and a 15-min call can be booked from the Contact section.</p></details>\n      <details><summary>What AI products has he built?</summary><p>Three, shipped and live solo: Hook AI (marketing copy engine), the Creative Predictor (AI ad &amp; CRO suite), and an AI Growth Strategy Generator. Live links are in the Projects section.</p></details>\n      <details><summary>Is Vamshidhar open to work?</summary><p>Yes — he is open to performance marketing, SEO, paid media, and AI-augmented marketing roles.</p></details>\n      <details><summary>How can someone contact or hire him?</summary><p>Email geovamshidhar@gmail.com, phone <a href=\"tel:+917981719085\">+91-7981719085</a>, or LinkedIn /in/vamshidharreddym.</p></details>\n    </div>\n  </div>\n\n</section>";
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  
+</Base>

@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "Skills — Vamshidhar Reddy | SEO, PPC, AI, Analytics",
+  description: "Technical expertise of Vamshidhar Reddy: Paid Media/PPC 95%, SEO & Content 93%, AI & Automation 90%, Analytics 88%, Development 78%.",
+  canonical: "https://vamshidharm.vercel.app/skills.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "skills.html",
+};
+const body = "<section>\n\n  <div class=\"wrap\">\n    <div class=\"sec-head reveal\"><span class=\"tag\">Skills</span><h1>Technical Expertise</h1></div>\n    <div class=\"skillgrid reveal\">\n      <div>\n        <div class=\"skill\"><h4>Paid Media / PPC <b>95%</b></h4><div class=\"bar\"><i data-w=\"95\"></i></div></div>\n        <div class=\"skill\"><h4>SEO &amp; Content <b>93%</b></h4><div class=\"bar\"><i data-w=\"93\"></i></div></div>\n        <div class=\"skill\"><h4>AI &amp; Automation <b>90%</b></h4><div class=\"bar\"><i data-w=\"90\"></i></div></div>\n        <div class=\"skill\"><h4>Analytics <b>88%</b></h4><div class=\"bar\"><i data-w=\"88\"></i></div></div>\n        <div class=\"skill\"><h4>Development <b>78%</b></h4><div class=\"bar\"><i data-w=\"78\"></i></div></div>\n      </div>\n      <div>\n        <div class=\"chipbox\"><b style=\"color:var(--accent2)\">AI &amp; Automation</b><div class=\"chipcloud\"><span>Generative AI</span><span>Prompt Engineering</span><span>ChatGPT</span><span>Claude</span><span>Gemini</span><span>AI Agents</span><span>Workflow Automation</span></div></div>\n        <div class=\"chipbox\"><b style=\"color:var(--accent2)\">SEO &amp; Paid</b><div class=\"chipcloud\"><span>Technical SEO</span><span>Local SEO</span><span>E-E-A-T</span><span>Google Ads</span><span>LinkedIn Ads</span><span>CRO</span><span>Landing Pages</span></div></div>\n        <div class=\"chipbox\"><b style=\"color:var(--accent2)\">Analytics &amp; Tools</b><div class=\"chipcloud\"><span>GA4</span><span>Looker Studio</span><span>Tableau</span><span>SEMrush</span><span>Ahrefs</span><span>Search Console</span><span>Screaming Frog</span></div></div>\n      </div>\n    </div>\n  </div>\n\n</section>";
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  
+</Base>

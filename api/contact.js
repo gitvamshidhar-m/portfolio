@@ -12,6 +12,15 @@ function kvFetch(action, key, method) {
     headers: { Authorization: 'Bearer ' + KV_TOKEN }
   }).then(function (r) { return r.json(); });
 }
+function saveLead(lead) {
+  if (!KV_URL || !KV_TOKEN) return Promise.resolve();
+  const url = String(KV_URL).replace(/\/$/, '') + '/pipeline';
+  const commands = [['LPUSH', 'leads:recent', JSON.stringify(lead)], ['LTRIM', 'leads:recent', 0, 49]];
+  return fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(commands) }).then(function (r) {
+    if (!r.ok) throw new Error('lead storage failed');
+    return r.json();
+  });
+}
 function ipOf(req) {
   const xf = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
   if (xf) return xf;
@@ -75,8 +84,11 @@ module.exports = function handler(req, res) {
       const payload = JSON.stringify({ text: text, name: name, email: email, subject: subject, message: message, spam: isSpam, score: verdict ? verdict.score : undefined, reason: verdict ? verdict.reason : undefined });
 
       const finalize = function (resBody) {
-        if (isSpam) { kv('incr', 'profile:spam', 'POST').then(function () { send(resBody); }).catch(function () { send(resBody); }); }
-        else { send(resBody); }
+        if (isSpam) { kv('incr', 'profile:spam', 'POST').then(function () { send(resBody); }).catch(function () { send(resBody); }); return; }
+        if (!resBody.delivered) { send(resBody); return; }
+        saveLead({ name: name, email: email, subject: subject, message: message, receivedAt: new Date().toISOString(), channels: resBody.channels || [] })
+          .then(function () { send(resBody); })
+          .catch(function () { send(resBody); });
       };
 
       if (hardBlock) {
@@ -96,7 +108,7 @@ module.exports = function handler(req, res) {
           finalize({ ok: true, delivered: ok.length > 0, channels: outcomes.map(function (o) { return { channel: o.value || 'err', delivered: o.status === 'fulfilled' }; }), spam: isSpam || undefined, score: verdict ? verdict.score : undefined, reason: verdict ? verdict.reason : undefined });
         });
       } else {
-        finalize({ ok: true, delivered: true, note: 'no delivery destination configured', spam: isSpam || undefined, score: verdict ? verdict.score : undefined, reason: verdict ? verdict.reason : undefined });
+        finalize({ ok: false, delivered: false, error: 'no delivery destination configured', spam: isSpam || undefined, score: verdict ? verdict.score : undefined, reason: verdict ? verdict.reason : undefined });
       }
     };
     if (Spam && typeof Spam.classify === 'function') {

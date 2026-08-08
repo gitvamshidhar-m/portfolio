@@ -1,0 +1,58 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "About — Vamshidhar Reddy | Performance Marketer",
+  description: "About Vamshidhar Reddy — AI-augmented performance marketer. From QA engineer to a marketer who builds. 10+ years across SEO, PPC, CRO and AI tools.",
+  canonical: "https://vamshidharm.vercel.app/about.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "about.html",
+};
+const body = "<section>\n\n  <div class=\"wrap grid2\">\n    <div class=\"reveal\">\n      <span class=\"tag\">About Me</span>\n      <h1>From QA Engineer to a Marketer Who Builds</h1>\n      <p style=\"margin-top:18px;color:var(--muted)\">My career started in software testing — which taught me to break things down, find the root cause, and fix it. That same muscle now drives every campaign. I moved into digital marketing in 2015, managed budgets north of Rs.2L/month, then taught myself to code so I could stop waiting on developers and ship my own marketing tools.</p>\n      <p style=\"margin-top:12px;color:var(--muted)\">Today I sit in a rare middle lane: I plan the strategy with the CMO <b style=\"color:var(--txt)\">and</b> build the tool that executes it.</p>\n      <div class=\"how\">\n        <div class=\"step\"><span class=\"num\">01</span><div><b>Data-First</b><p>Every decision starts with real numbers — campaigns and budgets backed by GA4, Looker, and live dashboards.</p></div></div>\n        <div class=\"step\"><span class=\"num\">02</span><div><b>AI-Augmented</b><p>If a task repeats, I automate it. I build AI tools that cut hours of work into seconds.</p></div></div>\n        <div class=\"step\"><span class=\"num\">03</span><div><b>End-to-End</b><p>Strategy, execution, tracking, optimization — I own the full cycle until the result is proven.</p></div></div>\n        <div class=\"step\"><span class=\"num\">04</span><div><b>ROI Over Activity</b><p>More work doesn't mean better results. Every action has a measurable target.</p></div></div>\n      </div>\n    </div>\n    <div class=\"reveal\">\n      <div id=\"terminal\">\n        <div class=\"term-bar\">\n          <span class=\"dot\" style=\"background:#ff5f56\"></span>\n          <span class=\"dot\" style=\"background:#ffbd2e\"></span>\n          <span class=\"dot\" style=\"background:#27c93f\"></span>\n          <span style=\"margin-left:10px;color:var(--muted);font-size:12.5px;font-family:ui-monospace\">vamshidhar@portfolio: ~ — tap a question (or press ?)</span>\n        </div>\n        <div class=\"term-body\" id=\"termBody\">\n          <div class=\"out\"><span class=\"c3\">➜</span> welcome to my portfolio. ask me anything 👇</div>\n        </div>\n        <div class=\"qs\">\n          <button data-q=\"what\">What do you do?</button>\n          <button data-q=\"ppc\">Show a PPC win</button>\n          <button data-q=\"ai\">Your AI tools</button>\n          <button data-q=\"edge\">The edge</button>\n          <button data-q=\"hire\">Why hire you?</button>\n          <button data-q=\"role\">Match a role</button>\n        </div>\n        <div class=\"term-input\">\n          <input id=\"chatIn\" type=\"text\" placeholder='type \"seo\", \"ppc\", \"hire\"…' aria-label=\"Ask me anything\" autocomplete=\"off\">\n          <button id=\"micBtn\" aria-label=\"Ask with your voice\" title=\"Ask with your voice\" hidden>🎙️</button>\n          <button id=\"chatSend\" aria-label=\"Send message\">➤</button>\n        </div>\n        <div class=\"chat-tools\" id=\"chatTools\">\n          <button id=\"btCopy\">📋 Copy last Q&A</button>\n          <button id=\"btEmail\">📧 Email me this chat</button>\n        </div>\n        <div class=\"ragnote\">⚡ Live RAG — answers are grounded in my real documents (<b>api/kb.js</b>), then answered by an LLM.</div>\n      </div>\n      <div style=\"margin-top:22px\">\n        <span class=\"tag\">My journey</span>\n        <div class=\"tl\">\n          <div class=\"titem\"><span class=\"range\">2007–2014</span><h3>Software Test Engineering</h3><p style=\"color:var(--muted);font-size:14px\">Ainslee Software &amp; Corbz Data — built the analytical rigor behind every decision.</p></div>\n          <div class=\"titem\"><span class=\"range\">2015–2022</span><h3>SEO → PPC → Strategy</h3><p style=\"color:var(--muted);font-size:14px\">From SEO Executive to Campaign Specialist across four companies.</p></div>\n          <div class=\"titem\"><span class=\"range\">2023–Present</span><h3>AI-Powered Marketing</h3><p style=\"color:var(--muted);font-size:14px\">Managing Rs.2L+ ad budgets, 15% organic growth, and shipping AI products.</p></div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n</section>";
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script is:inline>
+    (() => {
+      const terminal = document.getElementById('termBody');
+      const input = document.getElementById('chatIn');
+      const send = document.getElementById('chatSend');
+      if (!terminal || !input || !send) return;
+
+      const fallback = {
+        what: "I'm a performance marketer with 10+ years in SEO, PPC, CRO, and AI-powered marketing. I also build and ship my own AI marketing tools.",
+        ppc: "I reduced cost per lead from Rs.1,100 to Rs.770 and improved ROAS from 3.2x to 5.5x while managing Rs.2L+ monthly ad budgets.",
+        ai: "I've built three live AI products solo: Hook AI, Creative Predictor, and an AI Growth Strategy Generator.",
+        edge: "I combine marketing strategy with hands-on product building, so I can plan the funnel and build the tool that improves it.",
+        hire: "I'm open to SEO, paid media, and AI-automation marketing roles. You can reach me through the Contact page, email, or LinkedIn.",
+        role: "My strongest fit is performance marketing, SEO, paid media, or AI/automation marketing roles where measurable growth matters.",
+      };
+      function append(kind, text) {
+        const line = document.createElement('div');
+        line.className = kind === 'user' ? 'out cmd' : 'out';
+        line.textContent = `➜ ${kind === 'user' ? 'You' : 'Vamshidhar'}: ${text}`;
+        terminal.appendChild(line);
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+      async function ask(question, key) {
+        const text = question.trim();
+        if (!text) return;
+        append('user', text);
+        send.disabled = true;
+        try {
+          const response = await fetch('/api/rag', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: text }) });
+          const data = await response.json();
+          append('bot', data.answer || fallback[key] || "I can help with SEO, PPC, AI tools, or hiring details. Ask me anything.");
+        } catch (_) {
+          append('bot', fallback[key] || "I can help with SEO, PPC, AI tools, or hiring details. Ask me anything.");
+        } finally {
+          send.disabled = false;
+        }
+      }
+      send.addEventListener('click', () => { const value = input.value; input.value = ''; ask(value); });
+      input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); send.click(); } });
+      document.querySelectorAll('.qs button').forEach(button => button.addEventListener('click', () => ask(button.textContent || '', button.dataset.q)));
+    })();
+  </script>
+</Base>
