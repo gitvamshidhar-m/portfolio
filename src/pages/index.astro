@@ -588,5 +588,6 @@ document.getElementById('rev').addEventListener('input',function(){document.getE
 document.getElementById('ads').addEventListener('input',function(){document.getElementById('pb').textContent=inr(this.value);calc();});
 calc();
 if('serviceWorker' in navigator&&!window.__swRegistered){window.__swRegistered=true;addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,referrer:document.referrer,ua:navigator.userAgent})}).catch(function(){});}
 </script>
 </Base>

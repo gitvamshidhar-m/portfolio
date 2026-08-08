@@ -25,6 +25,18 @@ function authorized(req) {
   const token = header.replace(/^Bearer\s+/i, '').trim();
   return ADMIN_TOKEN && token === ADMIN_TOKEN;
 }
+function zparse(result) {
+  // zrevrange returns {result: [member1, score1, member2, score2, ...]}
+  const arr = result && result.result;
+  if (!Array.isArray(arr)) return [];
+  const out = [];
+  for (let i = 0; i + 1 < arr.length; i += 2) {
+    let member = arr[i];
+    try { member = JSON.parse(member); } catch (e) {}
+    out.push({ name: member, count: parseInt(arr[i + 1], 10) || 0 });
+  }
+  return out;
+}
 
 module.exports = function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -33,18 +45,38 @@ module.exports = function handler(req, res) {
   if (!authorized(req)) return res.status(401).json({ error: 'Unauthorized' });
   if (!KV_URL || !KV_TOKEN) return res.status(503).json({ error: 'KV storage is not configured' });
 
-  // last 14 days, oldest first
   const days = Array.from({ length: 14 }, function (_, i) { return { day: isoDay(i - 13), key: 'views:daily:' + isoDay(i - 13) }; });
+  const today = isoDay(0);
+  const hours = Array.from({ length: 24 }, function (_, i) { return { hour: i, key: 'analytics:views:hour:' + today + ':' + i }; });
 
   Promise.all([
     command(['get', 'profile:views']), command(['get', 'profile:resume']), command(['get', 'profile:messages']), command(['get', 'profile:spam']),
     command(['lrange', 'leads:recent', '0', '49'])
-  ].concat(days.map(function (d) { return command(['get', d.key]); })))
+  ].concat(
+    days.map(function (d) { return command(['get', d.key]); }),
+    hours.map(function (h) { return command(['get', h.key]); }),
+    [
+      command(['zrevrange', 'analytics:pages', '0', '9']),
+      command(['zrevrange', 'analytics:refs', '0', '9']),
+      command(['zrevrange', 'analytics:devices', '0', '4']),
+      command(['get', 'analytics:views'])
+    ]
+  ))
     .then(function (items) {
       const leads = (items[4].result || []).map(function (item) { try { return JSON.parse(item); } catch (e) { return null; } }).filter(Boolean);
       const series = days.map(function (d, i) { return { day: d.day, views: number(items[5 + i]) }; });
-      res.json({ metrics: { views: number(items[0]), resumes: number(items[1]), messages: number(items[2]), spamBlocked: number(items[3]) }, leads: leads, views14: series });
-    }).catch(function () {
+      const hOffset = 5 + days.length;
+      const hourly = hours.map(function (h, i) { return { hour: h.hour, views: number(items[hOffset + i]) }; });
+      const aOffset = hOffset + hours.length;
+      const pages = zparse(items[aOffset]);
+      const refs = zparse(items[aOffset + 1]);
+      const devices = zparse(items[aOffset + 2]);
+      const totalViews = number(items[aOffset + 3]);
+      res.json({
+        metrics: { views: totalViews || number(items[0]), resumes: number(items[1]), messages: number(items[2]), spamBlocked: number(items[3]) },
+        leads: leads, views14: series, hourly: hourly, pages: pages, refs: refs, devices: devices
+      });
+    }).catch(function (e) {
       res.status(502).json({ error: 'Unable to load dashboard data' });
     });
 };

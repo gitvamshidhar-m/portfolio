@@ -193,6 +193,10 @@ const jsonLd = JSON.stringify({
         window.__swRegistered = true;
         addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
       }
+      if (!window.__analyticsFired) {
+        window.__analyticsFired = true;
+        fetch('/api/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: location.pathname, referrer: document.referrer, ua: navigator.userAgent }) }).catch(() => {});
+      }
     </script>
   )
 }
