@@ -5,6 +5,20 @@ const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 const STOP = new Set('a,an,the,and,or,but,to,of,for,in,on,at,is,are,was,were,am,be,been,being,do,does,did,you,your,youre,me,my,i,we,us,can,could,will,would,should,what,how,why,who,which,when,where,about,with,as,that,this,it,from,not,they,them,have,having,has,tell,me'.split(','));
 
+const TOPIC_META = {
+  profile: { label: 'Profile', url: '/#about' },
+  experience: { label: 'Experience', url: '/#experience' },
+  products: { label: 'AI Products', url: '/#projects' },
+  results: { label: 'Case Studies', url: '/blog.html' },
+  skills: { label: 'Skills', url: '/#skills' },
+  approach: { label: 'Approach', url: '/about.html' },
+  hire: { label: 'Hire Me', url: '/#for-you' },
+  contact: { label: 'Contact', url: '/#contact' },
+  education: { label: 'Education', url: '/resume.html' },
+  tools: { label: 'This Site', url: '/about.html' },
+  greeting: { label: 'Hello', url: '/' }
+};
+
 const rl = { hits: {}, last: Date.now() };
 const RL_WIN = 60000, RL_MAX = 20;
 function rate(key) {
@@ -100,8 +114,11 @@ module.exports = function handler(req, res) {
     })
   }).then(function (r) { return r.json(); }).then(function (j) {
     const answer = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || null;
-    const source = (best[0] ? best[0].topic : null) || null;
-    res.json({ answer: answer, mode: 'rag', source: source, topics: best.map(function (b) { return b.topic; }) });
+    const citations = best.map(function (b) {
+      const meta = TOPIC_META[b.topic] || { label: b.topic, url: null };
+      return { topic: b.topic, label: meta.label, url: meta.url };
+    });
+    res.json({ answer: answer, mode: 'rag', source: (citations[0] ? citations[0].label : null) || null, citations: citations });
   }).catch(function (err) {
     res.json({ answer: null, offline: true, error: String(err) });
   });

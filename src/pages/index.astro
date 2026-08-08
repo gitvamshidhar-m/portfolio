@@ -416,7 +416,7 @@ const answers={
 };
 function clearChat(){while(term.firstChild)term.removeChild(term.firstChild);}
 function line(html){const d=document.createElement('div');d.className='out';d.innerHTML=html;term.appendChild(d);while(term.children.length>3)term.removeChild(term.firstChild);term.scrollTop=term.scrollHeight;return d;}
-function botSay(gen,q){const t=line('<span class="c1">Vamshidhar</span><span class="typ"><b></b><b></b><b></b></span>');setTimeout(async()=>{const j=await gen();t.innerHTML='<span class="c3">➜</span> '+(j.rag?'<span class="aib">⚡ AI</span> ':'')+'<b style="color:var(--accent2)">Vamshidhar:</b> '+j.answer;if(q&&typeof logQA==='function')logQA(q,j.answer);if(j.source){const s=document.createElement('div');s.className='out src';s.innerHTML='<span class="c3">📎</span> grounded in: <b style="color:var(--accent2)">'+j.source+'</b>';term.appendChild(s);while(term.children.length>4)term.removeChild(term.firstChild);}term.scrollTop=term.scrollHeight;},320);}
+function botSay(gen,q){const t=line('<span class="c1">Vamshidhar</span><span class="typ"><b></b><b></b><b></b></span>');setTimeout(async()=>{const j=await gen();t.innerHTML='<span class="c3">➜</span> '+(j.rag?'<span class="aib">⚡ AI</span> ':'')+'<b style="color:var(--accent2)">Vamshidhar:</b> '+j.answer;if(q&&typeof logQA==='function')logQA(q,j.answer);if(j.citations&&j.citations.length){const s=document.createElement('div');s.className='out src';s.innerHTML='<span class="c3">📎</span> sources: '+j.citations.map(function(c){return '<a href="'+(c.url||'#')+'" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:underline">'+c.label+'</a>';}).join(' · ');term.appendChild(s);while(term.children.length>4)term.removeChild(term.firstChild);}term.scrollTop=term.scrollHeight;},320);}
 function ask(q){line('<span class="c3">➜</span> <b style="color:var(--accent2)">You:</b> '+q);}
 answers.greeting="Hi! I'm a digital marketing specialist who builds. Ask me about SEO, PPC, my AI tools, or why hire me.";
 answers.seo="I've grown organic traffic ~15% via SEO audits, technical fixes, keyword strategy and E-E-A-T hardening (GA4 + Search Console).";
@@ -451,7 +451,7 @@ async function genAnswer(q){
   try{
     const r=await fetch('/api/rag',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})});
     const j=await r.json();
-    if(j&&j.answer)return{answer:j.answer,rag:true,source:j.source||(j.topics&&j.topics[0])};
+    if(j&&j.answer)return{answer:j.answer,rag:true,citations:j.citations||[]};
   }catch(e){}
   return{answer:responder(q),rag:false};
 }

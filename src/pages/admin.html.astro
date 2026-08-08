@@ -31,10 +31,12 @@ const op = {
       </div>
       <div class="lead-head"><h2>Recent delivered leads</h2><button id="adminRefresh" class="btn" type="button">Refresh</button></div>
       <div id="leadList" class="lead-list"></div>
+      <div class="trend-head"><h2>Profile views · last 14 days</h2><span id="trendTotal" class="trend-total">—</span></div>
+      <div id="trendChart" class="trend-chart"></div>
     </div>
   </section>
   <style is:inline>{`
-    .admin-page{padding-top:72px;padding-bottom:88px;max-width:1060px}.admin-login{max-width:620px;margin:30px 0}.admin-login label{display:block;font-weight:700;margin-bottom:8px}.admin-login>div{display:flex;gap:10px}.admin-login input{flex:1;min-width:0;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--txt)}.admin-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:36px 0}.admin-metrics article,.lead-list article{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px}.admin-metrics span{display:block;color:var(--muted);font-size:13px}.admin-metrics b{display:block;font-size:30px;margin-top:7px;color:var(--accent2)}.lead-head{display:flex;justify-content:space-between;align-items:center;gap:16px}.lead-list{display:grid;gap:12px;margin-top:16px}.lead-list h3{margin:0 0 5px}.lead-list p{white-space:pre-wrap;color:var(--muted);margin:10px 0 0}.lead-meta{font-size:13px;color:var(--muted)}.empty{color:var(--muted);padding:20px 0}@media(max-width:680px){.admin-login>div{display:block}.admin-login button{width:100%;margin-top:10px}.admin-metrics{grid-template-columns:repeat(2,1fr)}}
+    .admin-page{padding-top:72px;padding-bottom:88px;max-width:1060px}.admin-login{max-width:620px;margin:30px 0}.admin-login label{display:block;font-weight:700;margin-bottom:8px}.admin-login>div{display:flex;gap:10px}.admin-login input{flex:1;min-width:0;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--txt)}.admin-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:36px 0}.admin-metrics article,.lead-list article{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px}.admin-metrics span{display:block;color:var(--muted);font-size:13px}.admin-metrics b{display:block;font-size:30px;margin-top:7px;color:var(--accent2)}.lead-head{display:flex;justify-content:space-between;align-items:center;gap:16px}.lead-list{display:grid;gap:12px;margin-top:16px}.lead-list h3{margin:0 0 5px}.lead-list p{white-space:pre-wrap;color:var(--muted);margin:10px 0 0}.lead-meta{font-size:13px;color:var(--muted)}.empty{color:var(--muted);padding:20px 0}.trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-top:34px}.trend-total{color:var(--accent2);font-weight:800;font-size:15px}.trend-chart{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;align-items:end;height:150px;margin-top:16px;padding:10px 4px 0;border:1px solid var(--line);background:var(--surface);border-radius:14px}.trend-col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%}.trend-bar{width:100%;max-width:26px;background:var(--grad);border-radius:5px 5px 0 0;opacity:.9;min-height:3px}.trend-col:hover .trend-bar{opacity:1}.trend-bar.empty{background:var(--line);opacity:.5}.trend-day{font-size:9.5px;color:var(--muted);transform:rotate(-45deg);white-space:nowrap;margin-top:4px}.trend-num{font-size:9.5px;color:var(--accent2);font-weight:700}@media(max-width:680px){.admin-login>div{display:block}.admin-login button{width:100%;margin-top:10px}.admin-metrics{grid-template-columns:repeat(2,1fr)}.trend-chart{grid-template-columns:repeat(7,1fr)}.trend-chart .trend-col:nth-child(n+8){display:none}}
   `}</style>
   <script is:inline>{`
     (function(){
@@ -48,7 +50,20 @@ const op = {
           document.getElementById('metricViews').textContent=m.views||0;document.getElementById('metricResumes').textContent=m.resumes||0;document.getElementById('metricMessages').textContent=m.messages||0;document.getElementById('metricSpam').textContent=m.spamBlocked||0;
           var leads=j.leads||[], list=document.getElementById('leadList');
           list.innerHTML=leads.length?leads.map(function(x){return '<article><h3>'+esc(x.subject||'No subject')+'</h3><div class="lead-meta">'+esc(x.name||'Unknown')+' · '+esc(x.email||'No email')+' · '+esc(x.receivedAt||'')+'</div><p>'+esc(x.message||'')+'</p></article>';}).join(''):'<p class="empty">No delivered leads have been recorded yet.</p>';
+          renderTrend(j.views14||[]);
         }).catch(function(e){data.hidden=true;setStatus(e.message||'Unable to load dashboard',true);});
+      }
+      function renderTrend(series){
+        var chart=document.getElementById('trendChart'), total=document.getElementById('trendTotal');
+        var max=1;series.forEach(function(p){if(p.views>max)max=p.views;});
+        var sum=0;series.forEach(function(p){sum+=p.views;});
+        total.textContent=sum+' views';
+        chart.innerHTML=series.map(function(p){
+          var h=Math.max(4,Math.round(p.views/max*100));
+          var label=p.day.slice(5); // MM-DD
+          var isEmpty=p.views===0;
+          return '<div class="trend-col" title="'+label+' · '+p.views+' views"><span class="trend-num">'+(p.views||'')+'</span><div class="trend-bar'+(isEmpty?' empty':'')+'" style="height:'+h+'%"></div><span class="trend-day">'+label+'</span></div>';
+        }).join('');
       }
       form.addEventListener('submit',function(e){e.preventDefault();token=input.value.trim();if(!token)return;load();});
       document.getElementById('adminRefresh').addEventListener('click',load);
