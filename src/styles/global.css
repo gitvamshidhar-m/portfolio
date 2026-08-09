@@ -498,7 +498,7 @@ body.bs-open{overflow:hidden}
 .nf-note{font-size:13px;margin-top:22px!important;margin-bottom:0!important}
 
 /* scroll-story hero */
-.hero-stage{height:235vh}
+.hero-stage{height:190vh}
 .hero-pin{position:sticky;top:0;min-height:100vh;overflow:hidden}
 .h-story{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:min(880px,94%);z-index:5}
 .h-beats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -508,7 +508,7 @@ body.bs-open{overflow:hidden}
 .h-beat p{color:var(--muted);font-size:12px;line-height:1.55;margin-top:5px}
 .h-progress{position:absolute;left:0;right:0;bottom:-16px;height:3px;background:var(--line);border-radius:3px;overflow:hidden}
 .h-progress span{display:block;height:100%;background:var(--grad);transform:scaleX(0);transform-origin:left}
-@media(min-width:1200px){.hero-stage{height:245vh}}
+@media(min-width:1200px){.hero-stage{height:200vh}}
 @media(max-width:640px){.h-beats{grid-template-columns:1fr 1fr 1fr;gap:8px}.h-beat{padding:10px 12px}.h-beat p{display:none}.h-beat span{font-size:10px}.h-beat b{font-size:12.5px}.h-story{bottom:14px}}
 @media (prefers-reduced-motion: reduce){
   .hero-stage{height:auto}

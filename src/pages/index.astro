@@ -615,9 +615,9 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
     var vh=window.innerHeight;
     var max=Math.max(1,(stage.offsetHeight-vh));
     var s=clamp(-top/max,0,1);
-    var g=clamp(s/0.55,0,1);
+    var g=clamp(s/0.65,0,1);
     var list=[tag,hero,typewrap,roles,ticker,socials,sub];
-    for(var i=0;i<list.length;i++){if(list[i])list[i].style.opacity=String(1-g);}
+    for(var i=0;i<list.length;i++){if(list[i])list[i].style.opacity=String(1-g*0.35);}
     if(grid)grid.style.transform='translateY('+(s*120)+'px)';
     if(hero)hero.style.transform='translateY('+(s*-36)+'px) scale('+(1-s*0.12)+')';
     beats.forEach(function(b,i){if(b)b.style.opacity=String(clamp((s-(i*0.27))/0.3,0,1));});
