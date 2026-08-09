@@ -1,4 +1,4 @@
-const Spam = require('./spam');
+const Spam = require('../libs/spam');
 
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();

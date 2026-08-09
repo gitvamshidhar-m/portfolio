@@ -1,4 +1,4 @@
-const KB = require('./kb');
+const KB = require('../libs/kb');
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
