@@ -1,0 +1,80 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  const sorted = [...posts].sort((a, b) => new Date(b.data.date) - new Date(a.data.date));
+  return sorted.map((post) => ({
+    params: { slug: post.id },
+    props: { post, all: sorted },
+  }));
+}
+
+const { post, all } = Astro.props;
+const { Content } = await render(post);
+const idx = all.findIndex((p) => p.id === post.id);
+const newer = idx > 0 ? all[idx - 1] : null;
+const older = idx < all.length - 1 ? all[idx + 1] : null;
+const ptags = post.data.tags && post.data.tags.length ? post.data.tags : [post.data.tag];
+const related = all.filter((p) => p.id !== post.id && p.data.tags && p.data.tags.some((t) => ptags.includes(t))).slice(0, 3);
+const relatedFallback = related.length > 0 ? related : all.filter((p) => p.id !== post.id).slice(0, 3);
+const site = 'https://vamshidharm.vercel.app';
+const abs = site + '/blog/' + post.id + '.html';
+const d = post.data;
+const fmtDate = new Date(d.date).toISOString().slice(0, 10);
+const op = {
+  title: d.title + ' | Vamshidhar Reddy',
+  description: d.description,
+  canonical: abs,
+  ogImage: '',
+  variant: 'sub',
+  active: 'blog/' + post.id + '.html',
+};
+const ld = {
+  '@context': 'https://schema.org', '@type': 'BlogPosting',
+  headline: d.title, description: d.description, url: abs,
+  datePublished: fmtDate, inLanguage: 'en',
+  author: { '@type': 'Person', name: 'Vamshidhar Reddy M', url: site + '/' },
+  publisher: { '@type': 'Person', name: 'Vamshidhar Reddy M' },
+  mainEntityOfPage: abs,
+  keywords: ptags.join(', '),
+};
+---
+<Base {...op}>
+  <section class="wrap">
+    <article class="article">
+      <a class="back" href="/blog.html">&larr; All posts</a>
+      <div class="ameta"><b>{d.tag}</b><span>{fmtDate}</span><span>{d.read}</span></div>
+      <h1>{d.title}</h1>
+      <Content />
+      <hr style="margin:36px 0;border:none;border-top:1px solid var(--line)" />
+      <div class="ptags"><b>Topics:</b>{ptags.map((t) => <a href="/blog.html" class="pchip">{t}</a>)}</div>
+      <p style="color:var(--muted)"><b style="color:var(--accent2)">Vamshidhar</b> &mdash; performance marketer who builds AI tools. Open to work. <a href="/contact.html">Contact &rarr;</a></p>
+      {relatedFallback.length > 0 && (
+        <div class="prbox rel">
+          <h3>Related reading</h3>
+          {relatedFallback.map((r) => (
+            <a class="pr-card" href={'/blog/' + r.id + '.html'}>
+              <small>{r.data.tag}</small><b>{r.data.title}</b>
+              <span>{r.data.read}</span>
+            </a>
+          ))}
+        </div>
+      )}
+      <div class="prbox">
+        {newer ? (
+          <a class="pr-card" href={'/blog/' + newer.id + '.html'}>
+            <small>Newer</small><b>{newer.data.title}</b>
+          </a>
+        ) : <span></span>}
+        {older ? (
+          <a class="pr-card" href={'/blog/' + older.id + '.html'}>
+            <small>Older</small><b>{older.data.title}</b>
+          </a>
+        ) : <span></span>}
+      </div>
+    </article>
+  </section>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(ld)} />
+</Base>
