@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: 'Page not found — Vamshidhar Reddy',
+  description: 'This page does not exist on vamshidharm.vercel.app. Go home, browse the projects, or search the blog.',
+  canonical: 'https://vamshidharm.vercel.app/404.html',
+  ogImage: '',
+  variant: 'sub',
+  active: '404.html',
+};
+---
+<Base {...op}>
+  <section class="wrap">
+    <div class="nf">
+      <div class="nf-code" aria-hidden="true">404</div>
+      <h1>This page took a wrong turn</h1>
+      <p>The URL doesn&rsquo;t exist — but most of what I do lives on the routes below. Search the blog or jump straight to a section.</p>
+      <div class="nf-links">
+        <button type="button" class="btn primary" onclick="window.__bsOpen&&window.__bsOpen()">🔍 Search the blog</button>
+        <a class="btn link-secondary" href="/">Go home</a>
+        <a class="btn link-secondary" href="/projects.html#demos">Live demos</a>
+        <a class="btn link-secondary" href="/contact.html">Contact</a>
+      </div>
+      <p class="nf-note">Found this from a broken link? <a href="/contact.html">Tell me the URL</a> and I&rsquo;ll fix it.</p>
+    </div>
+  </section>
+</Base>
