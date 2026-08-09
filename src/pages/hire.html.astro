@@ -3,65 +3,59 @@ import Base from '../layouts/Base.astro';
 
 const op = {
   title: "Hire Me — Personalized Pitch Generator | Vamshidhar Reddy",
-  description: "Paste a job description (or answer 4 quick questions) and get a personalized outreach email + first-30-days plan from Vamshidhar, an AI-augmented performance marketer.",
+  description: "Paste a job description or answer a quick quiz and get a personalized outreach email plus a first-30-days plan from Vamshidhar, an AI-augmented performance marketer.",
   canonical: "https://vamshidharm.vercel.app/hire.html",
   ogImage: "",
   variant: 'sub',
-  active: '',
+  active: 'hire.html',
 };
 const body = `
 <section>
   <div class="wrap">
-    <div class="sec-head reveal"><span class="tag">Hire me · build your pitch</span><h1>Paste the JD. I write my reach-out email for you.</h1></div>
-    <p class="reveal" style="text-align:center;max-width:760px;margin:0 auto 20px;color:var(--muted)">I don't send the same CV to everyone. Paste a real job description — or answer 4 questions — and this tool drafts a tailored email plus a concrete first-30-days plan, grounded in my actual results.</p>
+    <div class="sec-head reveal"><span class="tag">Hire me · build your pitch</span><h1>Paste the JD. I write your reach-out email.</h1></div>
+    <p class="reveal" style="text-align:center;max-width:760px;margin:0 auto 20px;color:var(--muted)">I don't send the same CV everywhere. Three steps — paste a real job description or answer a quick quiz — and this tool drafts a tailored email plus a concrete first-30-days plan grounded in my real results.</p>
+
+    <div class="stepbar reveal" id="stepbar">
+      <div class="stepbar-item on" data-s="1"><span class="sb-n">1</span>How we pitch</div>
+      <div class="stepbar-item" data-s="2"><span class="sb-n">2</span>Details</div>
+      <div class="stepbar-item" data-s="3"><span class="sb-n">3</span>Generate &amp; send</div>
+      <span class="sb-prog" id="sbProg"></span>
+    </div>
 
     <div class="reveal" style="max-width:820px;margin:0 auto">
-      <div id="hireTabs" class="hireTabs">
-        <button type="button" class="on" data-t="jd">Paste a job description</button>
-        <button type="button" data-t="quiz">Quick wizard</button>
-      </div>
-
-      <form id="hireForm" style="display:grid;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:14px">
+      <form id="hireForm" style="display:grid;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:14px">
         <label class="hp" aria-hidden="true">Website <input name="hp_three" type="text" tabindex="-1" autocomplete="off"></label>
 
-        <div data-pane="jd">
+        <div data-pane="mode">
+          <p style="margin:0 0 10px;color:var(--muted);font-size:14px">How do you want to build it?</p>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <label class="qcard"><input type="radio" name="mode" value="jd" checked> 📋 I have a job description</label>
+            <label class="qcard"><input type="radio" name="mode" value="quiz"> ⚡ Quick quiz instead</label>
+          </div>
+        </div>
+
+        <div data-pane="jd" hidden>
           <input name="company" placeholder="Company you're applying to (optional)">
-          <textarea name="jd" rows="7" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt)" placeholder="Paste the full job description here… (title, requirements, what the team runs: Google Ads? SEO? AI tooling?)" required></textarea>
-          <select name="focus">
-            <option value="growth">Emphasis: full-funnel growth</option>
-            <option value="ppc">Emphasis: Paid Media / PPC</option>
-            <option value="seo">Emphasis: SEO &amp; Content</option>
-            <option value="ai">Emphasis: AI Automation</option>
-          </select>
+          <textarea name="jd" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt)" placeholder="Paste the full job description here… (title, requirements, what the team runs)"></textarea>
         </div>
 
         <div data-pane="quiz" hidden>
-          <p style="color:var(--muted);font-size:14px;margin:0">The role is hiring for…</p>
-          <div class="quizgrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
-            <label class="qcard"><input type="radio" name="focus" value="ppc" checked> Paid Media / PPC</label>
-            <label class="qcard"><input type="radio" name="focus" value="seo"> SEO &amp; Content</label>
-            <label class="qcard"><input type="radio" name="focus" value="ai"> AI Automation</label>
-            <label class="qcard"><input type="radio" name="focus" value="growth"> Full-funnel Growth</label>
-          </div>
-          <label style="margin-top:10px;font-size:14px;color:var(--muted)">Company stage
-            <select name="stage">
-              <option value="startup">Startup — one owner of demand</option>
-              <option value="scale">Scale-up — channel discipline needed</option>
-              <option value="enterprise">Enterprise — heavy tooling &amp; approvals</option>
-            </select>
-          </label>
-          <label style="margin-top:10px;font-size:14px;color:var(--muted)">The KPI they most mention
-            <select name="kpi">
-              <option value="roas">ROAS / ad efficiency</option>
-              <option value="cpl">Cost-per-lead</option>
-              <option value="leads">Lead volume</option>
-              <option value="traffic">Organic traffic</option>
-              <option value="retention">Retention / LTV</option>
-            </select>
-          </label>
+          <select name="focus"><option value="ppc">Paid Media / PPC</option><option value="seo">SEO &amp; Content</option><option value="ai">AI Automation</option><option value="growth">Full-funnel Growth</option></select>
+          <select name="stage"><option value="startup">Startup — one owner of demand</option><option value="scale">Scale-up — channel discipline needed</option><option value="enterprise">Enterprise — heavy tooling &amp; approvals</option></select>
+          <select name="kpi"><option value="roas">KPI: ROAS / ad efficiency</option><option value="cpl">KPI: Cost-per-lead</option><option value="leads">KPI: Lead volume</option><option value="traffic">KPI: Organic traffic</option><option value="retention">KPI: Retention / LTV</option></select>
         </div>
 
-        <button class="btn primary" type="submit">Generate my pitch →</button>
+        <div data-pane="review" hidden>
+          <b>Ready to draft.</b> The generator reads my real track record (ROAS 3.2x→5.5x, CPL −30%, +15% organic traffic, 3 solo AI products) and your inputs, then writes a tailored email + a 30-day plan. Takes ~15s, costs nothing.
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap">
+          <button class="btn" type="button" id="backBtn" hidden>← Back</button>
+          <span style="display:flex;gap:10px;margin-left:auto">
+            <button class="btn primary" type="button" id="nextBtn">Continue →</button>
+            <button class="btn primary" type="submit" id="genBtn" hidden>Generate my pitch →</button>
+          </span>
+        </div>
         <p id="hmsg" class="formmsg" hidden></p>
       </form>
 
@@ -82,7 +76,7 @@ const body = `
         </div>
       </div>
 
-      <p class="reveal" style="margin-top:22px;color:var(--muted);font-size:13px;text-align:center">Generated from my real track record (traceable in the projects, blog and staff dashboard) — no invented numbers. Uses Groq AI when available, falls back to a smart template.</p>
+      <p class="reveal" style="margin-top:22px;color:var(--muted);font-size:13px;text-align:center">Generated from my real track record — no invented numbers. AI via Groq when available, smart template as fallback.</p>
     </div>
   </div>
 </section>
@@ -92,56 +86,68 @@ const body = `
   <Fragment set:html={body} />
   <script is:inline>
     (function () {
-      var tabs = document.querySelectorAll('#hireMode button');
-      tabs.forEach(function (b) {
-        b.addEventListener('click', function () {
-          tabs.forEach(function (x) { x.classList.remove('on'); });
-          b.classList.add('on');
-          document.querySelectorAll('[data-pane]').forEach(function (p) { p.hidden = b.dataset.t !== p.dataset.pane; });
-          document.querySelectorAll('[data-pane] select, [data-pane] textarea, [data-pane] input').forEach(function (el) { el.required = b.dataset.t === el.closest('[data-pane]').dataset.pane && (el.name === 'jd'); });
-        });
-      });
+      var bar = document.getElementById('stepbar');
+      var prog = document.getElementById('sbProg');
+      var nextBtn = document.getElementById('nextBtn');
+      var backBtn = document.getElementById('backBtn');
+      var genBtn = document.getElementById('genBtn');
       var f = document.getElementById('hireForm');
-      if (!f) return;
+      if (!bar || !f) return;
+      var step = 1;
+      function getMode() { var on = f.querySelector('input[name=mode]:checked'); return on ? on.value : 'jd'; }
+      function render() {
+        var active = step >= 2 ? (step === 3 ? 'review' : (getMode() === 'quiz' ? 'quiz' : 'jd')) : 'mode';
+        f.querySelectorAll('[data-pane]').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== active; });
+        genBtn.hidden = step !== 3;
+        nextBtn.hidden = step === 3;
+        backBtn.hidden = step === 1;
+        bar.querySelectorAll('.stepbar-item').forEach(function (b) { b.classList.toggle('on', +b.dataset.s <= step); });
+        prog.style.width = (step * 33.2) + '%';
+      }
+      nextBtn.addEventListener('click', function () {
+        if (step === 1) { step = 2; }
+        else if (step === 2) {
+          if (getMode() === 'jd') {
+            var jd = f.querySelector('[name=jd]');
+            if (!String(jd.value || '').trim()) { jd.focus(); return; }
+          }
+          step = 3;
+        }
+        render();
+      });
+      backBtn.addEventListener('click', function () { if (step > 1) step--; render(); });
+      f.querySelectorAll('.qcard input').forEach(function (i) { i.addEventListener('change', function () { if (step === 2) render(); }); });
+
       var msg = document.getElementById('hmsg');
       var out = document.getElementById('hout');
-      var subj = document.getElementById('hsubj');
-      var hbody = document.getElementById('hbody');
-      var hplan = document.getElementById('hplan');
-      var btn = f.querySelector('button[type=submit]');
+      var subj = document.getElementById('hsubj'), hbody = document.getElementById('hbody'), hplan = document.getElementById('hplan');
       f.addEventListener('submit', function (e) {
         e.preventDefault();
-        var mode = document.querySelector('#hireMode .on').dataset.t;
-        btn.disabled = true; btn.textContent = 'Drafting — takes ~15s…';
+        genBtn.disabled = true; genBtn.textContent = 'Drafting — ~15s…';
         var body = {};
-        new FormData(f).forEach(function (v, k) { body[k] = v; });
-        body.mode = mode;
+        new FormData(f).forEach(function (v, k) { if (v) body[k] = v; });
+        body.mode = getMode();
         fetch('/api/coverletter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
           .then(function (r) { return r.json(); })
           .then(function (j) {
             subj.textContent = j.subject || 'Your pitch';
             hbody.textContent = j.email || j.error || '';
-            hplan.innerHTML = (j.plan || []).map(function (p) { return '<li>' + p + '</li>'; }).join('');
-            var sub = encodeURIComponent(j.subject || '');
-            var body2 = encodeURIComponent((j.email || '') + '\n\n---\nFirst 30 days:\n' + (j.plan || []).map(function (p) { return '• ' + p; }).join('\n'));
+            hplan.innerHTML = (j.plan || []).map(function (p) { return '<li>' + String(p).replace(/&/g, '&amp;') + '</li>'; }).join('');
+            var sm = encodeURIComponent(j.subject || ''), bd = encodeURIComponent((j.email || '') + '\n\n---\nFirst 30 days:\n' + (j.plan || []).map(function (p) { return '• ' + p; }).join('\n'));
             var g = document.getElementById('hmail');
-            g.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=&su=' + sub + '&body=' + body2;
+            g.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=&su=' + sm + '&body=' + bd;
             out.hidden = false;
             out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try { if (window.va) window.va('event', { name: 'hire_generated', label: getMode() }); } catch (e) {}
           })
-          .catch(function () {
-            msg.hidden = false; msg.className = 'formmsg err';
-            msg.textContent = 'Could not draft right now — email me geovamshidhar@gmail.com and I will reply with a tailored pitch.';
-          })
-          .then(function () { btn.disabled = false; btn.textContent = 'Generate my pitch →'; });
+          .catch(function () { msg.hidden = false; msg.className = 'formmsg err'; msg.textContent = 'Could not draft right now — email geovamshidhar@gmail.com for a tailored pitch.'; })
+          .then(function () { genBtn.disabled = false; genBtn.textContent = 'Generate my pitch →'; });
       });
-      var cp = document.getElementById('hcp');
-      cp.addEventListener('click', function () {
-        navigator.clipboard.writeText(hbody.textContent).then(function () {
-          cp.textContent = 'Copied ✓';
-          setTimeout(function () { cp.textContent = 'Copy email'; }, 1500);
-        }).catch(function () {});
+      var cp = document.getElementById('hcopy');
+      if (cp) cp.addEventListener('click', function () {
+        navigator.clipboard.writeText(hbody.textContent).then(function () { cp.textContent = 'Copied ✓'; setTimeout(function () { cp.textContent = 'Copy email'; }, 1500); }).catch(function () {});
       });
+      render();
     })();
   </script>
 </Base>

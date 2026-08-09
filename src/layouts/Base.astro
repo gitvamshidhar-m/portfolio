@@ -26,11 +26,11 @@ const isBlogPage = Boolean(canonical.match(/\/blog\/.+/));
 const indexLinks = [
   ['about.html', 'About'], ['blog.html', 'Blog'], ['projects.html', 'Projects'],
   ['projects.html#demos', 'Demos'], ['experience.html', 'Experience'], ['skills.html', 'Skills'],
-  ['faq.html', 'FAQ'], ['#insights', 'ROI'], ['contact.html', 'Contact'],
+  ['faq.html', 'FAQ'], ['#insights', 'ROI'], ['hire.html', 'Hire Me'], ['contact.html', 'Contact'],
 ];
 const subLinks = [
   ['/', 'Home'], ['/about.html', 'About'], ['/blog.html', 'Blog'], ['/projects.html', 'Projects'],
-  ['/projects.html#demos', 'Demos'], ['/skills.html', 'Skills'], ['/experience.html', 'Experience'], ['/faq.html', 'FAQ'], ['/contact.html', 'Contact'],
+  ['/projects.html#demos', 'Demos'], ['/skills.html', 'Skills'], ['/experience.html', 'Experience'], ['/faq.html', 'FAQ'], ['/hire.html', 'Hire Me'], ['/contact.html', 'Contact'],
 ];
 const links = variant === 'index' ? indexLinks : subLinks;
 
@@ -40,7 +40,7 @@ const crumbLabel = (() => {
   if (/blog\.html$/.test(canonical)) return 'Blog';
   if (/admin\.html$/.test(canonical)) return 'Dashboard';
   if (/resume\.html$/.test(canonical)) return 'Resume';
-  const map = { about: 'About', projects: 'Projects', skills: 'Skills', experience: 'Experience', faq: 'FAQ', contact: 'Contact' };
+  const map = { about: 'About', projects: 'Projects', skills: 'Skills', experience: 'Experience', faq: 'FAQ', contact: 'Contact', hire: 'Hire Me' };
   const key = canonical.match(/\/([a-z-]+)\.html$/);
   return (key && map[key[1]]) || title;
 })();
@@ -168,7 +168,7 @@ const ogUrl = ogImage
   <LivePulse />
   <footer>
     <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
-    <div class="wrap ft" style="margin-top:14px"><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
+    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
     <div class="wrap ft" style="margin-top:10px">Services — <a href="/seo.html">SEO &amp; Content</a> · <a href="/ads.html">Paid Media / PPC</a> · <a href="/ai-automation.html">AI Automation</a></div>
     <div class="wrap ft ft-seo">Built as proof, not just a demo — semantic HTML (&lt;1 h1) with a clean h2–h3 tree, Person + FAQPage JSON-LD, canonical URL, Open Graph/Twitter cards, RSS feed, sitemap.xml, robots.txt &amp; llms.txt.</div>
   </footer>
@@ -210,5 +210,17 @@ const ogUrl = ogImage
   )
 }
 {variant !== 'index' && <Search />}
+<script is:inline>
+  (function () {
+    function va(name, label) { try { if (window.va) window.va('event', { name: name, label: label || '' }); } catch (e) {} }
+    document.querySelectorAll('a[download]').forEach(function (a) {
+      a.addEventListener('click', function () { va('file_download', (a.getAttribute('download') || 'file').replace(/\.\w+$/, '')); });
+    });
+    document.addEventListener('submit', function (e) {
+      var f = e.target;
+      if (f && f.id) va('form_submit', f.id);
+    }, true);
+  }());
+</script>
 </body>
 </html>

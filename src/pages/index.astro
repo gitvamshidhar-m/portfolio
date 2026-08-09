@@ -631,4 +631,16 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
   draw();
 })();
 </script>
+  <script is:inline>
+  (function () {
+    var v = (new URLSearchParams(location.search)).get('v') || 'a';
+    var role = document.getElementById('heroRole');
+    var tag = document.querySelector('.hero .tag');
+    if (v === 'b' && role) {
+      role.textContent = 'The marketer who codes. I run performance marketing AND ship the AI tools behind it — 3 live products (ROAS 3.2x→5.5x, CPL −30%), all measurable on this page.';
+      if (tag) tag.textContent = '⚡ Live A/B: variant B active ($v=b test). Performance Marketing · SEO · AI-Augmented.';
+    }
+    try { localStorage.setItem('ab_v', v); if (window.va) window.va('event', { name: 'hero_variant', label: v }); } catch (e) {}
+  })();
+  </script>
 </Base>

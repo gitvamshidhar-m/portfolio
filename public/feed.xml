@@ -6,7 +6,16 @@
 <atom:link href="https://vamshidharm.vercel.app/feed.xml" rel="self" type="application/rss+xml"/>
 <description>SEO, PPC, paid media and AI marketing notes from a marketer who builds.</description>
 <language>en</language>
-<lastBuildDate>Sat, 08 Aug 2026 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 09 Aug 2026 00:00:00 GMT</lastBuildDate>
+  <item>
+    <title>I Built a Cover Letter Generator That Writes in My Voice</title>
+    <link>https://vamshidharm.vercel.app/blog/i-built-a-cover-letter-generator-that-writes-in-my-voice.html</link>
+    <guid isPermaLink="true">https://vamshidharm.vercel.app/blog/i-built-a-cover-letter-generator-that-writes-in-my-voice.html</guid>
+    <pubDate>Sun, 09 Aug 2026 00:00:00 GMT</pubDate>
+    <category>Build</category>
+    <description><![CDATA[Every job seeker sends the same template CV. I built a tool that turns a pasted job description into a personalized outreach email and a first-30-days plan grounded in my real track record. Here is the funnel, the prompt, and why grounding beats prompting.]]></description>
+    <content:encoded><![CDATA[<p>Most candidates send the same CV to every company, tweak the greeting, and hope. I built the opposite: a generator, live on this site, that takes a pasted job description and writes a tailored outreach email plus a concrete first-30-days plan in my voice. It works because it is grounded in my real track record — not generic AI flattery.</p><h2>The pipeline</h2><p>The endpoint takes a mode and a few inputs: a pasted JD, or four quiz answers (role focus, company stage, KPI). It retrieves only the relevant pieces of my knowledge base, so every claim stays traceable, then asks Groq for a short outreach email and up to five specific first-30-days bullets. If the model is unavailable, a smart template falls back with the same structure.</p><h2>Four rules that mattered</h2><p>Use only facts in context. Never invent numbers. First person. End with a low-friction ask (a 15-minute call). The "never invent numbers" rule is the differentiator — my numbers are real and clickable on this site.</p><blockquote>Don't make candidates invent enthusiasm. Make them prove their record.</blockquote><p>Try it yourself: <a href="https://vamshidharm.vercel.app/hire.html">paste a job description and generate your pitch</a>.</p>]]></content:encoded>
+  </item>
   <item>
     <title>Technical SEO on My Own Portfolio: How to Inspect It</title>
     <link>https://vamshidharm.vercel.app/blog/technical-seo-for-your-own-portfolio.html</link>
