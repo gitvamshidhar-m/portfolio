@@ -24,12 +24,12 @@ const isBlogPage = Boolean(canonical.match(/\/blog\/.+/));
 
 const indexLinks = [
   ['about.html', 'About'], ['blog.html', 'Blog'], ['projects.html', 'Projects'],
-  ['#hooklab', 'Hook'], ['experience.html', 'Experience'], ['skills.html', 'Skills'],
+  ['projects.html#demos', 'Demos'], ['experience.html', 'Experience'], ['skills.html', 'Skills'],
   ['faq.html', 'FAQ'], ['#insights', 'ROI'], ['contact.html', 'Contact'],
 ];
 const subLinks = [
   ['/', 'Home'], ['/about.html', 'About'], ['/blog.html', 'Blog'], ['/projects.html', 'Projects'],
-  ['/skills.html', 'Skills'], ['/experience.html', 'Experience'], ['/faq.html', 'FAQ'], ['/contact.html', 'Contact'],
+  ['/projects.html#demos', 'Demos'], ['/skills.html', 'Skills'], ['/experience.html', 'Experience'], ['/faq.html', 'FAQ'], ['/contact.html', 'Contact'],
 ];
 const links = variant === 'index' ? indexLinks : subLinks;
 
@@ -160,7 +160,7 @@ const jsonLd = JSON.stringify({
   <slot />
   <footer>
     <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
-    <div class="wrap ft" style="margin-top:14px"><a href="/#hooklab">Hook Lab</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
+    <div class="wrap ft" style="margin-top:14px"><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
     <div class="wrap ft ft-seo">Built as proof, not just a demo — semantic HTML (&lt;1 h1) with a clean h2–h3 tree, Person + FAQPage JSON-LD, canonical URL, Open Graph/Twitter cards, RSS feed, sitemap.xml, robots.txt &amp; llms.txt.</div>
   </footer>
 </main>
