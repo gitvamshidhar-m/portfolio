@@ -6,9 +6,11 @@
     var ref = document.referrer || '';
     var refHost = '';
     try { refHost = new URL(ref).hostname.replace(/^www\./, ''); } catch (e) {}
+    try { window.__who = String(p.get('who') || '').trim().slice(0, 60); } catch (e) {}
     var r = document.getElementById('prz');
     var tag = '', link = null, msg = '', step = 'none';
-    if (utm === 'linkedin' || /linkedin\.com/.test(ref)) { step = 'linkedin'; tag = 'LinkedIn'; msg = 'Seeing me from LinkedIn — recruiters usually jump straight to the proof.'; link = '/projects.html#proof'; }
+    if (window.__who) { step = 'who'; tag = 'Tailored'; msg = 'I see you opened the link meant for you — the whole site re-tailors itself. Chat below is company-aware.'; link = '/hire-recruiters.html'; }
+    else if (utm === 'linkedin' || /linkedin\.com/.test(ref)) { step = 'linkedin'; tag = 'LinkedIn'; msg = 'Seeing me from LinkedIn — recruiters usually jump straight to the proof.'; link = '/projects.html#proof'; }
     else if (utm === 'ads' || /ads|ppc/.test(cam)) { step = 'ads'; tag = 'Paid Media'; msg = 'You should see what the ad spend buys: paste a creative, get a predicted CTR — live product.'; link = '/projects.html#creative'; }
     else if (utm === 'seo' || /google\.|bing\.|duckduckgo/.test(ref)) { step = 'seo'; tag = 'Organic Search'; msg = 'Caught from search — here is the SEO case history that shows how my own site ranks.'; link = '/blog.html'; }
     else if (utm === 'ai' || /ai/.test(cam)) { step = 'ai'; tag = 'AI Automation'; msg = 'Interested in the AI side — three products I built solo prove the build half.'; link = '/projects.html#ai'; }

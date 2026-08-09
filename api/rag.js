@@ -54,7 +54,10 @@ function retrieve(question, topN) {
   return scored.filter(function (x) { return x.score > 0; }).slice(0, topN).map(function (x) { return x.chunk; });
 }
 
-function buildSystem(ctx) {
+function buildSystem(ctx, who) {
+  const whoLine = who
+    ? '\nVISITOR: They are from/related to "' + who + '". Tailor the greeting to them and their company, and let them know you are contactable for that context.'
+    : '';
   return 'You are \"Vamshidhara\", the AI assistant on Vamshidhar Reddy M\'s personal portfolio.\n\n'
     + 'THE PERSON: Vamshidhar Reddy M is an performance marketer who builds AI tools (10+ years) who also builds his own software tools. He is from Hyderabad, India, and is open to work.\n\n'
     + 'RULES:\n'
@@ -62,7 +65,9 @@ function buildSystem(ctx) {
     + '- Ground every answer ONLY in the CONTEXT below. Never invent facts, numbers, tools, or URLs that are not in the context.\n'
     + '- If the context does not contain the answer, say you do not have that detail on hand and offer topics: SEO, PPC/ads, AI tools, products, or hire me.\n'
     + '- Small talk (hi, hello, thanks) -> greet warmly and offer to help.\n'
-    + '- For hiring/contact, point to email geovamshidhar@gmail.com, phone +91-7981719085, or the Contact section; include the portfolio URL https://vamshidharm.vercel.app and any live product URLs from the context.\n\n'
+    + '- For hiring/contact, point to email geovamshidhar@gmail.com, phone +91-7981719085, or the Contact section; include the portfolio URL https://vamshidharm.vercel.app and any live product URLs from the context.\n'
+    + 'SPECIAL OPTION: a visitor may identify as being from a specific company (e.g. through a special link I share). If so, greet them personally and tailor your 30-second pitch toward what they do.\n\n'
+    + whoLine + '\n\n'
     + 'CONTEXT:\n' + (ctx || '(no relevant context found)');
 }
 
@@ -77,8 +82,10 @@ module.exports = function handler(req, res) {
   }
 
   let question = '';
+  let who = '';
   try {
     question = ((req.body && req.body.question) || '').toString().trim().slice(0, 500);
+    who = ((req.body && req.body.who) || '').toString().trim().slice(0, 80);
   } catch (e) { question = ''; }
   if (!question) {
     res.status(400).json({ error: 'missing question' });
@@ -108,7 +115,7 @@ module.exports = function handler(req, res) {
       temperature: 0.35,
       max_tokens: 460,
       messages: [
-        { role: 'system', content: buildSystem(ctx) },
+        { role: 'system', content: buildSystem(ctx, who) },
         { role: 'user', content: 'Question: ' + question }
       ]
     })

@@ -41,7 +41,8 @@ const body = "<section>\n\n  <div class=\"wrap grid2\">\n    <div class=\"reveal
         append('user', text);
         send.disabled = true;
         try {
-          const response = await fetch('/api/rag', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: text }) });
+          const who = window.__who || '';
+          const response = await fetch('/api/rag', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: text, who: who }) });
           const data = await response.json();
           append('bot', data.answer || fallback[key] || "I can help with SEO, PPC, AI tools, or hiring details. Ask me anything.");
         } catch (_) {

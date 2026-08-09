@@ -572,3 +572,35 @@ body.bs-open{overflow:hidden}
 .sb-n{width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px}
 .stepbar-item.on .sb-n{background:var(--accent);border-color:var(--accent);color:#fff}
 .sb-prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease}
+
+/* ---- hire-recruiters page ---- */
+.rm-grid{display:grid;gap:14px}
+.rm-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.rm-hero h2{margin:10px 0 8px}
+.rm-list{list-style:none;display:grid;gap:12px;margin:10px 0 0;padding:0}
+.rm-list li{display:grid;gap:2px;border-bottom:1px dashed var(--line);padding-bottom:10px;font-size:14px}
+.rm-list li b{font-size:16px}
+.rm-list li span{color:var(--muted);font-size:13px}
+.rm-cta{text-align:center}
+/* ---- changelog page ---- */
+.cl-head{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;font-size:14px;margin-bottom:16px}
+.cl-list{list-style:none;margin:0;padding:0;display:grid}
+.cl-list li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:12px 6px;font-size:14px}
+.cl-dot{width:10px;height:10px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 4px rgba(47,243,192,.12)}
+.cl-msg{font-weight:600;color:var(--txt);line-height:1.4}
+.cl-meta{display:grid;gap:2px;font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.cl-sha{font-family:ui-monospace,monospace;color:var(--accent)}
+.cl-ago{color:var(--accent2)}
+.cl-goto{font-weight:700;color:var(--accent);text-decoration:none}
+/* ---- salary compass ---- */
+.compass{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:10px;align-items:end;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:860px;margin:18px auto 4px}
+.compass select{width:100%}
+.comp-out{margin:14px 0 0;padding:12px 14px;border:1px dashed var(--line);border-radius:10px;font-size:15px;font-weight:700;display:none}
+.comp-out.on{display:block;color:var(--accent2)}
+@media(max-width:720px){.compass{grid-template-columns:1fr}}
+/* ---- variant B meta-note ---- */
+#vnote{position:fixed;right:14px;bottom:14px;z-index:99;background:rgba(10,12,20,.92);border:1px solid var(--accent);color:var(--txt);font-size:12.5px;padding:9px 12px;border-radius:10px;opacity:0;transform:translateY(6px);transition:.35s;box-shadow:var(--shadow)}
+#vnote.show{opacity:1;transform:none}
+#vnote b{color:var(--accent2)}
+@keyframes vnotePulse{0%,100%{box-shadow:0 0 0 0 rgba(47,243,192,.35)}50%{box-shadow:0 0 0 5px rgba(47,243,192,0)}}
+#vnote{border-color:var(--accent)}

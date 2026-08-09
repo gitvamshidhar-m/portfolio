@@ -66,6 +66,7 @@ const body = `
             <span style="display:flex;gap:8px;flex-wrap:wrap">
               <button type="button" class="btn" id="hcopy">Copy email</button>
               <a class="btn" id="hmail" target="_blank" rel="noopener noreferrer">Send via Gmail →</a>
+              <a class="btn" id="hplanCard" target="_blank" rel="noopener noreferrer">Plan card ↗</a>
             </span>
           </div>
           <pre id="hbody" style="white-space:pre-wrap;font-family:inherit;margin:12px 0 0;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;line-height:1.7"></pre>
@@ -73,8 +74,24 @@ const body = `
         <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px">
           <b>My first-30-days plan</b>
           <ol id="hplan" style="margin:10px 0 0 18px;color:var(--muted);display:grid;gap:8px"></ol>
+          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn" id="hAts">Download my CV for your ATS (.txt)</button>
+            <button type="button" class="btn" id="hAtsJson">ATS JSON</button>
+          </div>
         </div>
       </div>
+
+      
+      <div class="compass reveal">
+        <b>🧭 The compass — my honest ask</b>
+        <p style="margin:6px 0 12px;font-size:13px;color:var(--muted)">Pick what fits and get a real number. I'd rather shortlist ourselves than waste your time.</p>
+        <select id="compStage"><option value="startup">Company: startup / seed</option><option value="growth">Company: growth / funded</option><option value="enterprise">Company: enterprise</option></select>
+        <select id="compCity"><option value="remote-in">Remote (anywhere in India)</option><option value="hyderabad">Hyderabad (hybrid)</option><option value="remote-global">Remote (global hours overlap)</option></select>
+        <select id="compEquity"><option value="0">Base only</option><option value="mix">Base + meaningful equity / ESOPs</option><option value="equity">Stock-heavy (early stage)</option></select>
+        <button class="btn primary" type="button" id="compGo">Show my ask →</button>
+        <p class="comp-out" id="compOut"></p>
+      </div>
+
 
       <p class="reveal" style="margin-top:22px;color:var(--muted);font-size:13px;text-align:center">Generated from my real track record — no invented numbers. AI via Groq when available, smart template as fallback.</p>
     </div>
@@ -136,12 +153,68 @@ const body = `
             var sm = encodeURIComponent(j.subject || ''), bd = encodeURIComponent((j.email || '') + '\n\n---\nFirst 30 days:\n' + (j.plan || []).map(function (p) { return '• ' + p; }).join('\n'));
             var g = document.getElementById('hmail');
             g.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=&su=' + sm + '&body=' + bd;
+            try { var mt2 = String(body.jd || '').match(/[^\n\r]{0,80}(?:marketing|growth|digital|seo|performance|paid)[^\n\r]{0,60}/i); var g2 = mt2 ? mt2[0].trim().slice(0, 90) : ''; } catch (e) { var g2 = ''; }
+            window.__hireSaved = { jc: body.company || '', jt: g2 || '', subject: j.subject || '', email: j.email || '', plan: j.plan || [] };
+            planCard();
             out.hidden = false;
             out.scrollIntoView({ behavior: 'smooth', block: 'start' });
             try { if (window.va) window.va('event', { name: 'hire_generated', label: getMode() }); } catch (e) {}
           })
           .catch(function () { msg.hidden = false; msg.className = 'formmsg err'; msg.textContent = 'Could not draft right now — email geovamshidhar@gmail.com for a tailored pitch.'; })
           .then(function () { genBtn.disabled = false; genBtn.textContent = 'Generate my pitch →'; });
+      });
+      window.__hireSaved = null;
+      var hcard = document.getElementById('hplanCard'), hAts = document.getElementById('hAts'), hAtsJson = document.getElementById('hAtsJson');
+      var planCard = function () {
+        var h = window.__hireSaved; if (!h || !(h.plan && h.plan.length)) return;
+        var co = String(h.jc || 'THE COMPANY').replace(/[^a-zA-Z0-9 ]/g, ' ').trim() || 'THE COMPANY';
+        var q = ['co=' + encodeURIComponent(co.toUpperCase())]
+          .concat((h.plan || []).slice(0, 6).map(function (p, i) { return 'l' + (i + 1) + '=' + encodeURIComponent(String(p).slice(0, 66)); }));
+        hcard.href = '/api/og?p=plan&' + q.join('&');
+        hcard.classList.remove('dim');
+      };
+      if (hcard) hcard.addEventListener('click', function () { try { if (window.va) window.va('event', { name: 'file_download', label: 'plan_card' }); } catch (e) {} });
+      function dl(name, mime, text) {
+        var b = new Blob([text], { type: mime });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(b); a.download = name;
+        document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+      }
+      if (hAts) hAts.addEventListener('click', function () {
+        var h = window.__hireSaved; var role = (h && (h.jt || h.role)) || 'growth marketer';
+        var txt = 'ROLE: ' + role + '\n' + (h && h.jc ? 'COMPANY: ' + h.jc + '\n' : '')
+          + (h && h.jsalary ? 'SALARY EXP.: ' + h.jsalary + '\n' : '') + '\n'
+          + 'VAMSHIDHAR REDDY M\nDigital Marketing & Growth | SEO | AI pipelines\ngeovamshidhar@gmail.com | +91 7981719085 | linkedin.com/in/vamshidharreddym | Hyderabad, India\nTrack record: ROAS 3.2x->5.5x | CPL -30% | +15% organic traffic | 70+ qualified leads/mo\n\n'
+          + '------- PITCH ------\n' + (h ? h.email : '') + '\n\n------ FIRST 30 DAYS -----\n'
+          + ((h && h.plan) || []).map(function (x) { return '- ' + x; }).join('\n') + '\n\n\n';
+        dl('Vamshidhar_Reddy_M_ATS.txt', 'text/plain', txt);
+        try { if (window.va) window.va('event', { name: 'file_download', label: 'ats_txt' }); } catch (e) {}
+      });
+      if (hAtsJson) hAtsJson.addEventListener('click', function () {
+        var h = window.__hireSaved || {};
+        dl('Vamshidhar_Reddy_M_ATS.json', 'application/json', JSON.stringify({
+          updatedAt: new Date().toISOString(),
+          candidate: { name: 'Vamshidhar Reddy M', email: 'geovamshidhar@gmail.com', phone: '+91-7981719085', location: 'Hyderabad, India (remote-ready)' },
+          targetRole: h.jt || 'Digital Marketing', targetCompany: h.jc || '',
+          salary: h.jsalary || '',
+          pitch: { subject: h.subject || '', body: h.email || '' },
+          first30Days: (h.plan || []),
+          source: 'vamshidhar-pitch-generator'
+        }, null, 2));
+        try { if (window.va) window.va('event', { name: 'file_download', label: 'ats_json' }); } catch (e) {}
+      });
+      var cs = document.getElementById('compStage'), cc = document.getElementById('compCity'), ce = document.getElementById('compEquity'), co = document.getElementById('compGo'), cout = document.getElementById('compOut');
+      if (co) co.addEventListener('click', function () {
+        var stage = { startup: 0.84, growth: 1, enterprise: 1.16 }[cs.value] || 1;
+        var city = { 'remote-in': 1, hyderabad: 1.05, 'remote-global': 1.2 }[cc.value] || 1;
+        var eq = { '0': 1, mix: 0.88, equity: 0.72 }[ce.value] || 1;
+        var cash = Math.round(9.5 * stage * city * eq);
+        var txt2 = '₹' + cash + ' LPA base';
+        if (ce.value === 'mix') txt2 += ' + options that matter (I’ll put a risk-adjusted number on them in the interview, not vague “competitive”).';
+        else if (ce.value === 'equity') txt2 += ' + ESOPs as the upside driver — I’m comfortable when the equity is real and the KPI is mine.';
+        else txt2 += ' fixed. No negotiation theatre, no wasted calls.';
+        cout.textContent = txt2; cout.classList.add('on');
+        try { if (window.va) window.va('event', { name: 'hire_generated', label: 'salary_compass' }); } catch (e) {}
       });
       var cp = document.getElementById('hcopy');
       if (cp) cp.addEventListener('click', function () {

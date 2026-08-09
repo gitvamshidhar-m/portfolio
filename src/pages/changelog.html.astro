@@ -1,0 +1,59 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "Changelog — This site ships in public | Vamshidhar Reddy",
+  description: "Every improvement on this portfolio is a real commit. Watch the changelog grow — proof that this marketer builds and ships, not just talks.",
+  canonical: "https://vamshidharm.vercel.app/changelog.html",
+  ogImage: "",
+  variant: 'sub',
+  active: '',
+};
+const body = `
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="tag">Changelog · live from GitHub</span><h1>This site ships. Here's the receipt.</h1></div>
+    <p class="reveal" style="text-align:center;max-width:760px;margin:0 auto 20px;color:var(--muted)">Every feature you're reading was shipped in a commit, straight from the repo. "I build what I market" is not a slogan — it's this timeline.</p>
+    <div class="reveal" style="max-width:760px;margin:0 auto">
+      <div class="cl-head" id="clHead">Loading commits…</div>
+      <ol class="cl-list" id="clList"></ol>
+      <p class="reveal" style="margin-top:18px;font-size:13px;color:var(--muted);text-align:center">Source: <a href="https://github.com/gitvamshidhar-m/portfolio" target="_blank" rel="noopener noreferrer">github.com/gitvamshidhar-m/portfolio</a></p>
+    </div>
+  </div>
+</section>
+`;
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script is:inline>
+    (function () {
+      var head = document.getElementById('clHead');
+      var list = document.getElementById('clList');
+      if (!list) return;
+      function fmt(d) {
+        try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return d || ''; }
+      }
+      fetch('/api/github', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+        var cs = j && j.commits;
+        if (!cs || !cs.length) {
+          head.textContent = 'GitHub API is rate-limited right now — the changelog will refresh on the next deploy.';
+          return;
+        }
+        head.innerHTML = '<b>' + cs.length + '</b>&nbsp;recent commits — the site mutates while you watch.';
+        var now = Date.now();
+        list.innerHTML = cs.map(function (c) {
+          var ago = '';
+          try { var s = Math.max(0, Math.round((Date.now() - new Date(c.date).getTime()) / 1000)); if (s < 3600) ago = Math.round(s / 60) + 'm ago'; else if (s < 86400) ago = Math.round(s / 3600) + 'h ago'; else ago = Math.round(s / 86400) + 'd ago'; } catch (e) {}
+          return '<li>' +
+            '<span class="cl-dot"></span>' +
+            '<div class="cl-msg">' + String(c.message || '').replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>' +
+            '<div class="cl-meta"><span class="cl-sha">' + c.sha + '</span><span>' + fmt(c.date) + '</span><span class="cl-ago">' + ago + '</span></div>' +
+            (c.url ? '<a class="cl-goto" href="' + c.url + '" target="_blank" rel="noopener noreferrer">commit ↗</a>' : '') +
+            '</li>';
+        }).join('');
+      }).catch(function () {
+        head.textContent = 'Could not reach GitHub right now — try again in a minute.';
+      });
+    })();
+  </script>
+</Base>

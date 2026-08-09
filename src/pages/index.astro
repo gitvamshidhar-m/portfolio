@@ -641,6 +641,11 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
       if (tag) tag.textContent = '⚡ Live A/B: variant B active ($v=b test). Performance Marketing · SEO · AI-Augmented.';
     }
     try { localStorage.setItem('ab_v', v); if (window.va) window.va('event', { name: 'hero_variant', label: v }); } catch (e) {}
+    var vNote = document.createElement('div');
+    vNote.id = 'vnote';
+    vNote.innerHTML = '⚡ You are seeing homepage variant <b>' + v.toUpperCase() + '</b> — this page is itself an A/B test. ' + (v === 'b' ? 'Meta, right?' : 'Try <i>?v=b</i>.');
+    document.body.appendChild(vNote);
+    setTimeout(function () { vNote.classList.add('show'); }, 1200);
   })();
   </script>
 </Base>

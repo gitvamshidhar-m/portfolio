@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "For Hiring Managers — 30-Second Read | Vamshidhar Reddy",
+  description: "A 30-second read for whoever is hiring: the one number that matters, the one-line positioning, and two ways to get proof. No CV wallpaper.",
+  canonical: "https://vamshidharm.vercel.app/hire-recruiters.html",
+  ogImage: "",
+  variant: 'sub',
+  active: '',
+};
+const body = `
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="tag">For hiring managers · 30-second read</span><h1>You're busy. Here's the only page you need.</h1></div>
+
+    <div class="reveal" style="max-width:860px;margin:0 auto">
+      <div class="rm-grid">
+        <div class="rm-card rm-hero">
+          <span class="tag" style="color:var(--accent2)">What I do</span>
+          <h2>Performance marketer who also builds the tools.</h2>
+          <p style="color:var(--muted);line-height:1.7">Planning with the CMO one day, shipping the AI pipeline that executes it the next. Most marketers can't code; most developers don't understand funnels. I do both — so I ship what I plan, and I attach a number.</p>
+        </div>
+        <div class="rm-card rm-nums">
+          <span class="tag">Receipt, not promise</span>
+          <ul class="rm-list">
+            <li><b>ROAS 3.2x → 5.5x</b><span>by consolidating 40+ ad groups into 8</span></li>
+            <li><b>CPL −30%</b><span>Rs.1,100 → Rs.770 on a client account</span></li>
+            <li><b>+15% organic traffic</b><span>technical SEO + on-page, in my current role</span></li>
+            <li><b>70+ qualified leads / mo</b><span>running, not projected</span></li>
+            <li><b>3 AI products shipped solo</b><span>deployed, live, clickable on this site</span></li>
+          </ul>
+        </div>
+        <div class="rm-card">
+          <span class="tag">The honest part</span>
+          <ul class="rm-list">
+            <li>Location: Hyderabad, India — remote-friendly, IST (UTC+5:30)</li>
+            <li>Notice: 1 week · Replies: within 24h</li>
+            <li>Open to: Digital Marketing · SEO · Paid Media · Performance — performance-first.</li>
+            <li>I decline roles where I can't take a KPI and own it.</li>
+          </ul>
+        </div>
+        <div class="rm-card rm-cta">
+          <span class="tag" style="color:var(--accent2)">Two ways to get proof</span>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;text-align:center">
+            <a class="btn primary" href="/hire.html">Generate my pitch for your JD →</a>
+            <a class="btn" href="/contact.html">15-min intro call →</a>
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin:14px auto 0">Or deep-dive: <a href="/projects.html">the tools</a> · <a href="/blog.html">the thinking</a> · <a href="/changelog.html">the shipping</a>.</p>
+        </div>
+      </div>
+
+      <blockquote class="reveal" style="text-align:center;border:0;margin:26px 0 0;color:var(--muted)">"I don't just run reports — I build the pipelines that generate them."</blockquote>
+      <p class="reveal" style="text-align:center;color:var(--muted);font-size:14px">Vamshidhar Reddy M · geovamshidhar@gmail.com · +91-7981719085 · <a href="https://linkedin.com/in/vamshidharreddym">LinkedIn</a> · <a href="https://vamshidharm.vercel.app/Vamshidhar_Reddy_M_CV.docx" download="Vamshidhar_Reddy_M_CV.docx">CV</a></p>
+    </div>
+  </div>
+</section>
+`;
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+</Base>
