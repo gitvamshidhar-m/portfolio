@@ -1,0 +1,74 @@
+﻿---
+import Base from '../layouts/Base.astro';
+import LeadForm from '../components/LeadForm.astro';
+
+const op = {
+  title: "Paid Media & PPC — Vamshidhar Reddy | Google Ads, Meta, LinkedIn",
+  description: "Google Ads, Meta and LinkedIn campaigns engineered for CAC. Proof: CPL cut 30% and ROAS improved 3.2x to 5.5x on managed accounts. Free paid-media teardown on request.",
+  canonical: "https://vamshidharm.vercel.app/ads.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "",
+};
+const faqLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "What does the free paid-media teardown cover?", acceptedAnswer: { "@type": "Answer", text: "Account structure, campaign and ad-group hygiene, audience and keyword coverage, bid strategy, conversion tracking, and landing-page friction — with 3–5 fixes you can apply immediately." } },
+    { "@type": "Question", name: "Which platforms do you manage?", acceptedAnswer: { "@type": "Answer", text: "Google Ads (Search, Performance Max, Shopping), Meta (Facebook, Instagram), LinkedIn Ads, and YouTube. I work with whichever mix your funnel needs." } },
+    { "@type": "Question", name: "How is success defined?", acceptedAnswer: { "@type": "Answer", text: "On your metric: cost-per-lead, ROAS, qualified pipeline, or paid share of conversions. Every campaign gets a clear target before a rupee is spent." } },
+    { "@type": "Question", name: "Can you start with a small budget?", acceptedAnswer: { "@type": "Answer", text: "Yes — I've scaled accounts from under Rs.1L/month budgets with manual bidding and tight campaign structure before moving to automation." } }
+  ]
+});
+const body = `<section class="lpage-wrap">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">Google Ads · Meta · LinkedIn · YouTube</span>
+      <h1>Paid media engineered around your cost-per-lead, not vanity CTR</h1>
+      <p style="color:var(--muted);max-width:720px">I restructure accounts around the one number that matters — acquisition cost, then double down on what prints. Proof: <b style="color:var(--accent2)">CPL cut by 30%</b> and <b style="color:var(--accent2)">ROAS lifted from 3.2x to 5.5x</b> on managed spend.</p>
+      <div class="cta-row" style="justify-content:center">
+        <a class="btn primary btn-lg" href="#ctaForm">Get a free paid-media teardown →</a>
+        <a class="btn link-secondary" href="/blog/case-study-restructuring-paid-media-cut-cpl-30.html">Read the CPL −30% case study →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap grid2" style="margin-top:34px">
+    <div class="how" style="margin:0">
+      <div class="step"><span class="num">01</span><div><b>Account Surgery First</b><p>Structure, keyword intent, audiences, and negative keywords reset before an extra rupee of spend.</p></div></div>
+      <div class="step"><span class="num">02</span><div><b>Creative &amp; Offers</b><p>Hooks, angles, and offer math — tested with a cheap experiment framework, not 'let's run it and see'.</p></div></div>
+      <div class="step"><span class="num">03</span><div><b>Automation That Learns</b><p>Smart bidding, budgets, and schedules — fed by clean conversion data I set up properly first.</p></div></div>
+      <div class="step"><span class="num">04</span><div><b>Live Dashboard</b><p>Daily cost, CPL, ROAS in a dashboard you can actually read. Weekly, not monthly, optimization cycles.</p></div></div>
+    </div>
+    <div style="display:grid;gap:14px">
+      <div style="border:1px solid var(--border,#ffffff22);border-radius:14px;padding:18px;background:rgba(139,123,255,.05)">
+        <b style="font-size:22px;color:var(--accent2)">−30%</b>
+        <p style="color:var(--muted);margin:6px 0 0">cost-per-lead from restructuring account structure and creative.</p>
+      </div>
+      <div style="border:1px solid var(--border,#ffffff22);border-radius:14px;padding:18px;background:rgba(139,123,255,.05)">
+        <b style="font-size:22px;color:var(--accent2)">3.2x → 5.5x</b>
+        <p style="color:var(--muted);margin:6px 0 0">ROAS lift documented on managed accounts over the campaign.</p>
+      </div>
+      <div style="border:1px solid var(--border,#ffffff22);border-radius:14px;padding:18px;background:rgba(139,123,255,.05)">
+        <b style="font-size:22px;color:var(--accent2)">Rs.2L+</b>
+        <p style="color:var(--muted);margin:6px 0 0">monthly ad budgets handled with a manual-first, automation-second approach.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:40px">
+    <span class="tag">Common questions</span>
+    <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What does the free teardown include?</summary><p style="color:var(--muted);margin-top:8px">Structure, match types, bids, audiences, tracking, and landing-page flow — with the highest-leverage changes ranked.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Which platforms do you manage?</summary><p style="color:var(--muted);margin-top:8px">Google (Search, PMAX, Shopping), Meta (Facebook/Instagram), LinkedIn, YouTube — whatever mix the funnel needs.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">How do you report results?</summary><p style="color:var(--muted);margin-top:8px">On CPL, qualified leads, ROAS or pipeline — your metric. A live dashboard and weekly optimization cycles, not monthly surprise.</p></details>
+    </div>
+  </div>
+</section>`;
+---
+
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script type="application/ld+json" is:inline set:html={faqLd} />
+  <LeadForm service="ads" serviceLabel="paid media" promise="Free paid-media teardown: I'll review account structure, match types, bids, tracking, and landing-page flow and send back the 3–5 highest-leverage fixes." />
+</Base>

@@ -4,6 +4,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: 'https://vamshidharm.vercel.app',
   output: 'static',
+  trailingSlash: 'never',
   server: {
     port: 4321
   }

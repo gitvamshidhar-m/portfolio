@@ -1,0 +1,74 @@
+---
+import Base from '../layouts/Base.astro';
+import LeadForm from '../components/LeadForm.astro';
+
+const op = {
+  title: "SEO & Content Growth — Vamshidhar Reddy | Technical SEO + Content That Ranks",
+  description: "Technical SEO audits, E-E-A-T content, and topic clusters for B2B brands. Proof: +15% organic traffic in 6 months from combined technical + content work. Free 30-min audit on request.",
+  canonical: "https://vamshidharm.vercel.app/seo.html",
+  ogImage: "",
+  variant: 'sub',
+  active: "",
+};
+const faqLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "What does a technical SEO audit include?", acceptedAnswer: { "@type": "Answer", text: "Crawl diagnostics, indexation review, Core Web Vitals (LCP/CLS/INP), schema validation, internal linking, duplicate content, and server/redirect checks — delivered with a prioritized fix list." } },
+    { "@type": "Question", name: "How long before SEO results show?", acceptedAnswer: { "@type": "Answer", text: "Technical fixes can move metrics within 4–6 weeks. Content and authority gains typically show in 3–6 months, depending on the niche and competition." } },
+    { "@type": "Question", name: "Do you do both technical and content SEO?", acceptedAnswer: { "@type": "Answer", text: "Yes — I run audits and the content strategy together, because technical fixes without content rarely compound, and content without technical cleanup leaks ranks." } },
+    { "@type": "Question", name: "How is SEO performance measured?", acceptedAnswer: { "@type": "Answer", text: "Organic sessions and conversions in GA4, rankings in Search Console, indexed-pages coverage, Core Web Vitals, and revenue attributed to organic channels." } }
+  ]
+});
+const body = `<section class="lpage-wrap">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">SEO · Content · E-E-A-T</span>
+      <h1>Make your website the business's best salesperson</h1>
+      <p style="color:var(--muted);max-width:720px">I rebuild the technical foundations, fix the leaks, and publish content that earns ranks. Managed a site to <b style="color:var(--accent2)">+15% organic traffic in 6 months</b> by combining technical fixes with content that matches buying intent.</p>
+      <div class="cta-row" style="justify-content:center">
+        <a class="btn primary btn-lg" href="#ctaForm">Get a free technical audit →</a>
+        <a class="btn link-secondary" href="/blog/technical-seo-for-your-own-portfolio.html">See how I SEO'd my own site →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap grid2" style="margin-top:34px">
+    <div class="how" style="margin:0">
+      <div class="step"><span class="num">01</span><div><b>Technical Foundation</b><p>Crawl, index, Core Web Vitals, schema, redirects — a checklist that stops ranks from silently leaking.</p></div></div>
+      <div class="step"><span class="num">02</span><div><b>Content That Ranks</b><p>Topic clusters and E-E-A-T signal — content mapped to search intent, not just keywords.</p></div></div>
+      <div class="step"><span class="num">03</span><div><b>Authority &amp; Trust</b><p>Digital PR, citations, internal linking — the compounding layer most agencies skip.</p></div></div>
+      <div class="step"><span class="num">04</span><div><b>Proof in Sheets</b><p>Dashboard with rankings, indexed pages, and conversions. You watch the numbers each month.</p></div></div>
+    </div>
+    <div style="display:grid;gap:14px">
+      <div style="border:1px solid var(--border,#ffffff22);border-radius:14px;padding:18px;background:rgba(139,123,255,.05)">
+        <b style="font-size:22px;color:var(--accent2)">+15%</b>
+        <p style="color:var(--muted);margin:6px 0 0">organic traffic growth in 6 months — mix of technical SEO and content.</p>
+      </div>
+      <div style="border:1px solid var(--border,#ffffff22);border-radius:14px;padding:18px;background:rgba(139,123,255,.05)">
+        <b style="font-size:22px;color:var(--accent2)">100%</b>
+        <p style="color:var(--muted);margin:6px 0 0">of audits shipped with a prioritized fix list, not a 90-slide deck.</p>
+      </div>
+      <div style="border:1px solid var(--border,#ffffff22);border-radius:14px;padding:18px;background:rgba(139,123,255,.05)">
+        <b style="font-size:22px;color:var(--accent2)">0%</b>
+        <p style="color:var(--muted);margin:6px 0 0">black-hat. Sustainable practices you won't have to undo in a year.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:40px">
+    <span class="tag">Common questions</span>
+    <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What does a technical SEO audit include?</summary><p style="color:var(--muted);margin-top:8px">Crawl diagnostics, indexation review, Core Web Vitals, schema, redirects, and internal linking — with a prioritized fix list.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">How soon do results appear?</summary><p style="color:var(--muted);margin-top:8px">Technical fixes net within 3–6 weeks; content and authority typically 3–6 months depending on niche.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Should I do SEO or paid first?</summary><p style="color:var(--muted);margin-top:8px">They compound. I fix the technical foundation for organic and use paid for immediate demand — then measure the total cost per acquisition.</p></details>
+    </div>
+  </div>
+</section>`;
+---
+
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script type="application/ld+json" is:inline set:html={faqLd} />
+  <LeadForm service="seo" serviceLabel="SEO & content" promise="Free 30-min audit: I'll review your crawl, Core Web Vitals, and top ranking leaks and send back 3–5 fixes you can action immediately." />
+</Base>

@@ -1,0 +1,55 @@
+---
+interface Props {
+  service: string;
+  serviceLabel: string;
+  promise: string;
+}
+const { service, serviceLabel, promise } = Astro.props;
+---
+
+<section id="ctaForm" class="lpage-form">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag">Free proposal</span>
+      <h2>Get your {serviceLabel} growth plan</h2>
+      <p>{promise}</p>
+    </div>
+    <form id="leadForm" data-svc={service} style="max-width:640px;margin:22px auto 0;display:grid;gap:12px;background:rgba(139,123,255,.06);border:1px solid rgba(139,123,255,.25);border-radius:16px;padding:22px;box-sizing:border-box">
+      <label class="hp" aria-hidden="true">Company website <input name="hp_three" type="text" tabindex="-1" autocomplete="off"></label>
+      <input name="name" placeholder="Your name" required style="width:100%;box-sizing:border-box" />
+      <input name="email" type="email" placeholder="Work email (to send the plan)" required style="width:100%;box-sizing:border-box" />
+      <textarea name="message" rows="3" placeholder={"What are you focused on right now? e.g. cut Google Ads CPL, fix crawl issues, automate reporting"} style="width:100%;box-sizing:border-box"></textarea>
+      <button class="btn primary" type="submit">Get my free plan →</button>
+      <p id="leadMsg" class="formmsg" hidden></p>
+    </form>
+  </div>
+</section>
+
+<script is:inline>
+(function () {
+  const f = document.getElementById('leadForm');
+  if (!f) return;
+  const msg = document.getElementById('leadMsg');
+  const svc = f.dataset.svc || '';
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const btn = f.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    const body = { subject: 'Free plan request · ' + svc };
+    new FormData(f).forEach(function (v, k) { body[k] = v; });
+    Promise.all([
+      fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }),
+      fetch('/api/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: '/lead/' + svc, referrer: document.referrer, ua: navigator.userAgent }), keepalive: true }).catch(function () {})
+    ]).then(function (out) {
+      msg.hidden = false;
+      const j = out[0] && out[0].body || null;
+      if (j && j.ok && j.delivered) { msg.className = 'formmsg ok'; msg.textContent = 'Got it — I\'ll send your plan within 24h. '; }
+      else { msg.className = 'formmsg err'; msg.textContent = 'Thanks! For the fastest reply, email me direct: geovamshidhar@gmail.com'; }
+      f.reset(); btn.disabled = false; btn.textContent = 'Get my free plan →';
+    }).catch(function () {
+      msg.hidden = false; msg.className = 'formmsg err'; msg.textContent = 'Network error — please email me: geovamshidhar@gmail.com';
+      btn.disabled = false; btn.textContent = 'Get my free plan →';
+    });
+  });
+})();
+</script>
