@@ -2,9 +2,10 @@ const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
 
 function base(url) { return String(url || '').replace(/\/+$/, ''); }
-function kv(action, key, method) {
+function kv(action, args, method) {
   if (!KV_URL || !KV_TOKEN) return Promise.reject(new Error('kv not configured'));
-  return fetch(base(KV_URL) + '/' + action + '/' + encodeURIComponent(key), {
+  const path = (Array.isArray(args) ? args : [args]).map(encodeURIComponent).join('/');
+  return fetch(base(KV_URL) + '/' + action + '/' + path, {
     method: method || 'POST',
     headers: { Authorization: 'Bearer ' + KV_TOKEN }
   }).then(function (r) { return r.json(); });
@@ -43,15 +44,15 @@ module.exports = function handler(req, res) {
 
   // counts (plain counters)
   const counters = [
-    kv('incr', 'analytics:views'),
-    kv('incr', 'analytics:views:' + day),
-    kv('incr', 'analytics:views:hour:' + day + ':' + hour)
+    kv('incr', ['analytics:views']),
+    kv('incr', ['analytics:views:' + day]),
+    kv('incr', ['analytics:views:hour:' + day + ':' + hour])
   ];
   // weighted sorted sets for ranking (zincrby +1 per member)
   const zsets = [
-    kv('zincrby', 'analytics:pages ' + 1 + ' ' + JSON.stringify(path)),
-    kv('zincrby', 'analytics:refs ' + 1 + ' ' + JSON.stringify(refHost)),
-    kv('zincrby', 'analytics:devices ' + 1 + ' ' + JSON.stringify(device))
+    kv('zincrby', ['analytics:pages', '1', path]),
+    kv('zincrby', ['analytics:refs', '1', refHost]),
+    kv('zincrby', ['analytics:devices', '1', device])
   ];
 
   Promise.all(counters.concat(zsets)).then(function () {
