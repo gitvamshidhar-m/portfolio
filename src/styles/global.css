@@ -599,8 +599,9 @@ body.bs-open{overflow:hidden}
 .comp-out.on{display:block;color:var(--accent2)}
 @media(max-width:720px){.compass{grid-template-columns:1fr}}
 /* ---- variant B meta-note ---- */
-#vnote{position:fixed;right:14px;bottom:14px;z-index:99;background:rgba(10,12,20,.92);border:1px solid var(--accent);color:var(--txt);font-size:12.5px;padding:9px 12px;border-radius:10px;opacity:0;transform:translateY(6px);transition:.35s;box-shadow:var(--shadow)}
+#vnote{position:fixed;right:14px;bottom:14px;z-index:99;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#8b7bff,#2ff3c0);color:#0b0a18;font-size:12.5px;font-weight:600;padding:10px 12px;border-radius:12px;opacity:0;transform:translateY(6px);transition:.35s;box-shadow:0 8px 30px rgba(0,0,0,.35);cursor:pointer;max-width:min(400px,calc(100vw - 28px))}
 #vnote.show{opacity:1;transform:none}
-#vnote b{color:var(--accent2)}
-@keyframes vnotePulse{0%,100%{box-shadow:0 0 0 0 rgba(47,243,192,.35)}50%{box-shadow:0 0 0 5px rgba(47,243,192,0)}}
-#vnote{border-color:var(--accent)}
+#vnote b{color:#0b0a18;text-decoration:underline}
+#vnote i{font-style:normal;border-bottom:2px solid #0b0a18}
+.vn-x{background:rgba(11,10,24,.12);border:0;color:#0b0a18;font-size:16px;line-height:1;width:22px;height:22px;border-radius:6px;cursor:pointer;flex:none;font-weight:800}
+.vn-x:hover{background:rgba(11,10,24,.22)}

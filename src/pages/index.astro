@@ -643,9 +643,21 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
     try { localStorage.setItem('ab_v', v); if (window.va) window.va('event', { name: 'hero_variant', label: v }); } catch (e) {}
     var vNote = document.createElement('div');
     vNote.id = 'vnote';
-    vNote.innerHTML = '⚡ You are seeing homepage variant <b>' + v.toUpperCase() + '</b> — this page is itself an A/B test. ' + (v === 'b' ? 'Meta, right?' : 'Try <i>?v=b</i>.');
+    vNote.innerHTML = '<span class="vn-body">⚡ You are seeing homepage variant <b>' + v.toUpperCase() + '</b> — this page is itself an A/B test. ' + (v === 'b' ? 'Meta, right?' : '<i>Try ?v=b</i>') + '</span><button class="vn-x" aria-label="Dismiss">×</button>';
     document.body.appendChild(vNote);
-    setTimeout(function () { vNote.classList.add('show'); }, 1200);
+    vNote.querySelector('.vn-x').addEventListener('click', function (e) {
+      e.stopPropagation();
+      try { localStorage.setItem('vnote_done', '1'); } catch (err) {}
+      vNote.remove();
+    });
+    vNote.addEventListener('click', function () {
+      try { if (window.va) window.va('event', { name: 'hero_variant', label: 'switch' }); } catch (e) {}
+      location.href = location.pathname + (v === 'b' ? '' : '?v=b');
+    });
+    if (v !== 'b') {
+      try { if (localStorage.getItem('vnote_done')) vNote.remove(); } catch (e) {}
+    }
+    setTimeout(function () { if (vNote.isConnected) vNote.classList.add('show'); }, 1200);
   })();
   </script>
 </Base>
