@@ -67,6 +67,7 @@ const body = `
               <button type="button" class="btn" id="hcopy">Copy email</button>
               <a class="btn" id="hmail" target="_blank" rel="noopener noreferrer">Send via Gmail →</a>
               <a class="btn" id="hplanCard" target="_blank" rel="noopener noreferrer">Plan card ↗</a>
+              <button type="button" class="btn" id="hplanDl">Plan card PNG</button>
             </span>
           </div>
           <pre id="hbody" style="white-space:pre-wrap;font-family:inherit;margin:12px 0 0;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;line-height:1.7"></pre>
@@ -93,10 +94,31 @@ const body = `
       </div>
 
 
+      
+      <div class="jdmatch reveal">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <b>🎯 JD-match score — before you apply, know the gap</b>
+          <span class="jm-score" id="jmScore">—</span>
+        </div>
+        <p style="margin:6px 0 12px;font-size:13px;color:var(--muted)">Paste the job description. It's compared against my real skills &amp; track record — you'll see exactly which keywords I hit and which to address in the cover note.</p>
+        <textarea id="jmJd" rows="6" style="width:100%;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt)" placeholder="Paste the JD here — same one as above works"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px">
+          <button class="btn primary" type="button" id="jmGo">Score my fit →</button>
+          <span style="font-size:12px;color:var(--muted)" id="jmNote"></span>
+        </div>
+        <div class="jm-out" id="jmOut" hidden>
+          <div class="jm-bar"><i id="jmBar" style="width:0%"></i></div>
+          <div class="jm-row"><b>Covered</b><span id="jmHit"></span></div>
+          <div class="jm-row"><b>Gaps to address</b><span id="jmMiss"></span></div>
+        </div>
+      </div>
+
+
+
       <p class="reveal" style="margin-top:22px;color:var(--muted);font-size:13px;text-align:center">Generated from my real track record — no invented numbers. AI via Groq when available, smart template as fallback.</p>
     </div>
   </div>
-</section>
+\n  <div class=\"wrap\" style=\"text-align:center;margin-top:6px\"><a class=\"btn\" href=\"https://wa.me/917981719085?text=Hi%20Vamshidhar%2C%20I%20saw%20your%20pitch%20generator\" target=\"_blank\" rel=\"noopener noreferrer\">💬 WhatsApp</a> · <a class=\"btn\" href=\"tel:+917981719085\">📞 Call</a></div></section>
 `;
 ---
 <Base {...op}>
@@ -174,6 +196,17 @@ const body = `
         hcard.classList.remove('dim');
       };
       if (hcard) hcard.addEventListener('click', function () { try { if (window.va) window.va('event', { name: 'file_download', label: 'plan_card' }); } catch (e) {} });
+      var hdl = document.getElementById('hplanDl');
+      if (hdl) hdl.addEventListener('click', function () {
+        var url = hcard ? hcard.href : '';
+        if (!url || url.indexOf('/api/og') !== 0) return;
+        try { if (window.va) window.va('event', { name: 'file_download', label: 'plan_card_png' }); } catch (e) {}
+        fetch(url).then(function (r) { return r.blob(); }).then(function (b) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(b); a.download = 'vamshidhar-first-30-days.png';
+          document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+        }).catch(function () {});
+      });
       function dl(name, mime, text) {
         var b = new Blob([text], { type: mime });
         var a = document.createElement('a');
@@ -219,6 +252,28 @@ const body = `
       var cp = document.getElementById('hcopy');
       if (cp) cp.addEventListener('click', function () {
         navigator.clipboard.writeText(hbody.textContent).then(function () { cp.textContent = 'Copied ✓'; setTimeout(function () { cp.textContent = 'Copy email'; }, 1500); }).catch(function () {});
+      });
+      var jmIn = document.getElementById('jmJd'), jmGo = document.getElementById('jmGo'), jmScore = document.getElementById('jmScore'), jmOut = document.getElementById('jmOut'), jmBar = document.getElementById('jmBar'), jmHit = document.getElementById('jmHit'), jmMiss = document.getElementById('jmMiss'), jmNote = document.getElementById('jmNote');
+      var RESUME_TERMS = ['seo','technical seo','on-page','off-page','keyword','content','ppc','google ads','linkedin ads','meta ads','paid media','cpc','cpl','roas','ctr','conversion','cro','a/b','ab testing','creative','landing page','ga4','analytics','looker','tableau','data studio','search console','screaming frog','ahrefs','semrush','automation','ai','artificial intelligence','groq','prompt','llm','chatgpt','agent','workflow','lead generation','funnel','email','smm','social media','retention','ltv','cac','budget','growth','strategy','audit','dashboard','reporting','b2b','b2c','ecommerce','saas','api','typescript','next.js','supabase','vercel','razorpay','qualitative','quantitative'];
+      if (jmGo) jmGo.addEventListener('click', function () {
+        var jd = String(jmIn.value || '').toLowerCase();
+        if (!jd.trim()) { jmNote.textContent = 'Paste a JD first.'; return; }
+        jmNote.textContent = '';
+        var found = [], missing = [];
+        RESUME_TERMS.forEach(function (t) {
+          if (jd.indexOf(t) > -1) found.push(t); else missing.push(t);
+        });
+        var total = RESUME_TERMS.length;
+        var pct = Math.round((found.length / total) * 100);
+        jmScore.textContent = pct + '%';
+        jmScore.style.color = pct >= 70 ? 'var(--accent2)' : (pct >= 45 ? 'var(--accent)' : '#ff6b6b');
+        jmBar.style.width = pct + '%';
+        var hitTxt = found.length ? found.join(', ') : 'none of the tracked terms appear verbatim';
+        var missPick = missing.slice(0, 14);
+        jmHit.textContent = hitTxt;
+        jmMiss.textContent = missPick.length ? missPick.join(', ') + (missing.length > 14 ? '…' : '') : 'none — strong overlap';
+        jmOut.hidden = false;
+        try { if (window.va) window.va('event', { name: 'hire_generated', label: 'jd_match' }); } catch (e) {}
       });
       render();
     })();

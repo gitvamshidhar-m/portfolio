@@ -160,7 +160,7 @@ h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-1px;line-heigh
 .pcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px;position:relative;overflow:hidden;transition:.3s;will-change:transform}
 .pcard:hover{border-color:var(--accent)}
 .pcard:before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad)}
-.pcard .ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--card2);font-size:24px;margin-bottom:16px}
+.pcard .ico{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 10px 24px -8px var(--accent);font-size:26px;margin-bottom:16px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.25)}
 .pcard h3{font-size:20px;margin-bottom:6px;letter-spacing:-.4px}
 .pcard .sub{color:var(--accent2);font-size:12px;text-transform:uppercase;letter-spacing:1px}
 .pcard p{color:var(--muted);font-size:14.5px;margin-top:12px}
@@ -605,3 +605,28 @@ body.bs-open{overflow:hidden}
 #vnote i{font-style:normal;border-bottom:2px solid #0b0a18}
 .vn-x{background:rgba(11,10,24,.12);border:0;color:#0b0a18;font-size:16px;line-height:1;width:22px;height:22px;border-radius:6px;cursor:pointer;flex:none;font-weight:800}
 .vn-x:hover{background:rgba(11,10,24,.22)}
+/* ---- JD-match widget ---- */
+.jdmatch{display:grid;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:860px;margin:16px auto 4px}
+.jm-score{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--accent2)}
+.jm-out{display:grid;gap:10px;margin-top:6px}
+.jm-bar{height:12px;background:var(--line);border-radius:8px;overflow:hidden}
+.jm-bar i{display:block;height:100%;background:var(--grad);border-radius:8px;transition:width .6s ease}
+.jm-row{display:flex;gap:8px;font-size:13.5px;color:var(--muted);align-items:flex-start}
+.jm-row b{color:var(--txt);flex:none;width:150px;font-weight:700}
+.jm-row span{line-height:1.5;word-break:break-word}
+@media(max-width:560px){.jm-row{flex-direction:column}.jm-row b{width:auto}}
+/* ---- meeting slot picker ---- */
+.slotpick select{flex:1;min-width:150px}
+.slot-tz{align-self:center;font-size:12px;color:var(--accent2);font-weight:700;white-space:nowrap}
+@media(max-width:560px){.slot-tz{width:100%}}
+/* ---- hero floating proof chips ---- */
+.proof-chips{position:absolute;inset:0;z-index:1;pointer-events:none}
+.pchip{position:absolute;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 12px 34px -12px rgba(0,0,0,.5);display:grid;gap:1px;animation:chipfloat 7s ease-in-out infinite;backdrop-filter:blur(6px)}
+.pchip b{font-size:15px;color:var(--txt);font-weight:800}
+.pchip span{font-size:11.5px;color:var(--muted)}
+.pc1{top:24%;right:max(8vw,40px);animation-delay:0s}
+.pc2{top:46%;left:max(8vw,40px);animation-delay:-1.4s}
+.pc3{bottom:30%;right:max(12vw,90px);animation-delay:-2.8s}
+.pc4{bottom:44%;left:max(12vw,90px);animation-delay:-4.2s}
+@keyframes chipfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@media(max-width:1100px){.proof-chips{display:none}}
