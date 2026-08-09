@@ -56,7 +56,14 @@ module.exports = function handler(req, res) {
   ];
 
   Promise.all(counters.concat(zsets)).then(function () {
-    res.json({ ok: true });
+    return fetch(base(KV_URL) + '/pipeline', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        ['LPUSH', 'visitors:recent', JSON.stringify({ t: now, day: day, hour: hour, ref: refHost.slice(0, 60), path: path.slice(0, 60), device: device })],
+        ['LTRIM', 'visitors:recent', 0, 19]
+      ])
+    }).then(function () { res.json({ ok: true }); }).catch(function () { res.json({ ok: true, note: 'partial' }); });
   }).catch(function () {
     res.json({ ok: true, note: 'partial' });
   });

@@ -517,3 +517,50 @@ body.bs-open{overflow:hidden}
   .h-beat{opacity:1!important}
   .h-progress{display:none}
 }
+/* ---- live telemetry + visitor log ---- */
+.livemeter{display:flex;align-items:center;gap:8px;margin:18px max(12px,50%-600px) 0;max-width:1200px;padding:9px 14px;border:1px solid rgba(47,243,192,.25);border-radius:12px;background:rgba(47,243,192,.05);color:var(--muted);font-size:13px}
+.lp-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 rgba(47,243,192,.5);animation:lpPulse 1.6s infinite}
+@keyframes lpPulse{0%{box-shadow:0 0 0 0 rgba(47,243,192,.4)}70%{box-shadow:0 0 0 7px rgba(47,243,192,0)}100%{box-shadow:0 0 0 0 rgba(47,243,192,0)}}
+.lp-tx{font-weight:600}
+.livelog{margin:10px max(12px,50%-600px) 0;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer}
+.livelog:hover{border-color:var(--accent)}
+.vislog{max-width:600px;margin:10px max(12px,50%-300px);padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.vislog.on{display:block}
+.vl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.vl-count{font-size:13px;color:var(--muted);margin-bottom:10px}
+.vl-list{list-style:none;display:grid;gap:8px;margin:0;padding:0}
+.vl-list li{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;font-size:13px;border-top:1px solid var(--line);padding-top:8px}
+.vl-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.vl-list b{font-weight:700;color:var(--txt)}
+.vl-list em{color:var(--muted);font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vl-list small{color:var(--muted);opacity:.8;white-space:nowrap}
+.vl-none{color:var(--muted);font-size:13px}
+.vl-note{margin-top:10px;font-size:11px;color:var(--muted);opacity:.8}
+.vl-head button{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px}
+/* ---- personalization banner ---- */
+.prz{max-width:1200px;margin:12px max(12px,50%-600px) 0;padding:10px 14px;border:1px solid rgba(139,123,255,.35);border-radius:12px;background:rgba(139,123,255,.08);font-size:13px;display:flex;align-items:center;gap:10px}
+.prz-tag{background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.prz-link{color:var(--txt);font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.prz-link:hover{color:var(--accent)}
+.prz-x{background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;margin-left:auto}
+
+/* ---- hire page ---- */
+.tabTabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.tabTabs button{padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-size:14px;font-weight:600;cursor:pointer}
+.tabTabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#hireForm select{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt);font:inherit}
+.qcard{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer;background:var(--bg)}
+.qcard:hover{border-color:var(--accent)}
+.qcard input{accent-color:var(--accent)}
+.formmsg{margin-top:10px;font-size:14px}
+.formmsg.ok{color:var(--accent2)}
+.formmsg.err{color:#ff5a5a}
+
+/* ---- skill proof chains ---- */
+.proofsec{margin-top:10px}
+.proofgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.proof{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.proof h4{margin:0 0 6px}
+.proof b{color:var(--accent)}
+.proof p{margin:0;font-size:13px;line-height:1.6;color:var(--muted)}
+.proof a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}

@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Search from '../components/Search.astro';
+import LivePulse from '../components/LivePulse.astro';
 
 interface Props {
   title: string;
@@ -162,6 +163,9 @@ const ogUrl = ogImage
 
 <main id="main">
   <slot />
+  <div id="prz" hidden class="prz"></div>
+  <script defer src="/personalize.js"></script>
+  <LivePulse />
   <footer>
     <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
     <div class="wrap ft" style="margin-top:14px"><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>

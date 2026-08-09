@@ -1,0 +1,76 @@
+<div class="livemeter" id="livemeter" hidden>
+  <span class="lp-dot"></span>
+  <span id="lpTx" class="lp-tx">Loading live signal…</span>
+</div>
+<button class="livelog" id="liveLog" type="button" title="Recent visitors">👀 Live visitors</button>
+
+<div class="vislog" id="vislog" hidden aria-live="polite">
+  <div class="vl-head"><b>Recent visitors — this portfolio is being watched</b><button id="vlx" aria-label="Close visitor log">×</button></div>
+  <div class="vl-count" id="vlCount"></div>
+  <ul class="vl-list" id="vlList"></ul>
+  <p class="vl-note">Anonymized · referrer host, page, device &amp; local time · never IPs</p>
+</div>
+
+<script is:inline>
+(function () {
+  const meter = document.getElementById('livemeter');
+  const lpTx = document.getElementById('lpTx');
+  const logBtn = document.getElementById('liveLog');
+  const logBox = document.getElementById('vislog');
+  const vl = document.getElementById('vlList');
+  const vlc = document.getElementById('vlCount');
+  const x = document.getElementById('vlx');
+  const fmt = n => Math.round(n || 0).toLocaleString('en-IN');
+  const ago = function (t) {
+    const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (s < 60) return s + 's ago';
+    const m = Math.round(s / 60); if (m < 60) return m + 'm ago';
+    const h = Math.round(m / 60); return h + 'h ago';
+  };
+  const host = function (h) {
+    if (!h || h === 'direct') return 'direct visit';
+    return h.replace(/^www\./, '');
+  };
+  let last = null;
+  const load = function () {
+    return fetch('/api/live', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      last = j || null;
+      const v = j && j.views;
+      let t = '';
+      if (v && typeof v.total === 'number') {
+        t = fmt(v.total) + ' tracked views';
+        if (v.today) t += ' · ' + fmt(v.today) + ' today';
+        if (v.hour) t += ' · ' + fmt(v.hour) + ' this hour';
+      } else t = 'analytics warming up';
+      if (lpTx) lpTx.textContent = t;
+      if (meter) { if (meter.hidden) meter.hidden = false; }
+      return j;
+    }).catch(function () {
+      if (lpTx) lpTx.textContent = 'live metrics unavailable';
+    });
+  };
+  load();
+  setInterval(load, 30000);
+
+  if (logBtn) logBtn.addEventListener('click', function () {
+    if (!logBox) return;
+    if (logBox.classList.contains('on')) { logBox.classList.remove('on'); return; }
+    const open = function (j) {
+      const v = (j && j.views) || (last && last.views);
+      vlc.textContent = (v ? fmt(v.total) : '—') + ' tracked · ' + (v ? fmt(v.today) : '—') + ' today';
+      const list = (j && j.visitors) || (last && last.visitors) || [];
+      if (!list.length) { vl.innerHTML = '<li class="vl-none">No visits logged yet — be the first 👀</li>'; }
+      else {
+        vl.innerHTML = list.map(function (w) {
+          const h = w.ref && w.ref !== 'direct' ? host(w.ref) : 'direct visit';
+          const ic = w.device === 'mobile' ? '📱' : '🖥️';
+          return '<li><span class="vl-dot"></span><b>' + h + '</b><em>' + ic + ' ' + (w.path || '/') + '</em><small>' + ago(w.t || Date.now()) + '</small></li>';
+        }).join('');
+      }
+      logBox.classList.add('on');
+    };
+    if (last && last.ok) open(null); else load().then(open);
+  });
+  if (x) x.addEventListener('click', function () { if (logBox) logBox.classList.remove('on'); });
+}());
+</script>
