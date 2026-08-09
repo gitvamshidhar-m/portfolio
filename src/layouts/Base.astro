@@ -1,7 +1,6 @@
 ---
 import '../styles/global.css';
 import Search from '../components/Search.astro';
-import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -110,7 +109,6 @@ const ogUrl = ogImage
 <script defer src="/_vercel/insights/script.js"></script>
 <script type="application/ld+json" set:html={jsonLd} />
 {breadcrumbLd && <script type="application/ld+json" set:html={breadcrumbLd} />}
-<ClientRouter />
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
