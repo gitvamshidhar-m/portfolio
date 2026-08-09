@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
               {
                 type: 'div',
                 props: { style: { display: 'flex', flexDirection: 'column', gap: '16px' }, children: (lines.length ? lines : ['Run a free 30-minute growth audit and agree the KPI.'].concat(['Audit current spend: ad groups, target CPA, CRO backlog.'])).map(function (line) {
-                  return { type: 'div', props: { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' }, children: [{ type: 'div', props: { style: { width: '10px', height: '10px', borderRadius: '50%', background: '#2ff3c0', marginTop: '12px' }, children: [] } }, { type: 'div', props: { style: { fontSize: '24px', color: '#e8e8f4', lineHeight: '1.35' }, children: line } }] } };
+                  return { type: 'div', props: { style: { display: 'flex', gap: '14px', alignItems: 'flex-start' }, children: [{ type: 'div', props: { style: { width: '10px', height: '10px', borderRadius: '50%', background: '#2ff3c0', marginTop: '12px' } } }, { type: 'div', props: { style: { fontSize: '24px', color: '#e8e8f4', lineHeight: '1.35' }, children: line } }] } };
                 }) },
               },
               { type: 'div', props: { style: { position: 'absolute', bottom: '34px', left: '64px', right: '64px', borderTop: '1px solid rgba(255,255,255,.12)', paddingTop: '18px', display: 'flex', justifyContent: 'space-between', fontSize: '18px', color: '#a9a9c0' }, children: ['vamshidharm.vercel.app', 'Vamshidhar Reddy M · performance marketer who builds'] } }
