@@ -604,6 +604,8 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
   var ctaRow=stage.querySelector('.cta-row');
   var sub=stage.querySelector('#heroRole');
   var grid=stage.querySelector('.hero-grid-bg');
+  var inner=stage.querySelector('.hero-inner');
+  var mse=stage.querySelector('.mouse');
   var beats=Array.prototype.slice.call(stage.querySelectorAll('.h-beat'));
   var bar=stage.querySelector('.h-progress span');
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
@@ -616,13 +618,18 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
     var vh=window.innerHeight;
     var max=Math.max(1,(stage.offsetHeight-vh));
     var s=clamp(-top/max,0,1);
-    var g=clamp(s/0.65,0,1);
-    var list=[tag,hero,typewrap,roles,ticker,socials,sub];
-    for(var i=0;i<list.length;i++){if(list[i])list[i].style.opacity=String(1-g*0.35);}
-    if(ctaRow)ctaRow.style.opacity=String(clamp(1-s*1.6,0,1));
-    if(grid)grid.style.transform='translateY('+(s*120)+'px)';
-    if(hero)hero.style.transform='translateY('+(s*-36)+'px) scale('+(1-s*0.12)+')';
-    beats.forEach(function(b,i){if(b)b.style.opacity=String(clamp((s-(i*0.27))/0.3,0,1));});
+    var intro=clamp(s/0.35,0,1);
+    var socialFade=clamp((s-0.12)/0.3,0,1);
+    var ctaFade=clamp((s-0.3)/0.25,0,1);
+    var tops=[tag,hero,typewrap,roles,ticker,sub];
+    for(var i=0;i<tops.length;i++){if(tops[i])tops[i].style.opacity=String(1-intro);}
+    if(socials)socials.style.opacity=String(1-socialFade);
+    if(ctaRow)ctaRow.style.opacity=String(1-ctaFade);
+    if(mse)mse.style.opacity=String(1-clamp(s/0.4,0,1));
+    if(grid)grid.style.transform='translateY('+(s*110)+'px)';
+    if(hero)hero.style.transform='translateY('+(s*-46)+'px) scale('+(1-s*0.12)+')';
+    if(inner)inner.style.transform='translateY('+(s*-50)+'px)';
+    beats.forEach(function(b,i){if(b)b.style.opacity=String(clamp((s-(0.45+i*0.18))/0.28,0,1));});
     if(bar)bar.style.transform='scaleX('+s+')';
   }
   if(reduces){if(bar)bar.style.transform='scaleX(1)';return;}

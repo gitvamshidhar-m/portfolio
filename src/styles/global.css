@@ -94,7 +94,7 @@ h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-1px;line-heigh
 @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.15)}66%{transform:translate(-30px,30px) scale(.95)}}
 .hero-grid-bg{position:absolute;inset:0;z-index:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.35;mask-image:radial-gradient(circle at 50% 45%,#000 0%,transparent 75%)}
 #particles{position:absolute;inset:0;z-index:0}
-.hero-inner{position:relative;z-index:2;text-align:center;max-width:860px;margin:0 auto;padding:30px 0 150px;transform-style:preserve-3d;will-change:transform}
+.hero-inner{position:relative;z-index:2;text-align:center;max-width:860px;margin:0 auto;padding:30px 0;transform-style:preserve-3d;will-change:transform}
 .hero h1{font-size:clamp(38px,7vw,72px);font-weight:900;letter-spacing:-2.5px;line-height:1.02;transform:translateZ(46px)}
 .hero h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .type-wrap{height:36px;font-size:clamp(20px,3.4vw,30px);margin:22px 0;font-weight:600;transform:translateZ(30px)}
@@ -506,7 +506,7 @@ body.bs-open{overflow:hidden}
 .nf-note{font-size:13px;margin-top:22px!important;margin-bottom:0!important}
 
 /* scroll-story hero */
-.hero-stage{height:190vh}
+.hero-stage{height:160vh}
 .hero-pin{position:sticky;top:0;min-height:100vh;overflow:hidden}
 .h-story{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:min(880px,94%);z-index:5}
 .h-beats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -516,7 +516,7 @@ body.bs-open{overflow:hidden}
 .h-beat p{color:var(--muted);font-size:12px;line-height:1.55;margin-top:5px}
 .h-progress{position:absolute;left:0;right:0;bottom:-16px;height:3px;background:var(--line);border-radius:3px;overflow:hidden}
 .h-progress span{display:block;height:100%;background:var(--grad);transform:scaleX(0);transform-origin:left}
-@media(min-width:1200px){.hero-stage{height:200vh}}
+@media(min-width:1200px){.hero-stage{height:170vh}}
 @media(max-width:640px){.h-beats{grid-template-columns:1fr 1fr 1fr;gap:8px}.h-beat{padding:10px 12px}.h-beat p{display:none}.h-beat span{font-size:10px}.h-beat b{font-size:12.5px}.h-story{bottom:14px}}
 @media (prefers-reduced-motion: reduce){
   .hero-stage{height:auto}
