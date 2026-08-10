@@ -670,8 +670,9 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
       fetch('/api/live', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
         var v = (j && j.visitors && j.visitors.length) ? j.visitors[0] : null;
         if (v) {
-          var who = hostOf(v.ref) || (v.path || 'this site');
-          el.textContent = who + ' · ' + (v.device || '');
+          var who = hostOf(v.ref);
+          var dev = v.device || '';
+          el.textContent = (who ? who + ' · ' : '') + (dev || 'you');
         } else { el.textContent = 'you'; }
       }).catch(function () { el.textContent = '—'; });
     }

@@ -94,7 +94,7 @@ h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-1px;line-heigh
 @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.15)}66%{transform:translate(-30px,30px) scale(.95)}}
 .hero-grid-bg{position:absolute;inset:0;z-index:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.35;mask-image:radial-gradient(circle at 50% 45%,#000 0%,transparent 75%)}
 #particles{position:absolute;inset:0;z-index:0}
-.hero-inner{position:relative;z-index:2;text-align:center;max-width:860px;margin:0 auto;padding:30px 0;transform-style:preserve-3d;will-change:transform}
+.hero-inner{position:relative;z-index:2;text-align:center;max-width:860px;margin:0 auto;padding:30px 0 150px;transform-style:preserve-3d;will-change:transform}
 .hero h1{font-size:clamp(38px,7vw,72px);font-weight:900;letter-spacing:-2.5px;line-height:1.02;transform:translateZ(46px)}
 .hero h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .type-wrap{height:36px;font-size:clamp(20px,3.4vw,30px);margin:22px 0;font-weight:600;transform:translateZ(30px)}
@@ -389,8 +389,8 @@ body.bs-open{overflow:hidden}
 .role-switch button{border:0;background:none;color:var(--muted);font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:999px;cursor:pointer;transition:.2s}
 .role-switch button:hover{color:var(--txt)}
 .role-switch button.on{background:var(--grad);color:#fff;box-shadow:0 6px 16px -6px var(--accent)}
-.traction{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:13px;color:var(--muted);margin-top:20px}
-.traction span{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+.traction{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;justify-content:center;font-size:13px;color:var(--muted);margin-top:20px;max-width:760px;margin-left:auto;margin-right:auto}
+.traction span{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px;white-space:nowrap;min-width:0}
 .traction b{color:var(--accent);font-variant-numeric:tabular-nums}
 .traction i{font-style:normal}
 .livepulse{width:7px;height:7px;border-radius:50%;background:var(--accent2);display:inline-block;animation:pulse 1.6s infinite}
@@ -633,10 +633,10 @@ body.bs-open{overflow:hidden}
 .pchip{position:absolute;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 12px 34px -12px rgba(0,0,0,.5);display:grid;gap:1px;animation:chipfloat 7s ease-in-out infinite;backdrop-filter:blur(6px)}
 .pchip b{font-size:15px;color:var(--txt);font-weight:800}
 .pchip span{font-size:11.5px;color:var(--muted)}
-.pc1{top:24%;right:max(8vw,40px);animation-delay:0s}
-.pc2{top:46%;left:max(8vw,40px);animation-delay:-1.4s}
-.pc3{bottom:30%;right:max(12vw,90px);animation-delay:-2.8s}
-.pc4{bottom:44%;left:max(12vw,90px);animation-delay:-4.2s}
+.pc1{top:22%;right:max(8vw,40px);animation-delay:0s}
+.pc2{top:34%;left:max(8vw,40px);animation-delay:-1.4s}
+.pc3{bottom:24%;right:max(12vw,90px);animation-delay:-2.8s}
+.pc4{bottom:32%;left:max(12vw,90px);animation-delay:-4.2s}
 @keyframes chipfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 @media(max-width:1100px){.proof-chips{display:none}}
 /* ---- simplified single-screen hero ---- */
