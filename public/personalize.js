@@ -15,6 +15,7 @@
     else if (utm === 'seo' || /google\.|bing\.|duckduckgo/.test(ref)) { step = 'seo'; tag = 'Organic Search'; msg = 'Caught from search — here is the SEO case history that shows how my own site ranks.'; link = '/blog.html'; }
     else if (utm === 'ai' || /ai/.test(cam)) { step = 'ai'; tag = 'AI Automation'; msg = 'Interested in the AI side — three products I built solo prove the build half.'; link = '/projects.html#ai'; }
     else if (ref && refHost) { step = 'ref'; tag = refHost; msg = 'You got here from ' + refHost + ' — the fastest proof is the ROI calculator.'; link = '/contact.html'; }
+    else { step = 'site'; tag = location.hostname.replace(/^www\./, ''); msg = 'You are on ' + location.hostname.replace(/^www\./, '') + ' — everything here is live proof, not mockups.'; link = '/contact.html'; }
     if (step !== 'none' && r) {
       r.hidden = false;
       r.innerHTML = '<span class="prz-tag"></span><a class="prz-link"></a><button class="prz-x" aria-label="Dismiss">×</button>';
