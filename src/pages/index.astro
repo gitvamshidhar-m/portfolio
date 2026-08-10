@@ -601,6 +601,7 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
   var roles=stage.querySelector('.role-switch');
   var ticker=stage.querySelector('.ticker');
   var socials=stage.querySelector('.socials');
+  var ctaRow=stage.querySelector('.cta-row');
   var sub=stage.querySelector('#heroRole');
   var grid=stage.querySelector('.hero-grid-bg');
   var beats=Array.prototype.slice.call(stage.querySelectorAll('.h-beat'));
@@ -618,6 +619,7 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
     var g=clamp(s/0.65,0,1);
     var list=[tag,hero,typewrap,roles,ticker,socials,sub];
     for(var i=0;i<list.length;i++){if(list[i])list[i].style.opacity=String(1-g*0.35);}
+    if(ctaRow)ctaRow.style.opacity=String(clamp(1-s*1.6,0,1));
     if(grid)grid.style.transform='translateY('+(s*120)+'px)';
     if(hero)hero.style.transform='translateY('+(s*-36)+'px) scale('+(1-s*0.12)+')';
     beats.forEach(function(b,i){if(b)b.style.opacity=String(clamp((s-(i*0.27))/0.3,0,1));});
