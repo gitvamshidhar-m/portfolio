@@ -636,20 +636,20 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
   function draw(){
     var top=stage.getBoundingClientRect().top;
     var vh=window.innerHeight;
-    var max=Math.max(1,(stage.offsetHeight-vh));
+    var max=Math.max(1,(stage.offsetHeight-vh*0.6));
     var s=clamp(-top/max,0,1);
     var intro=clamp(s/0.35,0,1);
     var socialFade=clamp((s-0.12)/0.3,0,1);
     var ctaFade=clamp((s-0.45)/0.3,0,1);
     var tops=[tag,hero,typewrap,roles,ticker,sub];
-    for(var i=0;i<tops.length;i++){if(tops[i])tops[i].style.opacity=String(1-intro);}
-    if(socials)socials.style.opacity=String(1-socialFade);
-    if(ctaRow)ctaRow.style.opacity=String(clamp(1-ctaFade,0.15,1));
-    if(mse)mse.style.opacity=String(1-clamp(s/0.4,0,1));
+    for(var i=0;i<tops.length;i++){if(tops[i])tops[i].style.opacity='1';}
+    if(socials)socials.style.opacity='1';
+    if(ctaRow)ctaRow.style.opacity='1';
+    if(mse)mse.style.opacity='1';
     if(grid)grid.style.transform='translateY('+(s*110)+'px)';
-    if(hero)hero.style.transform='translateY('+(s*-46)+'px) scale('+(1-s*0.12)+')';
-    if(inner)inner.style.transform='translateY('+(s*-120)+'px)';
-    beats.forEach(function(b,i){if(b)b.style.opacity=String(clamp((s-(0.55+i*0.15))/0.28,0,1));});
+    if(hero)hero.style.transform='none';
+    if(inner)inner.style.transform='none';
+    beats.forEach(function(b,i){if(b)b.style.opacity='1';});
     if(bar)bar.style.transform='scaleX('+s+')';
   }
   if(reduces){if(bar)bar.style.transform='scaleX(1)';return;}
