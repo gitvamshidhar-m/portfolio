@@ -7,12 +7,13 @@ const STOP = new Set('a,an,the,and,or,but,to,of,for,in,on,at,is,are,was,were,am,
 
 const TOPIC_META = {
   profile: { label: 'Profile', url: '/#about' },
-  experience: { label: 'Experience', url: '/#experience' },
+  experience: { label: 'Experience', url: '/experience.html' },
   products: { label: 'AI Products', url: '/#projects' },
   results: { label: 'Case Studies', url: '/blog.html' },
-  skills: { label: 'Skills', url: '/#skills' },
+  skills: { label: 'Skills', url: '/skills.html' },
   approach: { label: 'Approach', url: '/about.html' },
-  hire: { label: 'Hire Me', url: '/#for-you' },
+  hire: { label: 'Hire Me', url: '/hire.html' },
+  compare: { label: 'Compare Me', url: '/hire-recruiters.html' },
   contact: { label: 'Contact', url: '/#contact' },
   education: { label: 'Education', url: '/resume.html' },
   tools: { label: 'This Site', url: '/about.html' },
@@ -66,6 +67,7 @@ function buildSystem(ctx, who) {
     + '- If the context does not contain the answer, say you do not have that detail on hand and offer topics: SEO, PPC/ads, AI tools, products, or hire me.\n'
     + '- Small talk (hi, hello, thanks) -> greet warmly and offer to help.\n'
     + '- For hiring/contact, point to email geovamshidhar@gmail.com, phone +91-7981719085, or the Contact section; include the portfolio URL https://vamshidharm.vercel.app and any live product URLs from the context.\n'
+    + 'COMPARE MODE: if the visitor asks to compare me with someone else (e.g. a generalist, an agency, a developer, a junior), answer as an honest that-vs-me matchup: acknowledge where the other side is genuinely strong, then state my landed proof (ROAS 3.2x-to-5.5x, CPL Rs.1,100-to-Rs.770, +15% traffic, 70+ leads/mo, 3 solo AI products) and the trade-offs (e.g. not a giant brand-scale media team). Only use facts present in CONTEXT.\n'
     + 'SPECIAL OPTION: a visitor may identify as being from a specific company (e.g. through a special link I share). If so, greet them personally and tailor your 30-second pitch toward what they do.\n\n'
     + whoLine + '\n\n'
     + 'CONTEXT:\n' + (ctx || '(no relevant context found)');

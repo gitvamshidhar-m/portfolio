@@ -1,0 +1,156 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "One-Pager — Performance Marketing · SEO · AI Automation | Vamshidhar Reddy",
+  description: "A print-ready one-pager for each role Vamshidhar fits: Performance Marketing, SEO & Growth, and AI Automation. Save as PDF and take it to your team.",
+  canonical: "https://vamshidharm.vercel.app/one-pager.html",
+  ogImage: "",
+  variant: 'sub',
+  active: '',
+};
+const body = `
+<section id="onepager">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="tag">One-pagers · print-ready</span><h1>Pick a role. Get a one-pager.</h1><p>Each card is tuned for one hiring conversation — the numbers, the proof, and the honest trade-off. Open it, hit <b>Save as PDF</b>, take it to the meeting.</p></div>
+
+    <div class="op-tabs reveal" role="tablist" aria-label="Choose a role">
+      <button class="btn op-tab on" id="tabPerf" role="tab" aria-selected="true" data-role="perf">Performance / PPC</button>
+      <button class="btn op-tab" id="tabSeo" role="tab" aria-selected="false" data-role="seo">SEO &amp; Growth</button>
+      <button class="btn op-tab" id="tabAi" role="tab" aria-selected="false" data-role="ai">AI Automation</button>
+    </div>
+
+    <div class="op-pane reveal on" id="panePerf" data-pane="perf" role="tabpanel">
+      <div class="op-grid">
+        <div class="op-card">
+          <b class="op-kicker">The role</b>
+          <h2>Performance Marketing / PPC Specialist</h2>
+          <p>Own the numbers behind every rupee: paid media structure, bid strategy, creative testing, and reporting that leadership trusts.</p>
+        </div>
+        <div class="op-card">
+          <b class="op-kicker">Proof</b>
+          <ul>
+            <li>ROAS <b>3.2x → 5.5x</b> by consolidating 40+ ad groups into 8</li>
+            <li>Cost-per-lead <b>Rs.1,100 → Rs.770 (−30%)</b></li>
+            <li>Manages <b>Rs.2L+/month</b> across Google, LinkedIn, Meta</li>
+            <li>Moves Google Ads to <b>target-CPA</b> + A/B creative testing</li>
+          </ul>
+        </div>
+        <div class="op-card">
+          <b class="op-kicker">Hire me because</b>
+          <ul>
+            <li>10+ years across paid media, SEO and CRO — not a one-channel vendor</li>
+            <li>I build the tracking and dashboards (GA4, Looker) that prove ROI</li>
+            <li>I ship AI tools that automate what scales</li>
+          </ul>
+        </div>
+        <div class="op-card" style="--op-acc:var(--muted)">
+          <b class="op-kicker">Honest trade-off</b>
+          <p>I'm not a giant brand-scale media agency. My leverage is structure + efficiency for SMB-to-enterprise budgets where every rupee counts.</p>
+          <p class="op-meta">geovamshidhar@gmail.com · +91-7981719085 · Hyderabad, IN (remote-ready)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="op-pane reveal" id="paneSeo" data-pane="seo" role="tabpanel" hidden>
+      <div class="op-grid">
+        <div class="op-card">
+          <b class="op-kicker">The role</b>
+          <h2>SEO &amp; Growth Marketing</h2>
+          <p>Compound organic growth: technical SEO, content strategy, E-E-A-T, and measurement wired into one system.</p>
+        </div>
+        <div class="op-card">
+          <b class="op-kicker">Proof</b>
+          <ul>
+            <li>Grew organic traffic <b>+15%</b> via audits &amp; technical fixes</li>
+            <li>Generated <b>70+ qualified leads/month</b> in current role</li>
+            <li>Technical SEO: semantic HTML, one h1, JSON-LD, sitemap/robots (this site ships proof)</li>
+            <li>GA4, Search Console, Screaming Frog, Ahrefs/SEMrush in daily use</li>
+          </ul>
+        </div>
+        <div class="op-card">
+          <b class="op-kicker">Hire me because</b>
+          <ul>
+            <li>10+ years of SEO execution, from technical fixes to link building</li>
+            <li>I combine SEO with PPC + CRO so channels stop working against each other</li>
+            <li>I build dashboards that show exactly what moved</li>
+          </ul>
+        </div>
+        <div class="op-card" style="--op-acc:var(--muted)">
+          <b class="op-kicker">Honest trade-off</b>
+          <p>SEO compounds slowly; the first 1–2 months are foundation. I'll set the roadmap so you see momentum fast, but organic wins are a quarter-scale game.</p>
+          <p class="op-meta">geovamshidhar@gmail.com · +91-7981719085 · Hyderabad, IN (remote-ready)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="op-pane reveal" id="paneAi" data-pane="ai" role="tabpanel" hidden>
+      <div class="op-grid">
+        <div class="op-card">
+          <b class="op-kicker">The role</b>
+          <h2>AI &amp; Automation for Marketing</h2>
+          <p>Turn repetitive marketing work into systems: AI copy, ad prediction, lead enrichment, and internal GPT assistants that know your product.</p>
+        </div>
+        <div class="op-card">
+          <b class="op-kicker">Proof</b>
+          <ul>
+            <li><b>3 AI products shipped solo &amp; live</b> — Hook AI, Creative Predictor v13.0, Growth Strategy Generator</li>
+            <li>Stack: Next.js, Supabase, TypeScript, Groq, Razorpay, Vercel</li>
+            <li>This portfolio's chat is a RAG assistant grounded in my real record</li>
+          </ul>
+        </div>
+        <div class="op-card">
+          <b class="op-kicker">Hire me because</b>
+          <ul>
+            <li>I plan the automation with the CMO and build the tool myself</li>
+            <li>Result: hours of reporting/copy work become seconds</li>
+            <li>Same muscle automates your workflows, not just tools</li>
+          </ul>
+        </div>
+        <div class="op-card" style="--op-acc:var(--muted)">
+          <b class="op-kicker">Honest trade-off</b>
+          <p>I'm a marketing-first engineer, not a data-platform team. Perfect for automating marketing ops — not for building your core product database.</p>
+          <p class="op-meta">geovamshidhar@gmail.com · +91-7981719085 · Hyderabad, IN (remote-ready)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal" style="text-align:center;margin-top:22px">
+      <button class="btn primary" type="button" id="opPrint">⬇ Save this one-pager as PDF</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">Opens your browser's print dialog → choose "Save as PDF".</p>
+    </div>
+  </div>
+</section>
+`;
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script is:inline>
+    (function () {
+      var tabs = document.querySelectorAll('.op-tab');
+      var panes = document.querySelectorAll('.op-pane');
+      function show(role) {
+        panes.forEach(function (p) {
+          var on = p.getAttribute('data-pane') === role;
+          p.hidden = !on;
+          p.classList.toggle('on', on);
+          if (on) { try { p.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }
+        });
+        tabs.forEach(function (t) {
+          var on = t.getAttribute('data-role') === role;
+          t.classList.toggle('on', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        var h = location.href.split('#')[0];
+        history.replaceState(null, '', h + '?role=' + role);
+      }
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () { show(t.getAttribute('data-role')); });
+      });
+      var p = new URLSearchParams(location.search).get('role');
+      if (p === 'seo' || p === 'ai') show(p); else show('perf');
+      var btn = document.getElementById('opPrint');
+      if (btn) btn.addEventListener('click', function () { try { window.print(); } catch (e) {} });
+    })();
+  </script>
+</Base>
