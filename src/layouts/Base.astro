@@ -24,13 +24,15 @@ const pagePath = '/' + canonical.replace(/^https?:\/\/[^\/]+/, '').replace(/^\//
 const isBlogPage = Boolean(canonical.match(/\/blog\/.+/));
 
 const indexLinks = [
-  ['about.html', 'About'], ['blog.html', 'Blog'], ['projects.html', 'Projects'],
-  ['projects.html#demos', 'Demos'], ['experience.html', 'Experience'], ['skills.html', 'Skills'],
-  ['faq.html', 'FAQ'], ['#insights', 'ROI'], ['hire.html', 'Hire Me'], ['contact.html', 'Contact'],
+  ['about.html', 'About'], ['projects.html', 'Work'], ['blog.html', 'Case Studies'], ['contact.html', 'Contact'],
+];
+const moreLinks = [
+  ['/blog.html', 'Blog'], ['/experience.html', 'Experience'], ['/skills.html', 'Skills'], ['/faq.html', 'FAQ'],
+  ['/hire.html', 'Hire Me'], ['/hire-recruiters.html', 'Hiring Managers'], ['/changelog.html', 'Changelog'],
+  ['/resume.html', 'Resume'], ['/seo.html', 'SEO Services'], ['/ads.html', 'Paid Media'], ['/ai-automation.html', 'AI Automation'], ['/admin.html', 'Dashboard'],
 ];
 const subLinks = [
-  ['/', 'Home'], ['/about.html', 'About'], ['/blog.html', 'Blog'], ['/projects.html', 'Projects'],
-  ['/projects.html#demos', 'Demos'], ['/skills.html', 'Skills'], ['/experience.html', 'Experience'], ['/faq.html', 'FAQ'], ['/hire.html', 'Hire Me'], ['/changelog.html', 'Changelog'], ['/contact.html', 'Contact'],
+  ['/', 'Home'], ['/about.html', 'About'], ['/projects.html', 'Work'], ['/blog.html', 'Case Studies'], ['/contact.html', 'Contact'],
 ];
 const links = variant === 'index' ? indexLinks : subLinks;
 
@@ -141,6 +143,12 @@ const ogUrl = ogImage
         {links.map(([href, label]) => (
           <a href={href} class:list={[href === active ? 'active' : '', href.startsWith('#') ? 'hash' : '']}>{label}</a>
         ))}
+        <div class="nav-more">
+          <button class="nav-more-btn" aria-haspopup="true" aria-expanded="false">More ▾</button>
+          <div class="nav-more-drop">
+            {moreLinks.map(([href, label]) => <a href={href}>{label}</a>)}
+          </div>
+        </div>
       </div>
       {variant === 'index' && (
         <>
@@ -157,6 +165,7 @@ const ogUrl = ogImage
 
 <div id="mmenu">
   {links.map(([href, label]) => <a href={href}>{label}</a>)}
+  {moreLinks.map(([href, label]) => <a href={href}>{label}</a>)}
 </div>
 
 {!(variant === 'index') && <div id="progress" aria-hidden="true"></div>}
@@ -168,7 +177,7 @@ const ogUrl = ogImage
   <LivePulse />
   <footer>
     <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
-    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/hire-recruiters.html">Hiring Managers</a><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/changelog.html">Changelog</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
+    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/hire-recruiters.html">Hiring Managers</a><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/projects.html">Projects</a><a href="/changelog.html">Changelog</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
     <div class="wrap ft" style="margin-top:10px">Services — <a href="/seo.html">SEO &amp; Content</a> · <a href="/ads.html">Paid Media / PPC</a> · <a href="/ai-automation.html">AI Automation</a></div>
     <div class="wrap ft ft-seo">Built as proof, not just a demo — semantic HTML (&lt;1 h1) with a clean h2–h3 tree, Person + FAQPage JSON-LD, canonical URL, Open Graph/Twitter cards, RSS feed, sitemap.xml, robots.txt &amp; llms.txt.</div>
   </footer>
@@ -182,6 +191,8 @@ const ogUrl = ogImage
       if (tb) { tb.addEventListener('click', toggleTheme); tb.textContent = html.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️'; }
       const mb = document.getElementById('menuBtn'), mm = document.getElementById('mmenu');
       if (mb && mm) { mb.addEventListener('click', () => { const on = mm.classList.toggle('on'); mb.textContent = on ? '✕' : '☰'; mb.setAttribute('aria-label', on ? 'Close menu' : 'Open menu'); }); mm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { mm.classList.remove('on'); mb.textContent = '☰'; mb.setAttribute('aria-label', 'Open menu'); })); }
+      const nmb = document.querySelector('.nav-more-btn'), nmd = document.querySelector('.nav-more-drop');
+      if (nmb && nmd) { nmb.addEventListener('click', (e) => { e.stopPropagation(); const on = nmd.classList.toggle('on'); nmb.setAttribute('aria-expanded', on ? 'true' : 'false'); }); document.addEventListener('click', (e) => { if (!e.target.closest('.nav-more')) { nmd.classList.remove('on'); nmb.setAttribute('aria-expanded', 'false'); } }); }
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); e.target.querySelectorAll('.count').forEach(c => { if (!c.dataset.done) { c.dataset.done = 1; countUp(c); } }); e.target.querySelectorAll('.bar i').forEach(b => { b.style.width = b.dataset.w + '%'; }); io.unobserve(e.target); } }), { threshold: .15 });
       document.querySelectorAll('.reveal').forEach(x => io.observe(x));
       function countUp(c) { const t = +(c.dataset.target), suf = c.dataset.suffix || ''; let n = 0; const step = Math.max(1, t / 60); const iv = setInterval(() => { n += step; if (n >= t) { n = t; clearInterval(iv); } c.textContent = Math.floor(n) + (suf || ''); }, 24); }
