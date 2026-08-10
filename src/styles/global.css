@@ -114,7 +114,7 @@ h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-1px;line-heigh
 .btn{padding:13px 26px;border-radius:12px;font-weight:600;font-size:15px;border:1px solid var(--line);cursor:pointer;transition:.25s;background:var(--card);color:var(--txt);will-change:transform}
 .btn.primary{background:var(--grad);color:#fff;border:none;box-shadow:0 12px 30px -10px var(--accent)}
 .btn:hover{box-shadow:0 14px 34px -12px var(--accent)}
-.mouse{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2}
+.mouse{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none}
 .mouse span{display:block;width:24px;height:38px;border:2px solid var(--muted);border-radius:14px;position:relative}
 .mouse span:after{content:"";position:absolute;top:7px;left:50%;width:4px;height:7px;margin-left:-2px;background:var(--accent2);border-radius:4px;animation:scroll 1.6s infinite}
 @keyframes scroll{0%{opacity:0;top:7px}40%{opacity:1}80%{opacity:0;top:20px}}
@@ -506,18 +506,32 @@ body.bs-open{overflow:hidden}
 .nf-note{font-size:13px;margin-top:22px!important;margin-bottom:0!important}
 
 /* scroll-story hero */
-.hero-stage{height:160vh}
-.hero-pin{position:sticky;top:0;min-height:100vh;overflow:hidden}
-.h-story{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:min(880px,94%);z-index:5}
+.hero-stage{height:auto}
+.hero-pin{position:static;min-height:100vh;overflow:hidden}
+.h-story{position:static;transform:none;width:min(880px,94%);margin:18px auto 0;z-index:5}
 .h-beats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.h-beat{opacity:0;background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--line);border-radius:16px;padding:14px 16px;text-align:left;backdrop-filter:blur(6px);transition:opacity .5s ease,border-color .3s}
+.h-beat{opacity:1;background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--line);border-radius:16px;padding:14px 16px;text-align:left;backdrop-filter:blur(6px);transition:border-color .3s}
 .h-beat span{color:var(--accent2);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700}
 .h-beat b{display:block;font-size:14.5px;margin-top:4px}
 .h-beat p{color:var(--muted);font-size:12px;line-height:1.55;margin-top:5px}
-.h-progress{position:absolute;left:0;right:0;bottom:-16px;height:3px;background:var(--line);border-radius:3px;overflow:hidden}
+.h-progress{position:relative;margin-top:16px;height:3px;background:var(--line);border-radius:3px;overflow:hidden}
 .h-progress span{display:block;height:100%;background:var(--grad);transform:scaleX(0);transform-origin:left}
 @media(min-width:1200px){.hero-stage{height:170vh}}
-@media(max-width:640px){.h-beats{grid-template-columns:1fr 1fr 1fr;gap:8px}.h-beat{padding:10px 12px}.h-beat p{display:none}.h-beat span{font-size:10px}.h-beat b{font-size:12.5px}.h-story{bottom:14px}}
+@media(max-width:640px){.h-beats{grid-template-columns:1fr 1fr 1fr;gap:8px}.h-beat{padding:10px 12px}.h-beat p{display:none}.h-beat span{font-size:10px}.h-beat b{font-size:12.5px}.h-story{margin-top:14px}}
+@media(max-height:760px){
+  .hero-inner{padding:8px 0}
+  .hero h1{font-size:clamp(28px,5.2vw,44px)}
+  .type-wrap{margin:10px 0;height:auto}
+  .hero .tag{margin-bottom:8px;padding:6px 14px}
+  .role-switch{margin-top:10px}
+  .ticker{margin-top:10px;padding:6px 14px}
+  .socials{margin-top:12px}
+  .socials a{width:38px;height:38px}
+  .cta-row{margin-top:12px}
+  .btn{padding:10px 20px}
+  .proof-chips{display:none}
+  .h-story{margin-top:14px}
+}
 @media (prefers-reduced-motion: reduce){
   .hero-stage{height:auto}
   .hero-pin{position:static}
