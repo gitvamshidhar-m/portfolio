@@ -8,6 +8,7 @@ function getHandler(key) {
     case 'admin': return require('../libs/admin');
     case 'ama': return require('../libs/ama');
     case 'analytics': return require('../libs/analytics');
+    case 'agentic': return require('../libs/agentic');
     case 'audit': return require('../libs/audit');
     case 'capture': return require('../libs/capture');
     case 'casestudy': return require('../libs/casestudy');
