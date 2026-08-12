@@ -65,6 +65,8 @@ nav .wrap{display:flex;align-items:center;justify-content:space-between;min-heig
 .nav-links a:hover{color:var(--txt)}
 .nav-links a:after{content:"";position:absolute;left:0;bottom:-4px;height:2px;width:0;background:var(--grad);transition:.25s}
 .nav-links a:hover:after{width:100%}
+.nav-cta{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:14px;font-weight:700;color:#0a0a1e;background:var(--grad);padding:8px 13px;border-radius:11px;transition:.2s;box-shadow:0 8px 22px -10px rgba(47,243,192,.55)}
+.nav-cta:hover{transform:translateY(-1px);filter:brightness(1.06);color:#0a0a1e}
 .nav-more{position:relative}
 .nav-more-btn{background:none;border:0;color:var(--muted);font-weight:600;font-size:15px;cursor:pointer;padding:0;font-family:inherit;transition:.2s}
 .nav-more-btn:hover{color:var(--txt)}
