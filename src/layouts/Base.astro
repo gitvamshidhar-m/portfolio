@@ -36,6 +36,9 @@ const subLinks = [
 ];
 const links = variant === 'index' ? indexLinks : subLinks;
 const moreLinks = variant === 'index' ? indexMore : [];
+const toolsLinks = [
+  ['/audit.html', 'Audit campaign'], ['/case-study.html', 'Case study'], ['/projects.html#demos', 'Live demos'],
+];
 
 // Breadcrumb trail for sub pages
 const crumbLabel = (() => {
@@ -171,6 +174,14 @@ const ogUrl = ogImage
             </div>
           </div>
         )}
+        <div class="nav-more" id="navTools">
+          <button type="button" class="nav-more-btn" aria-expanded="false" aria-haspopup="true">Tools ▾</button>
+          <div class="nav-more-dd" role="menu">
+            {toolsLinks.map(([href, label]) => (
+              <a href={href} role="menuitem">{label}</a>
+            ))}
+          </div>
+        </div>
       </div>
       {variant === 'index' && (
         <>
@@ -188,6 +199,8 @@ const ogUrl = ogImage
 <div id="mmenu">
   {links.map(([href, label]) => <a href={href}>{label}</a>)}
   {moreLinks.map(([href, label]) => <a href={href}>{label}</a>)}
+  <div class="mm-sep">Tools</div>
+  {toolsLinks.map(([href, label]) => <a href={href}>{label}</a>)}
 </div>
 
 {!(variant === 'index') && <div id="progress" aria-hidden="true"></div>}
@@ -221,8 +234,16 @@ const ogUrl = ogImage
       if (tb) { tb.addEventListener('click', toggleTheme); tb.textContent = html.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️'; }
       const mb = document.getElementById('menuBtn'), mm = document.getElementById('mmenu');
       if (mb && mm) { mb.addEventListener('click', () => { const on = mm.classList.toggle('on'); mb.textContent = on ? '✕' : '☰'; mb.setAttribute('aria-label', on ? 'Close menu' : 'Open menu'); }); mm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { mm.classList.remove('on'); mb.textContent = '☰'; mb.setAttribute('aria-label', 'Open menu'); })); }
-      const nm = document.getElementById('navMore');
-      if (nm) { const btn = nm.querySelector('.nav-more-btn'), dd = nm.querySelector('.nav-more-dd'); function nmClose() { nm.classList.remove('open'); if (btn) btn.setAttribute('aria-expanded', 'false'); } if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); const on = nm.classList.toggle('open'); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); }); document.addEventListener('click', (e) => { if (!nm.contains(e.target)) nmClose(); }); nm.querySelectorAll('a').forEach(a => a.addEventListener('click', nmClose)); addEventListener('keydown', (e) => { if (e.key === 'Escape') nmClose(); }); }
+      ['navMore', 'navTools'].forEach(function (id) {
+        const nm = document.getElementById(id);
+        if (!nm) return;
+        const btn = nm.querySelector('.nav-more-btn'), dd = nm.querySelector('.nav-more-dd');
+        function nmClose() { nm.classList.remove('open'); if (btn) btn.setAttribute('aria-expanded', 'false'); }
+        if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); const on = nm.classList.toggle('open'); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); });
+        document.addEventListener('click', (e) => { if (!nm.contains(e.target)) nmClose(); });
+        nm.querySelectorAll('a').forEach(a => a.addEventListener('click', nmClose));
+        addEventListener('keydown', (e) => { if (e.key === 'Escape') nmClose(); });
+      });
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); e.target.querySelectorAll('.count').forEach(c => { if (!c.dataset.done) { c.dataset.done = 1; countUp(c); } }); e.target.querySelectorAll('.bar i').forEach(b => { b.style.width = b.dataset.w + '%'; }); io.unobserve(e.target); } }), { threshold: .15 });
       document.querySelectorAll('.reveal').forEach(x => io.observe(x));
       function countUp(c) { const t = +(c.dataset.target), suf = c.dataset.suffix || ''; let n = 0; const step = Math.max(1, t / 60); const iv = setInterval(() => { n += step; if (n >= t) { n = t; clearInterval(iv); } c.textContent = Math.floor(n) + (suf || ''); }, 24); }
