@@ -234,16 +234,22 @@ const ogUrl = ogImage
       if (tb) { tb.addEventListener('click', toggleTheme); tb.textContent = html.getAttribute('data-theme') === 'dark' ? '🌙' : '☀️'; }
       const mb = document.getElementById('menuBtn'), mm = document.getElementById('mmenu');
       if (mb && mm) { mb.addEventListener('click', () => { const on = mm.classList.toggle('on'); mb.textContent = on ? '✕' : '☰'; mb.setAttribute('aria-label', on ? 'Close menu' : 'Open menu'); }); mm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { mm.classList.remove('on'); mb.textContent = '☰'; mb.setAttribute('aria-label', 'Open menu'); })); }
-      ['navMore', 'navTools'].forEach(function (id) {
-        const nm = document.getElementById(id);
-        if (!nm) return;
-        const btn = nm.querySelector('.nav-more-btn'), dd = nm.querySelector('.nav-more-dd');
-        function nmClose() { nm.classList.remove('open'); if (btn) btn.setAttribute('aria-expanded', 'false'); }
-        if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); const on = nm.classList.toggle('open'); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); });
-        document.addEventListener('click', (e) => { if (!nm.contains(e.target)) nmClose(); });
-        nm.querySelectorAll('a').forEach(a => a.addEventListener('click', nmClose));
-        addEventListener('keydown', (e) => { if (e.key === 'Escape') nmClose(); });
-      });
+      if (!window.__navMoreInit) {
+        window.__navMoreInit = true;
+        document.addEventListener('click', function (e) {
+          const btn = e.target.closest('.nav-more-btn');
+          if (btn) {
+            const nm = btn.closest('.nav-more');
+            if (nm) { e.stopPropagation(); const on = nm.classList.toggle('open'); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); return; }
+          }
+          if (!e.target.closest('.nav-more')) {
+            document.querySelectorAll('.nav-more.open').forEach(function (n) { n.classList.remove('open'); const b = n.querySelector('.nav-more-btn'); if (b) b.setAttribute('aria-expanded', 'false'); });
+          }
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') { document.querySelectorAll('.nav-more.open').forEach(function (n) { n.classList.remove('open'); const b = n.querySelector('.nav-more-btn'); if (b) b.setAttribute('aria-expanded', 'false'); }); }
+        });
+      }
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); e.target.querySelectorAll('.count').forEach(c => { if (!c.dataset.done) { c.dataset.done = 1; countUp(c); } }); e.target.querySelectorAll('.bar i').forEach(b => { b.style.width = b.dataset.w + '%'; }); io.unobserve(e.target); } }), { threshold: .15 });
       document.querySelectorAll('.reveal').forEach(x => io.observe(x));
       function countUp(c) { const t = +(c.dataset.target), suf = c.dataset.suffix || ''; let n = 0; const step = Math.max(1, t / 60); const iv = setInterval(() => { n += step; if (n >= t) { n = t; clearInterval(iv); } c.textContent = Math.floor(n) + (suf || ''); }, 24); }
