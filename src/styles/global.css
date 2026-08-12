@@ -865,6 +865,7 @@ body.bs-open{overflow:hidden}
 .ag-mode{font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .ag-mode.ai{color:var(--accent2);border-color:color-mix(in srgb,var(--accent2) 50%,var(--line));background:var(--accent2-soft)}
 .ag-mode.template{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:var(--accent-soft)}
+.ag-mode.serp{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));background:var(--accent-soft)}
 
 .ag-stage{position:relative;margin-top:22px}
 .ag-orch{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}

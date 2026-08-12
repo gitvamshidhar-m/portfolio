@@ -2,6 +2,7 @@ const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
+const { serp, serpQuery, formatSerp } = require('./tools/serp');
 
 const rl = { hits: {}, last: Date.now() };
 const RL_WIN = 60000, RL_MAX = 6;
@@ -33,14 +34,16 @@ function sys() {
     + '  },\n'
     + '  "summary":"<2-3 sentence wrap-up a client would read>"\n'
     + '}\n'
+    + 'You have a LIVE SERP tool — real search results are passed in the user message under "LIVE SEARCH CONTEXT". The Research Agent MUST ground its output in them (reference real domains/sources), and later agents must build on that research.\n'
     + 'Rules: be concrete and specific to the GOAL (name real channels, real numbers, real tactics). Keep every field tight (1-2 sentences). Never invent a separate JSON block. Output MUST be parseable JSON.';
 }
-function userMessage(m) {
+function userMessage(m, serpBlock) {
   return 'GOAL: ' + (m.goal || '') + '\n'
     + (m.niche ? 'NICHE / PRODUCT: ' + m.niche + '\n' : '')
     + (m.budget ? 'MONTHLY BUDGET: ' + m.budget + '\n' : '')
     + (m.channels ? 'PREFERRED CHANNELS: ' + m.channels + '\n' : '')
-    + '\nRun the agent swarm and return the JSON plan now.';
+    + (serpBlock ? '\nLIVE SEARCH CONTEXT (real SERP results for "' + (serpBlock.query || '') + '"):\n' + serpBlock.text + '\n' : '')
+    + '\nRun Hive and return the JSON plan now.';
 }
 
 function inferNiche(goal) {
@@ -94,7 +97,7 @@ function fallback(m) {
       ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'],
         'Keeps improving using the KPIs Analytics defined.',
         'Auto-flags underperforming ads and rotates in the next hook variant.',
-        'Weekly experiment loop feeds fresh signal back to Research — the swarm keeps learning.')
+        'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.')
     ],
     campaignPlan: {
       channels: channels,
@@ -102,7 +105,7 @@ function fallback(m) {
       kpis: ['CPL / CAC', 'CTR & hook win-rate', 'Demo / lead rate', 'ROAS'],
       timeline: ['Week 1: Research + tracking live', 'Week 2-4: Launch ' + channels[0] + ' + content', 'Week 5-8: Scale winners, cut losers', 'Week 9-12: Automate the optimizer loop']
     },
-    summary: 'A 6-agent swarm takes "' + core + '" from blank page to a measured, self-optimizing campaign — research to reporting handled without a meeting. That is agentic marketing: autonomous agents that plan, act and improve, with you approving the big calls.'
+    summary: 'A 6-agent Hive takes "' + core + '" from blank page to a measured, self-optimizing campaign — research to reporting handled without a meeting. That is agentic marketing: autonomous agents that plan, act and improve, with you approving the big calls.'
   };
 }
 
@@ -117,7 +120,7 @@ function safePlan(obj) {
   return obj;
 }
 
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/agentic with {goal, niche?, budget?, channels?}' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -136,12 +139,17 @@ module.exports = function handler(req, res) {
 
   const key = (process.env.GROQ_API_KEY || '').trim();
   const fb = fallback(m);
-  if (!key) return res.json(Object.assign({ mode: 'template' }, fb));
+  if (!key) return res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0 }, fb));
+
+  let serpResults = null, serpQ = '';
+  try { serpQ = serpQuery(m); serpResults = await serp(serpQ); } catch (e) { serpResults = null; }
+  const serpCount = Array.isArray(serpResults) ? serpResults.length : 0;
+  const serpBlock = serpCount ? { query: serpQ, text: formatSerp(serpResults) } : null;
 
   fetch(GROQ, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1400, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys() }, { role: 'user', content: userMessage(m) }] })
+    body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1500, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys() }, { role: 'user', content: userMessage(m, serpBlock) }] })
   })
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -149,8 +157,8 @@ module.exports = function handler(req, res) {
       let out = null;
       try { out = JSON.parse(text); } catch (e) { const mm = text.match(/\{[\s\S]*\}/); if (mm) { try { out = JSON.parse(mm[0]); } catch (e2) {} } }
       const plan = safePlan(out);
-      if (!plan) return res.json(Object.assign({ mode: 'template' }, fb));
-      res.json(Object.assign({ mode: 'ai' }, plan));
+      if (!plan) return res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0 }, fb));
+      res.json(Object.assign({ mode: 'ai', serpUsed: serpCount > 0, serpCount: serpCount, serpQuery: serpQ }, plan));
     })
-    .catch(function () { res.json(Object.assign({ mode: 'template' }, fb)); });
+    .catch(function () { res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0 }, fb)); });
 };

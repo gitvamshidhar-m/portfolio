@@ -3,8 +3,8 @@ import Base from '../layouts/Base.astro';
 import LeadForm from '../components/LeadForm.astro';
 
 const op = {
-  title: "Agentic AI in Digital Marketing — Vamshidhar Reddy | A Marketing Team That Runs Itself",
-  description: "Agentic AI doesn't just automate rules — it decides, acts and improves on its own. Watch a live swarm of six marketing agents turn any goal into a measured, self-optimizing campaign.",
+  title: "Hive — Agentic AI Marketing Team | Vamshidhar Reddy",
+  description: "Hive is agentic AI for marketing: autonomous agents that research (with live SERP), plan, create, launch, measure and optimize — deciding, acting and improving on their own.",
   canonical: "https://vamshidharm.vercel.app/agentic-ai.html",
   ogImage: "",
   variant: 'sub',
@@ -16,7 +16,7 @@ const faqLd = JSON.stringify({
   mainEntity: [
     { "@type": "Question", name: "What is agentic AI in digital marketing?", acceptedAnswer: { "@type": "Answer", text: "A set of autonomous agents that read a goal, pick their own tools, take action, check the result, and loop back to improve — instead of running fixed 'if this then that' rules you pre-wrote. Research, strategy, content, media, analytics and optimization happen without a human in every step." } },
     { "@type": "Question", name: "How is agentic AI different from marketing automation?", acceptedAnswer: { "@type": "Answer", text: "Automation executes the rules you defined; it cannot react to something you didn't anticipate. Agentic AI handles the unexpected — it decides what to do next based on live results, like a senior team would." } },
-    { "@type": "Question", name: "Is the agent demo on this page real?", acceptedAnswer: { "@type": "Answer", text: "Yes. It calls a real LLM (Groq) that orchestrates the six-agent plan. If no key is configured it falls back to a smart rule-based planner so the demo always returns a coherent campaign." } },
+    { "@type": "Question", name: "Is the agent demo on this page real?", acceptedAnswer: { "@type": "Answer", text: "Yes. It calls a real LLM (Groq) to orchestrate the six agents, and when a search key is set the Research Agent is grounded with live SERP results. With no keys it falls back to a smart rule-based planner so the demo always returns a coherent campaign." } },
     { "@type": "Question", name: "Where would I actually use this for my business?", acceptedAnswer: { "@type": "Answer", text: "Anywhere a goal needs a coordinated plan: launching a product, scaling paid media, building a content engine, or running an always-on improvement loop across channels — with your team approving the big calls." } }
   ]
 });
@@ -24,11 +24,11 @@ const body = `<section class="lpage-wrap">
   <div class="wrap">
     <div class="ag-hero">
       <div class="ag-hero-copy">
-        <span class="tag">Agentic AI · not just automation</span>
-        <h1>Meet the marketing team that runs itself</h1>
-        <p style="color:var(--muted)">Automation follows rules you wrote. <b style="color:var(--accent2)">Agentic AI decides, acts, and improves on its own.</b> Below, a swarm of six specialized agents takes any goal you type and turns it into a measured, self-optimizing campaign — research to reporting, no meeting required. This is where digital marketing is going, and it already works.</p>
+        <span class="tag">Hive · Agentic AI</span>
+        <h1>Meet Hive — the marketing team that runs itself</h1>
+        <p style="color:var(--muted)">Automation follows rules you wrote. <b style="color:var(--accent2)">Agentic AI decides, acts, and improves on its own.</b> Below, Hive's six specialized agents take any goal you type and turn it into a measured, self-optimizing campaign — research to reporting, no meeting required. This is where digital marketing is going, and it already works.</p>
         <div class="cta-row" style="justify-content:flex-start">
-          <a class="btn primary btn-lg" href="#demo">▶ Run the live agent swarm</a>
+          <a class="btn primary btn-lg" href="#demo">▶ Run Hive</a>
           <a class="btn link-secondary" href="/ai-automation.html">See the tools I build →</a>
         </div>
       </div>
@@ -61,7 +61,7 @@ const body = `<section class="lpage-wrap">
   </div>
 
   <div class="wrap" style="margin-top:40px">
-    <div class="sec-head" style="margin-bottom:18px"><span class="tag">The swarm</span><h2 style="font-size:clamp(20px,3vw,26px)">Six agents. One goal. Zero hand-holding.</h2></div>
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">The Hive</span><h2 style="font-size:clamp(20px,3vw,26px)">Six agents. One goal. Zero hand-holding.</h2></div>
     <div class="ab-grid">
       <div class="ab-variant"><b>🔍 Research Agent</b><p>Maps the real buyer and the channels they actually use — then hands clean signal to the next agent.</p></div>
       <div class="ab-variant"><b>🧭 Strategy Agent</b><p>Turns research into a focused plan: positioning, channels, and where the budget goes.</p></div>
@@ -73,7 +73,7 @@ const body = `<section class="lpage-wrap">
   </div>
 
   <div class="wrap" id="demo" style="margin-top:44px;scroll-margin-top:90px">
-    <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · powered by a real LLM</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Put the swarm to work</h2>
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · Hive + live SERP</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Put Hive to work</h2>
     <p style="color:var(--muted);max-width:680px">Type a real marketing goal. The agents will plan it, hand off between each other, and hand you a campaign plan. Runs on Groq — no account, and nothing is stored beyond an anonymous counter.</p></div>
     <div class="ag-console">
       <div class="ag-input">
@@ -84,8 +84,9 @@ const body = `<section class="lpage-wrap">
           <input id="budgetInput" type="text" placeholder="Monthly budget (optional)" />
         </div>
         <div class="ag-runrow">
-          <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run agent swarm</button>
+          <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Hive</button>
           <span id="agMode" class="ag-mode" hidden></span>
+          <span id="agSerp" class="ag-mode serp" hidden></span>
           <span class="ag-hint">Try: “Sell 500 units of a D2C skincare brand in 60 days” or “Book 30 consultations for a local dental clinic”.</span>
         </div>
       </div>
@@ -112,7 +113,7 @@ const body = `<section class="lpage-wrap">
 <Base {...op}>
   <Fragment set:html={body} />
   <script type="application/ld+json" is:inline set:html={faqLd} />
-  <LeadForm service="ai" serviceLabel="Agentic AI" promise="Want this running on your account? I'll scope a guardrailed agent swarm for your channels and KPIs — research to optimizer — and show you the first autonomous campaign plan." />
+  <LeadForm service="ai" serviceLabel="Agentic AI" promise="Want this running on your account? I'll scope a guardrailed Hive for your channels and KPIs — research to optimizer — and show you the first autonomous campaign plan." />
   <script>
     const ICON = { research: '🔍', strategy: '🧭', content: '✍️', media: '📣', analytics: '📊', optimizer: '♻️' };
     const STEP = 620, THINK = 620;
@@ -146,7 +147,7 @@ const body = `<section class="lpage-wrap">
           ag('content', 'Content Agent', 'Copy & creative', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.'),
           ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'], 'Builds the campaigns exactly as Content + Strategy specified.', 'Launches ' + channels[0] + ' with the winning hooks and tight audiences.', 'Live campaigns with audience sync + budget caps — handed to Analytics.'),
           ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'], 'Makes sure every rupee is measurable before it scales.', 'Wires GA4 + pixels and stands up a one-screen KPI dashboard.', 'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.'),
-          ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.', 'Weekly experiment loop feeds fresh signal back to Research — the swarm keeps learning.')
+          ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.',           'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.')
         ],
         campaignPlan: {
           channels: channels,
@@ -154,12 +155,12 @@ const body = `<section class="lpage-wrap">
           kpis: ['CPL / CAC', 'CTR & hook win-rate', 'Demo / lead rate', 'ROAS'],
           timeline: ['Week 1: Research + tracking live', 'Week 2-4: Launch ' + channels[0] + ' + content', 'Week 5-8: Scale winners, cut losers', 'Week 9-12: Automate the optimizer loop']
         },
-        summary: 'A 6-agent swarm takes "' + core + '" from blank page to a measured, self-optimizing campaign — research to reporting handled without a meeting. That is agentic marketing: autonomous agents that plan, act and improve, with you approving the big calls.'
+        summary: 'A 6-agent Hive takes "' + core + '" from blank page to a measured, self-optimizing campaign — research to reporting handled without a meeting. That is agentic marketing: autonomous agents that plan, act and improve, with you approving the big calls.'
       };
     }
 
     const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budget = $('budgetInput');
-    const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), plan = $('agPlan'), modeEl = $('agMode');
+    const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), plan = $('agPlan'), modeEl = $('agMode'), serpEl = $('agSerp');
 
     function logLine(cls, html) {
       const d = document.createElement('div');
@@ -206,7 +207,7 @@ const body = `<section class="lpage-wrap">
       if (!g) { goal.focus(); goal.style.borderColor = 'var(--accent)'; return; }
       goal.style.borderColor = '';
       runBtn.disabled = true;
-      runBtn.textContent = '⏳ Swarm working…';
+      runBtn.textContent = '⏳ Hive working…';
       stage.hidden = false;
       plan.hidden = true;
       reset();
@@ -231,8 +232,12 @@ const body = `<section class="lpage-wrap">
         modeEl.className = 'ag-mode ' + (data.mode === 'ai' ? 'ai' : 'template');
         modeEl.textContent = data.mode === 'ai' ? '● LIVE LLM' : (data.mode === 'offline' ? '● OFFLINE DEMO' : '● RULE-BASED FALLBACK');
       }
+      if (serpEl) {
+        if (data.serpUsed) { serpEl.hidden = false; serpEl.textContent = '🔎 LIVE SERP · ' + (data.serpCount || 0) + ' results'; logLine('t', 'research grounded in live SERP (' + (data.serpCount || 0) + ' results) for "' + esc(data.serpQuery || '') + '"'); }
+        else serpEl.hidden = true;
+      }
 
-      orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(data.orchestrator || 'Planning the swarm…') + '</span>';
+      orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(data.orchestrator || 'Planning Hive…') + '</span>';
       logLine('a', 'orchestrator: ' + esc(data.orchestrator || 'starting'));
 
       for (const a of data.agents) {
