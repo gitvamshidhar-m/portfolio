@@ -42,12 +42,12 @@ const body = `<section class="lpage-wrap">
           <line data-agent="optimizer" x1="50" y1="50" x2="72" y2="82"></line>
         </svg>
         <div class="ag-core"><span>GOAL</span><i></i></div>
-        <span class="ag-sat" data-agent="research" style="top:14%;left:24%">🔍</span>
-        <span class="ag-sat" data-agent="strategy" style="top:11%;left:74%">🧭</span>
-        <span class="ag-sat" data-agent="content" style="top:46%;left:9%">✍️</span>
-        <span class="ag-sat" data-agent="media" style="top:44%;left:90%">📣</span>
-        <span class="ag-sat" data-agent="analytics" style="top:80%;left:28%">📊</span>
-        <span class="ag-sat" data-agent="optimizer" style="top:82%;left:72%">♻️</span>
+        <span class="ag-sat" data-agent="research" style="top:14%;left:24%;--agc:#49b6ff">🔍</span>
+        <span class="ag-sat" data-agent="strategy" style="top:11%;left:74%;--agc:#8b7bff">🧭</span>
+        <span class="ag-sat" data-agent="content" style="top:46%;left:9%;--agc:#ff6fae">✍️</span>
+        <span class="ag-sat" data-agent="media" style="top:44%;left:90%;--agc:#ff9e5c">📣</span>
+        <span class="ag-sat" data-agent="analytics" style="top:80%;left:28%;--agc:#2ff3c0">📊</span>
+        <span class="ag-sat" data-agent="optimizer" style="top:82%;left:72%;--agc:#8affc1">♻️</span>
       </div>
     </div>
   </div>
@@ -63,12 +63,12 @@ const body = `<section class="lpage-wrap">
   <div class="wrap" style="margin-top:40px">
     <div class="sec-head" style="margin-bottom:18px"><span class="tag">The Hive</span><h2 style="font-size:clamp(20px,3vw,26px)">Six agents. One goal. Zero hand-holding.</h2></div>
     <div class="ab-grid">
-      <div class="ab-variant"><b>🔍 Research Agent</b><p>Maps the real buyer and the channels they actually use — then hands clean signal to the next agent.</p></div>
-      <div class="ab-variant"><b>🧭 Strategy Agent</b><p>Turns research into a focused plan: positioning, channels, and where the budget goes.</p></div>
-      <div class="ab-variant"><b>✍️ Content Agent</b><p>Writes hooks, ad copy and landing pages in your brand voice — not generic filler.</p></div>
-      <div class="ab-variant"><b>📣 Media Buying Agent</b><p>Builds and launches the campaigns with the right audiences and budget caps.</p></div>
-      <div class="ab-variant"><b>📊 Analytics Agent</b><p>Wires tracking and stands up the KPI dashboard so every rupee is measurable.</p></div>
-      <div class="ab-variant"><b>♻️ Optimizer Agent</b><p>Keeps experimenting, flags losers, rotates winners, and feeds fresh signal back to research.</p></div>
+      <div class="ab-variant"><b>🔍 Research Agent</b><span class="ag-persona">The Scout</span><p>The skeptical data hound. Maps the real buyer and the channels they use, then hands clean signal onward — no gut-feel assumptions.</p></div>
+      <div class="ab-variant"><b>🧭 Strategy Agent</b><span class="ag-persona">The Architect</span><p>The calm chess player. Turns research into a focused plan: positioning, channels, and exactly where the budget goes.</p></div>
+      <div class="ab-variant"><b>✍️ Content Agent</b><span class="ag-persona">The Wordsmith</span><p>The brand-voiced writer. Crafts hooks, ad copy and landing pages that sound like you — never generic filler.</p></div>
+      <div class="ab-variant"><b>📣 Media Buying Agent</b><span class="ag-persona">The Operator</span><p>The precise executor. Builds and launches campaigns with tight audiences and hard budget caps.</p></div>
+      <div class="ab-variant"><b>📊 Analytics Agent</b><span class="ag-persona">The Truth-Teller</span><p>The number-obsessed skeptic. Wires tracking and stands up the KPI dashboard so every rupee is measurable.</p></div>
+      <div class="ab-variant"><b>♻️ Optimizer Agent</b><span class="ag-persona">The Tinkerer</span><p>The restless experimenter. Flags losers, rotates winners, and feeds fresh signal back to research.</p></div>
     </div>
   </div>
 
@@ -116,6 +116,14 @@ const body = `<section class="lpage-wrap">
   <LeadForm service="ai" serviceLabel="Agentic AI" promise="Want this running on your account? I'll scope a guardrailed Hive for your channels and KPIs — research to optimizer — and show you the first autonomous campaign plan." />
   <script>
     const ICON = { research: '🔍', strategy: '🧭', content: '✍️', media: '📣', analytics: '📊', optimizer: '♻️' };
+    const AGENT_META = {
+      research: { icon: '🔍', color: '#49b6ff', persona: 'The Scout' },
+      strategy: { icon: '🧭', color: '#8b7bff', persona: 'The Architect' },
+      content: { icon: '✍️', color: '#ff6fae', persona: 'The Wordsmith' },
+      media: { icon: '📣', color: '#ff9e5c', persona: 'The Operator' },
+      analytics: { icon: '📊', color: '#2ff3c0', persona: 'The Truth-Teller' },
+      optimizer: { icon: '♻️', color: '#8affc1', persona: 'The Tinkerer' }
+    };
     const STEP = 620, THINK = 620;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
@@ -144,7 +152,7 @@ const body = `<section class="lpage-wrap">
         agents: [
           ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'], 'Maps who actually buys and where they hang out for: "' + core + '".', 'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.', 'Primary ICP + best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.'),
           ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'], 'Turns research into a focused plan instead of spraying budget.', 'Allocates "' + bud + '" across the highest-intent channels only.', 'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 test split — handed to Content.'),
-          ag('content', 'Content Agent', 'Copy & creative', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.'),
+          ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.'),
           ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'], 'Builds the campaigns exactly as Content + Strategy specified.', 'Launches ' + channels[0] + ' with the winning hooks and tight audiences.', 'Live campaigns with audience sync + budget caps — handed to Analytics.'),
           ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'], 'Makes sure every rupee is measurable before it scales.', 'Wires GA4 + pixels and stands up a one-screen KPI dashboard.', 'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.'),
           ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.',           'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.')
@@ -184,11 +192,13 @@ const body = `<section class="lpage-wrap">
       const card = document.createElement('div');
       card.className = 'ag-card';
       const id = (a.id || '').toLowerCase();
-      const icon = ICON[id] || '🤖';
+      const meta = AGENT_META[id] || {};
+      const icon = meta.icon || ICON[id] || '🤖';
+      if (meta.color) card.style.setProperty('--agc', meta.color);
       card.innerHTML =
         '<div class="ag-card-head">' +
           '<span class="ag-ico">' + icon + '</span>' +
-          '<div><div class="ag-name">' + esc(a.name || 'Agent') + '</div><div class="ag-role">' + esc(a.role || '') + '</div></div>' +
+          '<div><div class="ag-name">' + esc(a.name || 'Agent') + '</div><div class="ag-role">' + esc(a.role || '') + '</div>' + (meta.persona ? '<span class="ag-persona">' + esc(meta.persona) + '</span>' : '') + '</div>' +
           '<span class="ag-status">queued</span>' +
         '</div>' +
         '<div class="ag-tools">' + (Array.isArray(a.tools) ? a.tools.map((t) => '<span>' + esc(t) + '</span>').join('') : '') + '</div>' +

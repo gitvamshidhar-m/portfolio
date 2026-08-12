@@ -19,12 +19,12 @@ function sys() {
     + '  "goal":"<echo the goal, trimmed>",\n'
     + '  "orchestrator":"<one-line plan: how the agents will split the work>",\n'
     + '  "agents":[\n'
-    + '    {"id":"research","name":"Research Agent","role":"Market & audience intelligence","tools":["web_search","analytics"],"thinking":"<1 sentence: what it reasons about>","action":"<1 sentence: the concrete step it takes>","output":"<1-2 sentences: the specific finding it hands to the next agent>","status":"done"},\n'
-    + '    {"id":"strategy","name":"Strategy Agent","role":"Positioning, channels & budget","tools":["planner"],"thinking":"...","action":"...","output":"... references the research agent\'s finding","status":"done"},\n'
-    + '    {"id":"content","name":"Content Agent","role":"Copy & creative","tools":["llm_writer","brand_voice"],"thinking":"...","action":"...","output":"... references the strategy","status":"done"},\n'
-    + '    {"id":"media","name":"Media Buying Agent","role":"Campaign build & targeting","tools":["ad_platform","audience_sync"],"thinking":"...","action":"...","output":"... references the content + strategy","status":"done"},\n'
-    + '    {"id":"analytics","name":"Analytics Agent","role":"Tracking, KPIs & dashboards","tools":["ga4","pixel"],"thinking":"...","action":"...","output":"... defines how success is measured","status":"done"},\n'
-    + '    {"id":"optimizer","name":"Optimizer Agent","role":"Always-on improvement loop","tools":["experiment","alert"],"thinking":"...","action":"...","output":"... closes the loop back to research","status":"done"}\n'
+    + '    {"id":"research","name":"Research Agent","persona":"The Scout","role":"Market & audience intelligence","tools":["web_search","analytics"],"thinking":"<1 sentence: what it reasons about, skeptical of assumptions>","action":"<1 sentence: the concrete step it takes>","output":"<1-2 sentences: the specific finding it hands to the next agent>","status":"done"},\n'
+    + '    {"id":"strategy","name":"Strategy Agent","persona":"The Architect","role":"Positioning, channels & budget","tools":["planner"],"thinking":"...","action":"...","output":"... references the research agent\'s finding","status":"done"},\n'
+    + '    {"id":"content","name":"Content Agent","persona":"The Wordsmith","role":"Copy, creative & brand voice","tools":["llm_writer","brand_voice"],"thinking":"...","action":"...","output":"... references the strategy","status":"done"},\n'
+    + '    {"id":"media","name":"Media Buying Agent","persona":"The Operator","role":"Campaign build & targeting","tools":["ad_platform","audience_sync"],"thinking":"...","action":"...","output":"... references the content + strategy","status":"done"},\n'
+    + '    {"id":"analytics","name":"Analytics Agent","persona":"The Truth-Teller","role":"Tracking, KPIs & dashboards","tools":["ga4","pixel"],"thinking":"...","action":"...","output":"... defines how success is measured","status":"done"},\n'
+    + '    {"id":"optimizer","name":"Optimizer Agent","persona":"The Tinkerer","role":"Always-on improvement loop","tools":["experiment","alert"],"thinking":"...","action":"...","output":"... closes the loop back to research","status":"done"}\n'
     + '  ],\n'
     + '  "campaignPlan":{\n'
     + '    "channels":["<channel>","<channel>"],\n'
@@ -82,7 +82,7 @@ function fallback(m) {
         'Turns the research into a focused plan instead of spraying budget.',
         'Allocates "' + budget + '" across the highest-intent channels only.',
         'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.'),
-      ag('strategy', 'Content Agent', 'Copy & creative', ['llm_writer', 'brand_voice'],
+      ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'],
         'Writes in the brand voice the strategy defined, not generic filler.',
         'Drafts hook variants, landing page and ad copy mapped to the ICP.',
         '3 hook angles + 1 landing page ready for Media to launch — handed to Media.'),
