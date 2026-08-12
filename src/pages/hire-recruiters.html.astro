@@ -49,6 +49,19 @@ const body = `
           </div>
           <p style="font-size:13px;color:var(--muted);margin:14px auto 0">Or deep-dive: <a href="/projects.html">the tools</a> · <a href="/blog.html">the thinking</a> · <a href="/changelog.html">the shipping</a>.</p>
         </div>
+
+        <div class="rm-card" id="opBuilder">
+          <span class="tag">One-click one-pager</span>
+          <h2 style="font-size:18px;margin:6px 0 8px">Build a tailored one-pager for your role</h2>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:12px">Pick the role, budget band, and timeline — get a print-ready one-pager tuned to your context. No generic CV wallpaper.</p>
+          <form id="opForm" style="display:grid;gap:10px">
+            <select name="role"><option value="perf">Performance / PPC</option><option value="seo">SEO &amp; Growth</option><option value="ai">AI Automation</option></select>
+            <select name="budget"><option value="lean">Lean — under ₹50k/mo ad spend</option><option value="mid">Mid — ₹50k–₹2L/mo</option><option value="scale">Scale — ₹2L+/mo</option></select>
+            <select name="timeline"><option value="asap">ASAP — start this week</option><option value="month">Within a month</option><option value="quarter">Next quarter</option></select>
+            <button type="submit" class="btn primary" style="margin-top:4px">Build my one-pager →</button>
+          </form>
+          <p id="opMsg" class="formmsg" hidden></p>
+        </div>
       </div>
 
       <blockquote class="reveal" style="text-align:center;border:0;margin:26px 0 0;color:var(--muted)">"I don't just run reports — I build the pipelines that generate them."</blockquote>
@@ -58,6 +71,22 @@ const body = `
 </section>
 `;
 ---
-<Base {...op}>
-  <Fragment set:html={body} />
-</Base>
+ <Base {...op}>
+   <Fragment set:html={body} />
+   <script is:inline>
+     (function () {
+       var f = document.getElementById('opForm');
+       if (!f) return;
+       f.addEventListener('submit', function (e) {
+         e.preventDefault();
+         var d = new FormData(f);
+         var role = d.get('role') || 'perf';
+         var budget = d.get('budget') || 'mid';
+         var timeline = d.get('timeline') || 'month';
+         var url = '/one-pager.html?role=' + role + '&budget=' + budget + '&timeline=' + timeline;
+         var w = window.open(url, '_blank');
+         if (!w) { window.location.href = url; }
+       });
+     })();
+   </script>
+ </Base>

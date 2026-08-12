@@ -30,6 +30,20 @@ const body = `
       var head = document.getElementById('clHead');
       var list = document.getElementById('clList');
       if (!list) return;
+      var NOTES = {
+        'restructure homepage': { why: 'The homepage was too long before the good stuff. Moved campaigns up, consolidated the live/changelog/ROI strip into one "Receipts" section. Now the first fold is proof, not prose.', diff: 'Would have liked a real heat map to validate scroll depth before reordering.' },
+        'fix header': { why: 'The particles canvas was blocking nav clicks. Pinned it behind the header with pointer-events:none so the nav is always usable.', diff: 'A proper z-index cascade would be cleaner, but this is the fastest fix.' },
+        'fix hero': { why: 'Hero opacity and gap were off — the fade made the headline hard to read. Pinned opacity, dropped the stage, flex layout.', diff: 'The More dropdown on mobile still needs a tap target test.' },
+        'fix More dropdown': { why: 'The More dropdown handler was missing on index because the mixin script was skipped. Added it inline.', diff: 'A shared component would be better, but the inline fix is lower risk.' },
+        'branch hire CTAs': { why: 'Recruiters and clients both land on the same page. Forked the hero CTA so each audience gets the right next step.', diff: 'Would add a proper A/B test to measure which fork converts better.' },
+        'revamp AI-automation': { why: 'The AI page was generic. Added a real shipped example (Hook AI), visible tech stack, and a team-shape playbook so visitors see what they\'d get.', diff: 'The "team shape" cards could use real screenshots instead of just copy.' },
+        'fix live command center': { why: 'Text in the Live Command Center detail rows was clipping on narrow viewports. Added flex-wrap, min-width:0, and overflow-wrap so values wrap instead of being cut.', diff: 'The row is still narrow at 1024px — a media query to stack at 1100px would help.' },
+        'add tools': { why: 'Built the Lab: audit my campaign (instant mini-audit with 3 AI recommendations) and case study generator. Both reuse the Groq endpoint and store leads to KV.', diff: 'A proper loading state and error handling would be nicer.' },
+        'add exit capture': { why: 'Exit-intent and scroll-depth capture — a non-annoying prompt that fires once per session, capturing email to /api/capture. Low friction, no spam.', diff: 'Would A/B test the copy against a "book a call" variant.' },
+        'add newsletter': { why: 'RSS feed already existed. Added a newsletter signup in the footer (email → /api/capture) and an RSS subscribe link. Build log monthly.', diff: 'A proper email provider (Resend, Mailgun) would be better than KV-only.' },
+        'add cmd+k': { why: 'Subpages only had blog search on Cmd+K. Added site-jump entries so Cmd+K works everywhere: go to projects, book a call, read case study.', diff: 'A proper fuzzy-search library would be nicer.' },
+        'add currently working on': { why: 'Shows the latest commit message in the footer as "Currently: ...". Cheap, makes the site feel alive between visits.', diff: 'Could add a static override for when commits are noisy.' }
+      };
       function fmt(d) {
         try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return d || ''; }
       }
@@ -44,9 +58,13 @@ const body = `
         list.innerHTML = cs.map(function (c) {
           var ago = '';
           try { var s = Math.max(0, Math.round((Date.now() - new Date(c.date).getTime()) / 1000)); if (s < 3600) ago = Math.round(s / 60) + 'm ago'; else if (s < 86400) ago = Math.round(s / 3600) + 'h ago'; else ago = Math.round(s / 86400) + 'd ago'; } catch (e) {}
+          var msg = String(c.message || '').toLowerCase();
+          var note = null;
+          for (var k in NOTES) { if (msg.indexOf(k) > -1) { note = NOTES[k]; break; } }
           return '<li>' +
             '<span class="cl-dot"></span>' +
             '<div class="cl-msg">' + String(c.message || '').replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>' +
+            (note ? '<div class="cl-note" style="margin:6px 0 0;padding:10px 14px;background:rgba(139,123,255,.06);border:1px solid rgba(139,123,255,.2);border-radius:10px;font-size:13.5px;line-height:1.6"><b style="color:var(--accent2)">Why I built this:</b> ' + note.why + (note.diff ? '<br><b style="color:var(--muted)">What I\'d do differently:</b> ' + note.diff : '') + '</div>' : '') +
             '<div class="cl-meta"><span class="cl-sha">' + c.sha + '</span><span>' + fmt(c.date) + '</span><span class="cl-ago">' + ago + '</span></div>' +
             (c.url ? '<a class="cl-goto" href="' + c.url + '" target="_blank" rel="noopener noreferrer">commit ↗</a>' : '') +
             '</li>';

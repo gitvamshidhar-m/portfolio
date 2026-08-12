@@ -118,6 +118,7 @@ const body = `
     <div class="reveal" style="text-align:center;margin-top:22px">
       <button class="btn primary" type="button" id="opPrint">⬇ Save this one-pager as PDF</button>
       <p style="font-size:12px;color:var(--muted);margin-top:10px">Opens your browser's print dialog → choose "Save as PDF".</p>
+      <div id="opTailored" style="margin-top:16px;color:var(--muted);font-size:13px;text-align:center"></div>
     </div>
   </div>
 </section>
@@ -148,9 +149,17 @@ const body = `
         t.addEventListener('click', function () { show(t.getAttribute('data-role')); });
       });
       var p = new URLSearchParams(location.search).get('role');
+      var budget = new URLSearchParams(location.search).get('budget');
+      var timeline = new URLSearchParams(location.search).get('timeline');
       if (p === 'seo' || p === 'ai') show(p); else show('perf');
       var btn = document.getElementById('opPrint');
       if (btn) btn.addEventListener('click', function () { try { window.print(); } catch (e) {} });
+      if (budget || timeline) {
+        var bmap = { lean: 'a lean budget under ₹50k/mo', mid: 'a mid-range budget (₹50k–₹2L/mo)', scale: 'a scale budget (₹2L+/mo)' };
+        var tmap = { asap: 'starting this week', month: 'within a month', quarter: 'next quarter' };
+        var el = document.getElementById('opTailored');
+        if (el) el.innerHTML = '<b>Tailored for:</b> ' + (p || 'perf') + ' role · ' + (bmap[budget] || budget) + ' · ' + (tmap[timeline] || timeline) + ' · <a href="#" onclick="window.print();return false">Print / Save as PDF →</a>';
+      }
     })();
   </script>
 </Base>

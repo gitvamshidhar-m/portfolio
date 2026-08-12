@@ -13,5 +13,36 @@ const body = "<section>\n\n  <div class=\"wrap\">\n    <div class=\"sec-head rev
 ---
 <Base {...op}>
   <Fragment set:html={body} />
-  
+  <script is:inline>
+  (function () {
+    var skills = document.querySelectorAll('.skill h4');
+    var proofs = document.querySelectorAll('.proof');
+    if (!skills.length || !proofs.length) return;
+    function skillName(el) { return (el.textContent || '').replace(/[0-9% ]+$/, '').trim(); }
+    function proofName(el) { return (el.textContent || '').replace(/[0-9% ]+$/, '').trim(); }
+    var pmap = {};
+    proofs.forEach(function (p) {
+      var h = p.querySelector('h4'); if (!h) return;
+      var k = skillName(h).toLowerCase();
+      if (k) pmap[k] = p;
+      p.setAttribute('data-skill', k);
+    });
+    skills.forEach(function (s) {
+      var h = s;
+      var k = skillName(h).toLowerCase();
+      s.style.cursor = 'pointer';
+      s.addEventListener('click', function () {
+        skills.forEach(function (x) { x.parentElement.classList.toggle('active', x === s); });
+        var target = pmap[k];
+        if (target) {
+          proofs.forEach(function (p) { p.classList.toggle('highlight', p === target); });
+          setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+        } else {
+          var el = target || document.querySelector('.proofsec');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  })();
+  </script>
 </Base>

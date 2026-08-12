@@ -2,6 +2,15 @@ const KB = require('../libs/kb');
 
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const KV_URL = (process.env.KV_REST_API_URL || '').trim();
+const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
+function kvPipe(pipe) {
+  if (!KV_URL || !KV_TOKEN) return Promise.resolve();
+  return fetch(String(KV_URL).replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(pipe) }).catch(function () {});
+}
+function sanitize(s, len) {
+  return String(s || '').replace(/\s+/g, ' ').trim().slice(0, len || 200);
+}
 
 const STOP = new Set('a,an,the,and,or,but,to,of,for,in,on,at,is,are,was,were,am,be,been,being,do,does,did,you,your,youre,me,my,i,we,us,can,could,will,would,should,what,how,why,who,which,when,where,about,with,as,that,this,it,from,not,they,them,have,having,has,tell,me'.split(','));
 
@@ -128,6 +137,17 @@ module.exports = function handler(req, res) {
       return { topic: b.topic, label: meta.label, url: meta.url };
     });
     res.json({ answer: answer, mode: 'rag', source: (citations[0] ? citations[0].label : null) || null, citations: citations });
+    if (answer) {
+      const topic = (best.length ? best[0].topic : 'general');
+      const q = sanitize(question, 220);
+      const a = sanitize(answer, 500);
+      if (q.length > 12 && a.length > 12) {
+        kvPipe([
+          ['LPUSH', 'ama:recent', JSON.stringify({ q: q, a: a, topic: topic, ts: Date.now(), ip: ipOf(req) })],
+          ['LTRIM', 'ama:recent', 0, 39]
+        ]);
+      }
+    }
   }).catch(function (err) {
     res.json({ answer: null, offline: true, error: String(err) });
   });

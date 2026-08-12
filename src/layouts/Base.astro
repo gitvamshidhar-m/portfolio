@@ -117,10 +117,25 @@ const ogUrl = ogImage
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
-<div class="rpath">
-  <span class="rp-tag">Recruiting?</span>
-  <span class="rp-txt">Hiring for SEO · Paid Media · AI Automation roles?</span>
-  <a href="https://vamshidharm.vercel.app/Vamshidhar_Reddy_M_CV.docx" download="Vamshidhar_Reddy_M_CV.docx">Resume →</a><a href="/#projects">Portfolio</a><a href={variant === 'index' ? '/#contact' : '/contact.html'}>Contact</a>
+ <div class="rpath">
+   <span class="rp-tag">Recruiting?</span>
+   <span class="rp-txt">Hiring for SEO · Paid Media · AI Automation roles?</span>
+   <a href="https://vamshidharm.vercel.app/Vamshidhar_Reddy_M_CV.docx" download="Vamshidhar_Reddy_M_CV.docx">Resume →</a><a href="/#projects">Portfolio</a><a href={variant === 'index' ? '/#contact' : '/contact.html'}>Contact</a>
+ </div>
+
+<div id="exitCapture" class="cap-overlay" hidden aria-hidden="true">
+  <div class="cap-box">
+    <button type="button" class="cap-close" aria-label="Close" id="capClose">✕</button>
+    <b>I cut a client's CPL 30% (Rs.1,100 → Rs.770). Want the playbook I used?</b>
+    <p style="color:var(--muted);font-size:14px;margin:8px 0 12px">Paste your email and I'll send the 3-step framework + the exact audit checklist. Takes 10s, no spam, one click out.</p>
+    <form id="capForm" method="POST" action="/api/capture" style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="hidden" name="source" value="exit-capture" />
+      <input type="email" name="email" placeholder="you@company.com" required style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt);font-size:14px">
+      <button type="submit" class="btn primary" style="width:100%;margin-top:8px">Send me the playbook →</button>
+      <p id="capMsg" class="formmsg" hidden></p>
+    </form>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center">Trusted, not spammed. I reply within 24h and you can unsubscribe any time.</p>
+  </div>
 </div>
 
 {(variant === 'sub' && crumbItems.length > 0) && (
@@ -159,7 +174,7 @@ const ogUrl = ogImage
       </div>
       {variant === 'index' && (
         <>
-          <span class="pill"><span class="dot"></span><span>Open to 1 role · replies in 24h</span></span>
+          <span class="pill"><span class="dot"></span><span>Open to work · replies in 24h</span></span>
           <span class="pill" id="clock" title="IST">⏱ --:--:--</span>
         </>
       )}
@@ -184,8 +199,16 @@ const ogUrl = ogImage
   <LivePulse />
   <footer>
     <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
-    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/hire-recruiters.html">Hiring Managers</a><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/changelog.html">Changelog</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
+    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/hire-recruiters.html">Hiring Managers</a><a href="/projects.html#demos">Live Demos</a><a href="/skills.html">Skills</a><a href="/audit.html">Tools</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/changelog.html">Changelog</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
     <div class="wrap ft" style="margin-top:10px">Services — <a href="/seo.html">SEO &amp; Content</a> · <a href="/ads.html">Paid Media / PPC</a> · <a href="/ai-automation.html">AI Automation</a></div>
+    <div class="wrap ft" style="margin-top:12px">
+      <span class="tag" style="color:var(--muted)">Building in public</span>
+      <span id="nowStatus" style="color:var(--accent2);font-weight:700">Currently: …</span>
+      <span style="color:var(--muted);margin-left:auto">
+        <a href="/feed.xml" title="RSS feed of builds + thoughts" style="color:var(--muted);text-decoration:underline">RSS</a>
+        · <button type="button" id="newsletterOpen" class="link-secondary" style="border:0;background:transparent;color:var(--accent2);cursor:pointer;padding:0">Newsletter — build log monthly</button>
+      </span>
+    </div>
     <div class="wrap ft ft-seo">Built as proof, not just a demo — semantic HTML (&lt;1 h1) with a clean h2–h3 tree, Person + FAQPage JSON-LD, canonical URL, Open Graph/Twitter cards, RSS feed, sitemap.xml, robots.txt &amp; llms.txt.</div>
   </footer>
 </main>
@@ -224,6 +247,67 @@ const ogUrl = ogImage
         window.__analyticsFired = true;
         fetch('/api/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: location.pathname, referrer: document.referrer, ua: navigator.userAgent }) }).catch(() => {});
       }
+      /* ---- live "currently working on" (from latest commit) ---- */
+      (function () {
+        const el = document.getElementById('nowStatus');
+        if (!el) return;
+        try {
+          const k = 'nowStatus:' + new Date().toISOString().slice(0, 10);
+          const cached = localStorage.getItem(k);
+          if (cached) { el.textContent = 'Currently: ' + cached; return; }
+          fetch('/api/github', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+            const c = (j && j.commits && j.commits[0] && j.commits[0].message) || '';
+            if (c) { el.textContent = 'Currently: ' + c; try { localStorage.setItem(k, c); } catch (e) {} }
+          }).catch(function () {});
+        } catch (e) {}
+      })();
+      /* ---- newsletter open + submit ---- */
+      (function () {
+        const openBtn = document.getElementById('newsletterOpen');
+        const cap = document.getElementById('exitCapture');
+        if (openBtn && cap) openBtn.addEventListener('click', function () { showCap('newsletter'); });
+        const f = document.getElementById('capForm');
+        if (f) f.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const msg = document.getElementById('capMsg'); if (!msg) return;
+          const btn = f.querySelector('button[type=submit]'); if (btn) btn.disabled = true;
+          const body = {}; new FormData(f).forEach(function (v, k) { if (v) body[k] = v; });
+          fetch('/api/capture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              if (j && j.captured) { msg.hidden = false; msg.className = 'formmsg ok'; msg.textContent = 'Got it — check your inbox shortly. Talk soon.'; f.querySelector('input[type=email]').value = ''; }
+              else { msg.hidden = false; msg.className = 'formmsg err'; msg.textContent = 'Something went wrong — email geovamshidhar@gmail.com directly.'; }
+            })
+            .catch(function () { msg.hidden = false; msg.className = 'formmsg err'; msg.textContent = 'Could not save — email geovamshidhar@gmail.com directly.'; })
+            .then(function () { if (btn) btn.disabled = false; });
+        });
+      })();
+      /* ---- exit-intent / scroll-depth capture ---- */
+      function showCap(src) {
+        const cap = document.getElementById('exitCapture'); if (!cap) return;
+        try { localStorage.setItem('capShown', '1'); } catch (e) {}
+        cap.hidden = false; cap.setAttribute('aria-hidden', 'false');
+        const srcIn = cap.querySelector('input[name=source]'); if (srcIn) srcIn.value = src;
+      }
+      (function () {
+        const cap = document.getElementById('exitCapture'); if (!cap) return;
+        let shown = false;
+        try { if (localStorage.getItem('capShown')) shown = true; } catch (e) {}
+        if (shown) return;
+        const closeBtn = document.getElementById('capClose');
+        if (closeBtn) closeBtn.addEventListener('click', function () { cap.hidden = true; });
+        cap.addEventListener('click', function (e) { if (e.target === cap) cap.hidden = true; });
+        let scrolled = false;
+        addEventListener('scroll', function () {
+          if (scrolled || shown) return;
+          const h = document.documentElement, st = h.scrollTop, doc = h.scrollHeight - h.clientHeight;
+          if (doc > 0 && (st / doc) > 0.7) { scrolled = true; shown = true; setTimeout(function () { showCap('scroll-capture'); }, 600); }
+        }, { passive: true });
+        document.addEventListener('mouseout', function (e) {
+          if (shown || scrolled) return;
+          if (!e.relatedTarget && e.clientY <= 0) { shown = true; setTimeout(function () { showCap('exit-capture'); }, 200); }
+        });
+      })();
     </script>
   )
 }

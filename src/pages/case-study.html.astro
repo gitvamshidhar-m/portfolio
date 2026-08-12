@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "Case Study Generator — Turn Your Numbers Into a Narrative | Vamshidhar Reddy",
+  description: "Free tool: paste your campaign numbers (before/after, channel, goal) and get a structured case-study draft grounded in real track-record format. No generic AI filler.",
+  canonical: "https://vamshidharm.vercel.app/case-study.html",
+  ogImage: "",
+  variant: 'sub',
+  active: 'case-study.html',
+};
+const body = `<section id="main">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="tag">The Lab · free, no fluff</span><h1>Case study generator</h1>
+      <p style="color:var(--muted);max-width:700px">I judge a marketer by their case studies, not their claims. Paste your real numbers and this writes a structured draft in the same format I use for my own results (the ones that prove ROAS 3.2x→5.5x, CPL −30%).</p></div>
+
+    <div class="reveal" style="max-width:820px;margin:0 auto">
+      <form id="csForm" class="tool-card">
+        <label>Channel <small>Google / Meta / LinkedIn / SEO / Email / Other</small><input name="channel" placeholder="e.g. Google Ads" /></label>
+        <label>Company / industry <input name="company" placeholder="e.g. B2B SaaS, fintech" /></label>
+        <label>Your goal <input name="goal" placeholder="e.g. cut CAC 40%" /></label>
+        <label>Before <small>spend, CPL, ROAS, conversions</small><textarea name="before" rows="2" placeholder="e.g. ₹1.8L/mo, CPL ₹2,400, ROAS 2.1x, 48 convs"></textarea></label>
+        <label>After <small>spend, CPL, ROAS, conversions</small><textarea name="after" rows="2" placeholder="e.g. ₹1.5L/mo, CPL ₹1,400, ROAS 4.3x, 112 convs"></textarea></label>
+        <label>What you did <small>actions taken</small><textarea name="action" rows="3" placeholder="Consolidated ad groups, rewrote hooks, relaunched landing page…"></textarea></label>
+        <label>Anything else? <small>barriers, seasonality, tools used</small><textarea name="note" rows="2" placeholder="optional"></textarea></label>
+        <button class="btn primary" type="submit">Generate case study →</button>
+        <p id="csMsg" class="formmsg" hidden></p>
+      </form>
+
+      <div id="csOut" hidden style="margin-top:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <b id="csTitle" style="font-size:18px"></b>
+          <button type="button" class="btn" id="csCopy">Copy</button>
+        </div>
+        <div id="csBody" class="cs-body" style="color:var(--muted);margin-top:12px;line-height:1.7;border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--bg)"></div>
+        <div style="text-align:center;margin-top:16px">
+          <button class="btn primary" id="csPrint" type="button">⬇ Save case study as PDF</button>
+        </div>
+      </div>
+    </div>
+    <div class="reveal" style="text-align:center;margin-top:30px;font-size:13px;color:var(--muted)">
+      Grounded in the same knowledge base as the chat. If models are busy, a smart template fills in with your facts. <a href="/audit.html" style="color:var(--accent2)">Want a campaign audit first?</a>
+    </div>
+  </div>
+  <div class="wrap tools-grid" style="margin-top:28px">
+    <a href="/audit.html"><b>Audit my campaign</b><span style="font-size:12px;color:var(--muted)">mini-audit in 15s</span></a>
+    <a href="/hire.html"><b>Pitch generator</b><span style="font-size:12px;color:var(--muted)">tailored outreach + 30-day plan</span></a>
+    <a href="https://vamshidharm.vercel.app" target="_blank" rel="noopener noreferrer"><b>Hook AI</b><span style="font-size:12px;color:var(--muted)">live copy engine</span></a>
+  </div>
+</section>`;
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script is:inline>
+  (function () {
+    function esc(s){var d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+    var f=document.getElementById('csForm');
+    if(!f)return;
+    f.addEventListener('submit',function(e){
+      e.preventDefault();
+      var bt=f.querySelector('button[type=submit]');bt.disabled=true;bt.textContent='Working…';
+      var b={};new FormData(f).forEach(function(v,k){if(v)b[k]=v;});
+      fetch('/api/casestudy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})
+        .then(function(r){return r.json();})
+        .then(function(j){
+          document.getElementById('csTitle').textContent=j.title||'Case study draft';
+          document.getElementById('csBody').innerHTML=
+            '<p><b>Situation:</b> '+esc(j.situation||'')+'</p>'
+            +'<p><b>Action:</b> '+esc(j.action||'')+'</p>'
+            +'<p><b>Results:</b></p><ul>'+(j.results||[]).map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul>'
+            +'<p><b>Lesson:</b> '+esc(j.lesson||'')+'</p>';
+          document.getElementById('csOut').hidden=false;
+          document.getElementById('csOut').scrollIntoView({behavior:'smooth',block:'start'});
+        })
+        .catch(function(){var m=document.getElementById('csMsg');m.hidden=false;m.className='formmsg err';m.textContent='Could not draft right now — email geovamshidhar@gmail.com directly.';})
+        .then(function(){bt.disabled=false;bt.textContent='Generate case study →';});
+    });
+    var cp=document.getElementById('csCopy');
+    if(cp)cp.addEventListener('click',function(){
+      var b=document.getElementById('csBody');navigator.clipboard.writeText(b.innerText||b.textContent).then(function(){cp.textContent='Copied ✓';setTimeout(function(){cp.textContent='Copy';},1400);});
+    });
+    var pp=document.getElementById('csPrint');
+    if(pp)pp.addEventListener('click',function(){try{window.print();}catch(e){}});
+  })();
+  </script>
+</Base>

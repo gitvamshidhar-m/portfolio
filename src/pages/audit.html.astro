@@ -1,0 +1,107 @@
+---
+import Base from '../layouts/Base.astro';
+
+const op = {
+  title: "Marketing Tools — Audit My Campaign & Case Study Generator | Vamshidhar Reddy",
+  description: "Free tools built from my real playbooks: paste campaign metrics for an instant mini-audit with 3 recommendations, or generate a case-study draft from your numbers. No fluff, just what to do next.",
+  canonical: "https://vamshidharm.vercel.app/audit.html",
+  ogImage: "",
+  variant: 'sub',
+  active: 'audit.html',
+};
+const body = `<section id="main">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="tag">The Lab · free, no fluff</span><h1>Paste the numbers. Get the next move.</h1>
+      <p style="color:var(--muted);max-width:700px">These are the same checks I run when I audit a funnel — just compressed into a 15-second tool. The audit stores nothing personal; the recommendations come from the AI assistant grounded in my real work (or a smart template when models are busy).</p></div>
+
+    <div class="grid2" style="align-items:start;gap:34px">
+      <div class="reveal">
+        <div class="tool-card">
+          <span class="tag">Audit my campaign</span>
+          <h2>Instant mini-audit</h2>
+          <form id="auditForm" style="display:grid;gap:12px">
+            <label>Channel <small>Paid / SEO / Email / Other</small>
+              <input name="channel" placeholder="e.g. Google Ads / SEO / Email" style="width:100%;box-sizing:border-box" />
+            </label>
+            <label>Monthly spend <small>in your currency</small><input name="spend" placeholder="e.g. 120000" /></label>
+            <label>Cost per lead (CPL) <small></small><input name="cpl" placeholder="e.g. 770" /></label>
+            <label>CTR <small>%</small><input name="ctr" placeholder="e.g. 1.2" /></label>
+            <label>Conversion rate <small>%</small><input name="conv" placeholder="e.g. 2.4" /></label>
+            <label>Revenue per lead <small>optional</small><input name="revPerLead" placeholder="e.g. 25000" /></label>
+            <label>Anything else worth noting? <small>optional, free text</small><textarea name="note" rows="3" placeholder="Budget pacing, seasonality, recent creative changes…" style="width:100%;box-sizing:border-box;resize:vertical"></textarea></label>
+            <button class="btn primary" type="submit">Audit my numbers →</button>
+          </form>
+          <p id="auditMsg" class="formmsg" hidden></p>
+        </div>
+
+        <div id="auditOut" class="reveal" hidden style="margin-top:22px">
+          <div class="audit-head"><span class="tag">Diagnosis</span><b id="auditDiag"></b></div>
+          <ol id="auditRecs" class="steps" style="margin-top:14px"></ol>
+          <div style="margin-top:18px;text-align:center">
+            <a class="btn link-secondary" href="/hire-recruiters.html">Want the full plan? Build my pitch →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <div class="tool-card">
+          <span class="tag">Case study generator</span>
+          <h2>Turn your results into a draft</h2>
+          <form id="csForm" style="display:grid;gap:12px">
+            <label>Channel <input name="channel" placeholder="e.g. LinkedIn Ads" /></label>
+            <label>Company / industry <input name="company" placeholder="e.g. SaaS startup" /></label>
+            <label>Goal <input name="goal" placeholder="e.g. cut CAC 40%" /></label>
+            <label>Before <small>spend + KPI</small><textarea name="before" rows="2" placeholder="e.g. ₹2L/mo, CPL ₹1,200, 1.8% CR"></textarea></label>
+            <label>After <small>spend + KPI</small><textarea name="after" rows="2" placeholder="e.g. ₹1.8L/mo, CPL ₹770, 3.4% CR"></textarea></label>
+            <label>What you did <small>actions taken</small><textarea name="action" rows="3" placeholder="Consolidated ad groups, rewrote hooks, relaunched landing page…"></textarea></label>
+            <button class="btn primary" type="submit">Build case study →</button>
+          </form>
+          <p id="csMsg" class="formmsg" hidden></p>
+        </div>
+        <div id="csOut" class="reveal" hidden style="margin-top:22px">
+          <div class="audit-head"><span class="tag">Drafted</span><b id="csTitle"></b></div>
+          <div id="csBody" style="color:var(--muted);margin-top:12px;line-height:1.7"></div>
+          <div style="margin-top:16px;text-align:center"><a class="btn link-secondary" href="/contact.html">Want me to run something like this on your account? →</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal" style="text-align:center;margin-top:34px;color:var(--muted);font-size:13px">
+      These tools are grounded in the same knowledge base as the chat on the homepage — no generic AI filler. Results? <a href="/skills.html">See the skills they lean on.</a>
+    </div>
+  </div>
+</section>`;
+---
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script is:inline>
+  (function () {
+    function htm(s){var d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML;}
+    function showMsg(id,msg,ok){var e=document.getElementById(id);if(!e)return;e.hidden=false;e.className='formmsg '+(ok?'ok':'err');e.textContent=msg;}
+    function submit(form, api, msgId, render){
+      var bt=form.querySelector('button[type=submit]');var msg='Got it.';
+      form.addEventListener('submit',function(e){e.preventDefault();bt.disabled=true;bt.textContent='Working…';var f=new FormData(form);var b={};f.forEach(function(v,k){if(v)b[k]=v;});
+      fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})
+        .then(function(r){return r.json();})
+        .then(function(j){if(j && (j.recs||j.title)){render(j);}else{showMsg(msgId,'No result right now. Email geovamshidhar@gmail.com — I’ll get you an answer.',false);}})
+        .catch(function(){showMsg(msgId,'Could not reach the tool. Email geovamshidhar@gmail.com — I’ll get you an answer.',false);})
+        .then(function(){bt.disabled=false;bt.textContent=msg;});
+      });
+    }
+    var af=document.getElementById('auditForm');
+    if(af){submit(af,'/api/audit','auditMsg',function(j){
+      document.getElementById('auditDiag').textContent=j.diagnosis||'Diagnosis';
+      var list=document.getElementById('auditRecs');list.innerHTML=(j.recs||[]).map(function(r){return '<li><b>'+(r.rec||'Do this')+((r.why)?'</b> — <span style="color:var(--muted)">'+htm(r.why)+'</span>':'</b>');}).join('')|| '<li style="color:var(--muted)">No specific recommendations</li>';
+      document.getElementById('auditOut').hidden=false;
+      document.getElementById('auditOut').scrollIntoView({behavior:'smooth',block:'start'});
+    });}
+    var cf=document.getElementById('csForm');
+    if(cf){submit(cf,'/api/casestudy','csMsg',function(j){
+      document.getElementById('csTitle').textContent=j.title||'Case study draft';
+      document.getElementById('csBody').innerHTML='<p><b>Problem:</b> '+htm(j.situation||'')+'</p><p><b>Approach:</b> '+htm(j.action||'')+'</p><p><b>Results:</b></p><ul>'+(j.results||[]).map(function(r){return '<li>'+htm(r)+'</li>';}).join('')+'</ul><p><b>Lesson:</b> '+htm(j.lesson||'')+'</p>';
+      document.getElementById('csOut').hidden=false;
+      document.getElementById('csOut').scrollIntoView({behavior:'smooth',block:'start'});
+    });}
+  })();
+  </script>
+</Base>
