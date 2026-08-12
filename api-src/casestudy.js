@@ -33,7 +33,7 @@ function fallback(m) {
   const bef = String(m.before || '').trim(), aft = String(m.after || '').trim();
   return {
     title: 'Case study: ' + (String(m.company || m.channel || 'campaign').slice(0, 40)) + ' — ' + (String(m.goal || 'performance turnaround')),
-    summary: 'A ' + (String(m.channel || 'paid media') + ' effort to ' + String(m.goal || 'improve efficiency') + '. ' + (bef ? 'Before: ' + bef + '. ' : '') + (aft ? 'After: ' + aft + '.' : ''),
+    summary: 'A ' + (String(m.channel || 'paid media') + ' effort to ' + String(m.goal || 'improve efficiency') + '. ' + (bef ? 'Before: ' + bef + '. ' : '') + (aft ? 'After: ' + aft + '.' : '')),
     situation: 'The business needed a measurable improvement in ' + String(m.goal || 'campaign efficiency') + ', with tight budget discipline.',
     action: 'Structured the account, tightened targeting to the highest-intent segments, and shifted budget toward the creative + landing page fixes that convert.',
     results: [aft ? 'After: ' + aft : 'Improved core KPIs while keeping spend controlled', 'Ran every change through a live dashboard so nothing moved on a hunch'],
