@@ -254,6 +254,16 @@ if(roleBtns.length){
     roleBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.role===r?'true':'false'));
   }
   roleBtns.forEach(b=>b.addEventListener('click',()=>applyRole(b.dataset.role)));
+  // Personalized hero via ?role= query param (e.g. recruiter/referrer links)
+  try {
+    var ur = new URLSearchParams(location.search).get('role');
+    if (ur) {
+      ur = String(ur).toLowerCase();
+      var rmap = { seo:'seo', ppc:'ppc', performance:'ppc', paid:'ppc', ai:'ai', marketing:'ppc' };
+      var r = rmap[ur] || (ur.indexOf('seo') > -1 ? 'seo' : ur.indexOf('ai') > -1 ? 'ai' : (ur.indexOf('ppc') > -1 || ur.indexOf('paid') > -1) ? 'ppc' : null);
+      if (r && ROLEPY[r]) applyRole(r);
+    }
+  } catch (e) {}
 }
 
 /* ---------- voice input ---------- */
