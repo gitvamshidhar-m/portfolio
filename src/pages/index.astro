@@ -820,7 +820,9 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
         if (!j || !j.views) return;
         var v = (j.visitors && j.visitors.length) ? j.visitors[0] : null;
         var who = v ? (host(v.ref) ? host(v.ref) + ' · ' : '') + (v.device || 'you') : 'you';
-        txt('lcNow', who);
+        var live = j.live || { count: 0, cities: [] };
+        var cityStr = (live.cities && live.cities.length) ? live.cities.map(function (c) { return c.city; }).join(' · ') : 'elsewhere';
+        txt('lcNow', live.count ? (live.count + ' viewing now · ' + cityStr) : who);
         txt('lcToday', j.views.today || 0);
         txt('lcHour', j.views.hour || 0);
         txt('lcTotal', j.views.total || 0);

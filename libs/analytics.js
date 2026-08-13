@@ -41,6 +41,11 @@ module.exports = function handler(req, res) {
   const ua = String(body.ua || '');
   const mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
   const device = mobile ? 'mobile' : 'desktop';
+  const cityRaw = (req.headers && (req.headers['x-vercel-ip-city'] || req.headers['x-vercel-ip-country'])) || '';
+  const city = (function () {
+    if (!cityRaw) return '';
+    try { return decodeURIComponent(String(cityRaw)).replace(/[^\w\s\-]/g, '').slice(0, 40); } catch (e) { return String(cityRaw).slice(0, 40); }
+  })();
 
   // counts (plain counters)
   const counters = [
@@ -60,7 +65,7 @@ module.exports = function handler(req, res) {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' },
       body: JSON.stringify([
-        ['LPUSH', 'visitors:recent', JSON.stringify({ t: now, day: day, hour: hour, ref: refHost.slice(0, 60), path: path.slice(0, 60), device: device })],
+        ['LPUSH', 'visitors:recent', JSON.stringify({ t: now, day: day, hour: hour, ref: refHost.slice(0, 60), path: path.slice(0, 60), device: device, city: city.slice(0, 40) })],
         ['LTRIM', 'visitors:recent', 0, 19]
       ])
     }).then(function () { res.json({ ok: true }); }).catch(function () { res.json({ ok: true, note: 'partial' }); });

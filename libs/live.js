@@ -51,11 +51,21 @@ module.exports = function handler(req, res) {
     const visitors = (items[6].result || []).map(function (item) {
       try { return JSON.parse(item); } catch (e) { return null; }
     }).filter(Boolean).slice(0, 10);
+    const cutoff = now - 60000;
+    const recent = visitors.filter(function (v) { return v && typeof v.t === 'number' && v.t > cutoff; });
+    const cityMap = {};
+    recent.forEach(function (v) {
+      const c = (v.city && v.city !== 'Unknown') ? v.city : 'elsewhere';
+      cityMap[c] = (cityMap[c] || 0) + 1;
+    });
+    const liveCities = Object.keys(cityMap).map(function (c) { return { city: c, count: cityMap[c] }; })
+      .sort(function (a, b) { return b.count - a.count; }).slice(0, 5);
     res.json({
       ok: true,
       views: { total: num(items[0]), today: num(items[1]), hour: num(items[2]) },
       pages: pages.slice(0, 5), refs: refs, devices: devices,
-      visitors: visitors
+      visitors: visitors,
+      live: { count: recent.length, cities: liveCities }
     });
   }).catch(function (e) {
     res.json({ ok: true, note: 'unavailable', error: String(e) });
