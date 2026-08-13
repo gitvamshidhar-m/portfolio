@@ -18,12 +18,15 @@ function getHandler(key) {
     case 'headline': return require('../libs/headline');
     case 'live': return require('../libs/live');
     case 'og': return require('../libs/og');
+    case 'pulse': return require('../libs/pulse');
     case 'rag': return require('../libs/rag');
+    case 'ship': return require('../libs/ship');
     case 'resume': return require('../libs/resume');
     case 'stats': return require('../libs/stats');
     case 'status': return require('../libs/status');
     case 'track': return require('../libs/track');
     case 'views': return require('../libs/views');
+    case 'who': return require('../libs/who');
     default: return null;
   }
 }

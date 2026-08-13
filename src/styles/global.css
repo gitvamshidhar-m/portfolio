@@ -125,6 +125,7 @@ p{text-wrap:pretty}
 .hero .hero-inner > *{position:relative;z-index:2}
 .hero .tag{background:transparent;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--muted);margin-bottom:22px;border-radius:999px;padding:8px 16px;font-size:12.5px;letter-spacing:.4px}
 .hero .tag .refnote{color:var(--accent2)}
+.hero .greet{display:block;font-size:14px;color:var(--accent2);font-weight:700;margin:0 auto 20px;letter-spacing:.3px;min-height:1em}
 .hero h1{margin-bottom:8px;text-shadow:none}
 /* hero live A/B test widget */
 .abvote{max-width:640px;margin:0 auto 6px;border:1px solid color-mix(in srgb,var(--accent2) 32%,var(--line));border-radius:16px;padding:14px 16px;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 9%,transparent),color-mix(in srgb,var(--accent2) 7%,transparent));box-shadow:var(--shadow-soft)}
@@ -331,6 +332,10 @@ footer .ft{display:flex;justify-content:center;align-items:center;gap:18px;flex-
 footer .ft a{color:var(--accent);font-weight:700;font-size:13px;text-decoration:underline;text-underline-offset:3px}
 footer .ft a:hover{color:var(--txt)}
 footer .ft-seo{margin-top:10px;font-size:12px;color:var(--muted);padding:0 20px 26px}
+footer .ft-pulse{font-size:12px;color:var(--muted);opacity:.75;font-variant-numeric:tabular-nums}
+footer .ft-pulse.on{color:var(--accent2);opacity:1;font-weight:600}
+footer .ft-ship-row{margin-top:14px}
+footer .ft-ship{font-size:13px;color:var(--muted);max-width:760px;margin:0 auto;line-height:1.5}
 .faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .faq details{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .faq summary{cursor:pointer;padding:16px 20px;font-weight:600;color:var(--txt);list-style:none;display:flex;justify-content:space-between;align-items:center}

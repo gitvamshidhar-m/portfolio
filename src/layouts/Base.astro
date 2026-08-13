@@ -111,7 +111,7 @@ const ogUrl = ogImage
 <meta name="theme-color" content="#0a0a12" />
 <meta name="keywords" content="Vamshidhar Reddy, Digital Marketing Specialist, SEO specialist, Google Ads, PPC, performance marketing, AI marketing, marketer, Hyderabad" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%238b7bff'/><stop offset='1' stop-color='%232ff3c0'/></linearGradient></defs><rect x='3' y='3' width='42' height='42' rx='12' fill='url(%23g)'/><path d='M16 13 L24 31 L32 13' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
-<script is:inline>try{var _t=localStorage.getItem('don-theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+<script is:inline>try{var _t=localStorage.getItem('don-theme');if(_t){document.documentElement.setAttribute('data-theme',_t);}else{var _hr=parseInt(new Date().toLocaleTimeString('en-US',{timeZone:'Asia/Kolkata',hour12:false}).split(':')[0],10);document.documentElement.setAttribute('data-theme',(_hr>=6&&_hr<18)?'light':'dark');}}catch(e){}</script>
 <script is:inline>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script type="application/ld+json" set:html={jsonLd} />
@@ -218,11 +218,13 @@ const ogUrl = ogImage
     <div class="wrap ft" style="margin-top:12px">
       <span class="tag" style="color:var(--muted)">Building in public</span>
       <span id="nowStatus" style="color:var(--accent2);font-weight:700">Building in public</span>
+      <span id="ghPulse" class="ft-pulse" title="Live GitHub activity"></span>
       <span style="color:var(--muted);margin-left:auto">
         <a href="/feed.xml" title="RSS feed of builds + thoughts" style="color:var(--muted);text-decoration:underline">RSS</a>
         · <button type="button" id="newsletterOpen" class="link-secondary" style="border:0;background:transparent;color:var(--accent2);cursor:pointer;padding:0">Newsletter — build log monthly</button>
       </span>
     </div>
+    <div class="wrap ft ft-ship-row"><span id="shipNote" class="ft-ship">…</span></div>
     <div class="wrap ft ft-seo">Built as proof, not just a demo — semantic HTML (&lt;1 h1) with a clean h2–h3 tree, Person + FAQPage JSON-LD, canonical URL, Open Graph/Twitter cards, RSS feed, sitemap.xml, robots.txt &amp; llms.txt.</div>
   </footer>
 </main>
@@ -275,20 +277,6 @@ const ogUrl = ogImage
         window.__analyticsFired = true;
         fetch('/api/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: location.pathname, referrer: document.referrer, ua: navigator.userAgent }) }).catch(() => {});
       }
-      /* ---- live "currently working on" (from latest commit) ---- */
-      (function () {
-        const el = document.getElementById('nowStatus');
-        if (!el) return;
-        try {
-          const k = 'nowStatus:' + new Date().toISOString().slice(0, 10);
-          const cached = localStorage.getItem(k);
-          if (cached) { el.textContent = 'Currently: ' + cached; return; }
-          fetch('/api/github', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
-            const c = (j && j.commits && j.commits[0] && j.commits[0].message) || '';
-            if (c) { el.textContent = 'Currently: ' + c; try { localStorage.setItem(k, c); } catch (e) {} }
-          }).catch(function () {});
-        } catch (e) {}
-      })();
       /* ---- newsletter open + submit ---- */
       (function () {
         const openBtn = document.getElementById('newsletterOpen');
@@ -339,6 +327,44 @@ const ogUrl = ogImage
     </script>
   )
 }
+<script is:inline>
+  (function () {
+    if (window.__footerLive) return;
+    window.__footerLive = true;
+    /* currently working on (latest commit) */
+    (function () {
+      var el = document.getElementById('nowStatus');
+      if (!el) return;
+      try {
+        var k = 'nowStatus:' + new Date().toISOString().slice(0, 10);
+        var cached = localStorage.getItem(k);
+        if (cached) { el.textContent = 'Currently: ' + cached; return; }
+        fetch('/api/github', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+          var c = (j && j.commits && j.commits[0] && j.commits[0].message) || '';
+          if (c) { el.textContent = 'Currently: ' + c; try { localStorage.setItem(k, c); } catch (e) {} }
+        }).catch(function () {});
+      } catch (e) {}
+    })();
+    /* live GitHub pulse (pushes today) */
+    (function () {
+      var el = document.getElementById('ghPulse');
+      if (!el) return;
+      fetch('/api/pulse', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+        var n = (j && j.pushesToday) || 0;
+        el.textContent = '· ' + n + (n === 1 ? ' push' : ' pushes') + ' today';
+        el.classList.add('on');
+      }).catch(function () {});
+    })();
+    /* AI "this week I shipped" summary */
+    (function () {
+      var el = document.getElementById('shipNote');
+      if (!el) return;
+      fetch('/api/ship', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.summary) el.textContent = '🤖 What I shipped this week: ' + j.summary;
+      }).catch(function () {});
+    })();
+  })();
+</script>
 {variant !== 'index' && <Search />}
 <script is:inline>
   (function () {
