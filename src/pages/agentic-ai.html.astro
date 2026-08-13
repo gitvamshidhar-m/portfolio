@@ -206,24 +206,21 @@ const body = `<section class="lpage-wrap">
       }
     }
 
+    // Compact offline fallback (server normally returns the full plan; this only
+    // covers the rare case the API call itself fails). Keep in sync with libs/agentic.js.
     function clientFallback(goal, budget) {
       const g = String(goal || '').toLowerCase();
-      let niche = 'general';
-      if (/b2b|saas|software|enterprise|api|platform|crm|workflow/.test(g)) niche = 'b2b_saas';
-      else if (/ecommerce|shopify|d2c|dtc|store|retail|skincare|apparel/.test(g)) niche = 'ecommerce';
-      else if (/local|restaurant|clinic|salon|dentist|lawyer|real estate|realtor|near me|gym/.test(g)) niche = 'local_service';
-      else if (/course|coach|coaching|infoproduct|membership|creator|youtube/.test(g)) niche = 'creator';
-      const channels = niche === 'b2b_saas' ? ['LinkedIn Ads', 'Google Search', 'Cold email + Apollo', 'G2 / review sites', 'Webinars']
-        : niche === 'ecommerce' ? ['Meta (FB/IG) Ads', 'Google Shopping', 'TikTok Ads', 'Influencer seeding', 'Email + SMS']
-        : niche === 'local_service' ? ['Google Local Services', 'Meta geo Ads', 'Local SEO', 'Google Maps', 'Reviews']
-        : niche === 'creator' ? ['YouTube', 'Instagram', 'TikTok', 'Email newsletter', 'Community']
+      const isB2B = /b2b|saas|software|enterprise|api|platform|crm|workflow/.test(g);
+      const isLoc = /local|restaurant|clinic|salon|dentist|agency|lawyer|real estate|realtor|near me|gym/.test(g);
+      const channels = isB2B ? ['LinkedIn Ads', 'Google Search', 'Cold email + Apollo', 'G2 / review sites', 'Webinars']
+        : isLoc ? ['Google Local Services', 'Meta geo Ads', 'Local SEO', 'Google Maps', 'Reviews']
+        : /ecommerce|shopify|d2c|dtc|store|retail|skincare|apparel/.test(g) ? ['Meta (FB/IG) Ads', 'Google Shopping', 'TikTok Ads', 'Influencer seeding', 'Email + SMS']
         : ['Meta Ads', 'Google Ads', 'LinkedIn', 'Email / CRM', 'Content + SEO'];
-      const bud = (budget && budget.trim()) ? budget.trim() : (niche === 'b2b_saas' ? '₹2.5L–₹4L / mo' : niche === 'local_service' ? '₹60k–₹1.2L / mo' : '₹1.5L–₹3L / mo');
+      const bud = (budget && budget.trim()) ? budget.trim() : (isB2B ? '₹2.5L–₹4L / mo' : isLoc ? '₹60k–₹1.2L / mo' : '₹1.5L–₹3L / mo');
       const core = goal.charAt(0).toUpperCase() + goal.slice(1);
       const ag = (id, name, role, tools, thinking, action, output, live, call, result) => ({ id, name, role, tools, thinking, action, output, live, call, result, status: 'done' });
       return {
-        mode: 'offline',
-        goal: goal,
+        mode: 'offline', goal: goal,
         orchestrator: 'Research sizes the audience, Strategy sets channels + budget, Content + Media ship the launch, Analytics measures, Optimizer closes the loop.',
         agents: [
           ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'], 'Maps who actually buys and where they hang out for: "' + core + '".', 'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.', 'Primary ICP + best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.', 'Sizing the audience via live SERP…', 'serp.search', '3 competitor angles · 12.4k monthly searches'),
@@ -234,8 +231,7 @@ const body = `<section class="lpage-wrap">
           ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.', 'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.', 'Spinning up the experiment loop…', 'experiment.rotate', '2 losers paused · next hook variant queued')
         ],
         campaignPlan: {
-          channels: channels,
-          budget: { total: bud, split: '70% to top channel, 30% to experiments' },
+          channels: channels, budget: { total: bud, split: '70% to top channel, 30% to experiments' },
           kpis: ['CPL / CAC', 'CTR & hook win-rate', 'Demo / lead rate', 'ROAS'],
           timeline: ['Week 1: Research + tracking live', 'Week 2-4: Launch ' + channels[0] + ' + content', 'Week 5-8: Scale winners, cut losers', 'Week 9-12: Automate the optimizer loop']
         },
@@ -259,26 +255,66 @@ const body = `<section class="lpage-wrap">
 
     function stripTags(s) { return String(s || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>'); }
 
+    // Robust SERP-HTML parser: understands DuckDuckGo, Google and plain pasted text,
+    // so the manual fallback works regardless of which search engine the visitor used.
     function parsePasted(html) {
       if (!html) return [];
       const out = [];
-      const titleRe = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
-      const titles = [];
-      let m;
-      while ((m = titleRe.exec(html))) {
-        const href = m[1] || '';
-        const um = href.match(/uddg=([^&]+)/);
+
+      // DuckDuckGo anchors (result__a / result__snippet)
+      const ddgT = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+      const ddgS = /<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
+      const ddgBlocks = [];
+      let mm;
+      while ((mm = ddgT.exec(html))) {
         let link = '';
+        const um = mm[1].match(/uddg=([^&]+)/);
         if (um) { try { link = decodeURIComponent(um[1]); } catch (e) {} }
-        titles.push({ title: stripTags(m[2]), link: link });
+        ddgBlocks.push({ title: stripTags(mm[2]), link: link });
       }
-      const snips = ((html.match(/<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g) || [])
-        .map(function (s) { return stripTags(s.replace(/^<a[^>]*>/, '').replace(/<\/a>$/, '')); }))
-        .concat(((html.match(/<div[^>]*class="[^"]*snippet[^"]*"[^>]*>([\s\S]*?)<\/div>/gi) || []).map(function (s) { return stripTags(s.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '')); })));
-      for (let i = 0; i < titles.length && out.length < 8; i++) {
+      const ddgSnips = (html.match(ddgS) || []).map((s) => stripTags(s.replace(/^<a[^>]*>/, '').replace(/<\/a>$/, '')));
+      for (let i = 0; i < ddgBlocks.length && out.length < 8; i++) {
         let domain = '';
-        try { domain = new URL(titles[i].link || '').hostname.replace(/^www\./, ''); } catch (e) {}
-        out.push({ title: titles[i].title, link: titles[i].link, domain: domain, snippet: snips[i] || snips[0] || '' });
+        try { domain = new URL(ddgBlocks[i].link || '').hostname.replace(/^www\./, ''); } catch (e) {}
+        out.push({ title: ddgBlocks[i].title, link: ddgBlocks[i].link, domain: domain, snippet: ddgSnips[i] || '' });
+      }
+
+      // Google anchors (h3 titles + /url?q= links + snippets)
+      if (out.length < 8) {
+        const gRe = /<a[^>]*href="\/url\?q=([^&"']+)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+        const gTitles = [];
+        while ((mm = gRe.exec(html))) {
+          let link = '';
+          try { link = decodeURIComponent(mm[1]); } catch (e) {}
+          gTitles.push({ title: stripTags(mm[2]), link: link });
+        }
+        const gSnips = (html.match(/<div[^>]*class="[^"]*(?:VwiC3b|IsZvec|aCOpRe)[^"]*"[^>]*>([\s\S]*?)<\/div>/gi) || []).map((s) => stripTags(s));
+        for (let i = 0; i < gTitles.length && out.length < 8; i++) {
+          let domain = '';
+          try { domain = new URL(gTitles[i].link || '').hostname.replace(/^www\./, ''); } catch (e) {}
+          out.push({ title: gTitles[i].title, link: gTitles[i].link, domain: domain, snippet: gSnips[i] || '' });
+        }
+      }
+
+      // Plain-text fallback: one result per line — "title — link" or "title — snippet"
+      if (out.length < 8) {
+        const isHtml = /<[a-zA-Z/][^>]*>/.test(html);
+        if (!isHtml) {
+          html.split(/\r?\n/).forEach((line) => {
+            if (out.length >= 8) return;
+            line = line.trim();
+            if (!line) return;
+            let title = line, link = '', snippet = '';
+            const linkMatch = line.match(/(https?:\/\/[^\s]+)/);
+            if (linkMatch) { link = linkMatch[1].replace(/[.,;:)\]}>]+$/, ''); title = line.replace(linkMatch[0], '').replace(/^[\s·•|\-–—]+|[\s·•|\-–—]+$/g, '').trim(); }
+            const em = line.split(/\s{2,}|\s+—\s+|\s+-\s+/);
+            if (!title && em.length > 1) { title = em[0]; snippet = em.slice(1).join(' — '); }
+            if (!title) title = link || line;
+            let domain = '';
+            try { domain = new URL(link || '').hostname.replace(/^www\./, ''); } catch (e) {}
+            out.push({ title: title.slice(0, 160), link: link, domain: domain, snippet: snippet.slice(0, 240) });
+          });
+        }
       }
       return out;
     }
@@ -399,7 +435,8 @@ const body = `<section class="lpage-wrap">
         logLine('a', (a.name || 'agent') + ' — ' + liveTxt);
         await type(ui.liveEl, liveTxt + '…');
         await sleep(THINK);
-        ui.thinkP.textContent = a.thinking || '';
+        ui.thinkP.textContent = '';
+        await type(ui.thinkP, a.thinking || '');
         await sleep(STEP);
         ui.actP.textContent = a.action || '';
         ui.outP.textContent = a.output || '';
@@ -466,7 +503,7 @@ const body = `<section class="lpage-wrap">
         ? '<div class="ag-note">Running on the built-in rule-based planner — connect a Groq + search key for live LLM grounding.</div>'
         : '';
       plan.innerHTML =
-        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button></div>' +
+        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions"><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
           '<div class="blk"><b>Budget</b>' + budgetTxt + '</div>' +
@@ -484,11 +521,34 @@ const body = `<section class="lpage-wrap">
           }).catch(function () { copyBtn.textContent = 'Copy failed'; });
         });
       }
+      const shareBtn = document.getElementById('agShareBtn');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', function () {
+          const h = '#' + encodeURIComponent(JSON.stringify({ goal: goal.value, niche: niche.value, budget: budget.value }));
+          copyText(location.origin + location.pathname + h).then(function () {
+            shareBtn.textContent = '✓ Link copied';
+            setTimeout(function () { shareBtn.textContent = '🔗 Share'; }, 1800);
+          }).catch(function () { shareBtn.textContent = 'Copy failed'; });
+        });
+      }
       plan.hidden = false;
       plan.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
     }
 
     runBtn.addEventListener('click', run);
     goal.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
+
+    // Deep-link: /agentic-ai.html#{"goal":...,"niche":...,"budget":...} auto-runs Hive.
+    (function () {
+      try {
+        const h = location.hash && location.hash.length > 4 ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : null;
+        if (h && h.goal) {
+          if (h.goal) goal.value = String(h.goal).slice(0, 600);
+          if (h.niche) niche.value = String(h.niche).slice(0, 120);
+          if (h.budget) budget.value = String(h.budget).slice(0, 120);
+          setTimeout(run, 350);
+        }
+      } catch (e) {}
+    })();
   </script>
 </Base>
