@@ -126,6 +126,16 @@ p{text-wrap:pretty}
 .hero .tag{background:transparent;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--muted);margin-bottom:22px;border-radius:999px;padding:8px 16px;font-size:12.5px;letter-spacing:.4px}
 .hero .tag .refnote{color:var(--accent2)}
 .hero h1{margin-bottom:8px;text-shadow:none}
+/* hero live A/B test widget */
+.abvote{max-width:640px;margin:0 auto 6px;border:1px solid color-mix(in srgb,var(--accent2) 32%,var(--line));border-radius:16px;padding:14px 16px;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 9%,transparent),color-mix(in srgb,var(--accent2) 7%,transparent));box-shadow:var(--shadow-soft)}
+.abvote-tag{display:block;font-size:12px;letter-spacing:.3px;color:var(--muted);margin-bottom:10px;font-weight:600}
+.abvote-row{display:flex;gap:10px;flex-wrap:wrap}
+.abvote-row button{flex:1;min-width:220px;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.18s;text-align:left;font-family:inherit}
+.abvote-row button:hover{border-color:color-mix(in srgb,var(--accent2) 55%,var(--line));transform:translateY(-1px);box-shadow:0 10px 24px -12px rgba(47,243,192,.45)}
+.abvote-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:12px}
+.abvote-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s var(--ease)}
+.abvote-note{display:block;margin-top:9px;font-size:12px;color:var(--accent2);font-weight:600}
+@media(max-width:640px){.abvote-row button{min-width:100%}}
 .type-wrap{margin:20px 0 18px}
 .role-switch{margin-top:18px;margin-bottom:2px}
 .cta-row{margin-top:24px}
