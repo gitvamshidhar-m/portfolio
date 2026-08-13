@@ -383,9 +383,12 @@ document.querySelectorAll('a[href^="tel:"]').forEach(ph=>{
 
 /* ---------- live product health ---------- */
 document.querySelectorAll('.status-badge').forEach(b=>{
-  const url=b.dataset.url;
-  fetch(url,{method:'HEAD',mode:'no-cors',cache:'no-store'}).then(()=>{
-    b.className='status-badge live';b.innerHTML='<span class="sdot"></span>Live';
+  const url=b.dataset.url; if(!url) return;
+  fetch('/api/status?url='+encodeURIComponent(url),{cache:'no-store'}).then(r=>r.json()).then(j=>{
+    const up=j&&j.status==='live';
+    const suffix=(typeof j.uptime==='number'&&j.uptime>0)?(' · '+Math.round(j.uptime)+'% · 30d'):'';
+    b.className='status-badge '+(up?'live':'down');
+    b.innerHTML='<span class="sdot"></span>'+(up?'Live':'Unreachable')+suffix;
   }).catch(()=>{
     b.className='status-badge down';b.innerHTML='<span class="sdot"></span>Unreachable';
   });

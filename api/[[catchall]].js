@@ -21,6 +21,7 @@ function getHandler(key) {
     case 'rag': return require('../libs/rag');
     case 'resume': return require('../libs/resume');
     case 'stats': return require('../libs/stats');
+    case 'status': return require('../libs/status');
     case 'track': return require('../libs/track');
     case 'views': return require('../libs/views');
     default: return null;
