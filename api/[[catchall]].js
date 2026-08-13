@@ -15,6 +15,7 @@ function getHandler(key) {
     case 'contact': return require('../libs/contact');
     case 'coverletter': return require('../libs/coverletter');
     case 'github': return require('../libs/github');
+    case 'headline': return require('../libs/headline');
     case 'live': return require('../libs/live');
     case 'og': return require('../libs/og');
     case 'rag': return require('../libs/rag');

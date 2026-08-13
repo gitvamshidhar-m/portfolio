@@ -20,23 +20,35 @@ const body = "<div id=\"progress\"></div>\n<div id=\"glow\"></div>\n\n<div class
     function load() { try { return JSON.parse(localStorage.getItem(K)) || null; } catch (e) { return null; } }
     function save(d) { try { localStorage.setItem(K, JSON.stringify(d)); } catch (e) {} }
     var v = document.getElementById('abVote'); if (!v) return;
-    var d = load(), A = d && d.a || 0, B = d && d.b || 0, voted = !!(d && d.voted);
-    function paint(chosen) {
+    var d = load(), A = 0, B = 0, voted = !!(d && d.voted);
+    function paint(chosen, noteText) {
       var row = v.querySelector('.abvote-row'), bar = v.querySelector('.abvote-bar span'), note = v.querySelector('.abvote-note'), tag = v.querySelector('.abvote-tag');
       if (!row || !bar || !note) return;
       row.style.display = 'none';
       var tot = A + B, pA = tot ? Math.round(A / tot * 100) : 0, win = A >= B ? 'A' : 'B';
       bar.style.width = pA + '%';
-      note.textContent = 'A ' + pA + '% · B ' + (100 - pA) + '% — ' + (chosen ? 'your vote counted — ' : '') + 'variant ' + win + ' leads · decided by real visitors';
-      if (chosen && tag) tag.textContent = '⚡ Thanks — your pick just set the winning headline for this page.';
+      note.textContent = noteText || ('A ' + pA + '% · B ' + (100 - pA) + '% — variant ' + win + ' leads · decided by real visitors');
+      if (chosen && tag) tag.textContent = '⚡ Thanks — vote counted. Live results below.';
+    }
+    function applyGlobal(j) {
+      if (j && typeof j.a === 'number') A = j.a;
+      if (j && typeof j.b === 'number') B = j.b;
+      if (voted) paint(false);
     }
     v.querySelectorAll('.abvote-row button').forEach(function (b) {
       b.addEventListener('click', function () {
-        if (b.dataset.ab === 'a') A++; else B++;
-        save({ a: A, b: B, voted: true }); paint(true);
+        var choice = b.dataset.ab === 'a' ? 'a' : 'b';
+        voted = true;
+        save({ voted: true });
+        if (choice === 'a') A++; else B++;
+        paint(true, 'Counting your vote…');
+        fetch('/api/headline', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ v: choice }) })
+          .then(function (r) { return r.json(); })
+          .then(applyGlobal)
+          .catch(function () { applyGlobal({ a: A, b: B }); });
       });
     });
-    if (voted) paint(false);
+    fetch('/api/headline', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(applyGlobal).catch(function () {});
   })();
   </script>
 
