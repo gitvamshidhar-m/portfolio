@@ -1,11 +1,13 @@
 // Live A/B headline votes, persisted in Vercel KV (Upstash Redis REST).
-// GET  -> { a, b } current global counts
+// GET  -> { a, b } current global counts (seeds a baseline on first read)
 // POST { v: 'a' | 'b' } -> records one vote, returns new counts
 const KA = 'abtest:a';
 const KB = 'abtest:b';
+const SEED_A = 46;
+const SEED_B = 54;
 
-function kvCmd(baseUrl, token, command, key) {
-  const url = String(baseUrl).replace(/\/$/, '') + '/' + command + '/' + encodeURIComponent(key);
+function kvCmd(baseUrl, token, command, path) {
+  const url = String(baseUrl).replace(/\/$/, '') + '/' + command + '/' + path;
   return fetch(url, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token }
@@ -25,15 +27,29 @@ function send(res, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function getNum(j) {
+  if (j && typeof j.result === 'number') return j.result;
+  if (j && typeof j.value === 'number') return j.value;
+  if (j && typeof j.result === 'string') return parseInt(j.result, 10) || 0;
+  return 0;
+}
+
+function counts(url, token) {
+  return Promise.all([kvCmd(url, token, 'get', KA), kvCmd(url, token, 'get', KB)])
+    .then(function (items) { return { a: getNum(items[0]), b: getNum(items[1]) }; });
+}
+
+// Seed a baseline once (setnx is a no-op if the key already exists).
+function ensureSeed(url, token) {
+  return Promise.all([
+    kvCmd(url, token, 'setnx', KA + '/' + SEED_A),
+    kvCmd(url, token, 'setnx', KB + '/' + SEED_B)
+  ]).then(function () { return counts(url, token); });
+}
+
 module.exports = function handler(req, res) {
   const e = env();
-  if (!e.url || !e.token) return send(res, { a: 0, b: 0, note: 'KV not configured' });
-
-  const getNum = function (j) {
-    if (j && typeof j.result === 'number') return j.result;
-    if (j && typeof j.value === 'number') return j.value;
-    return j && typeof j.result === 'string' ? parseInt(j.result, 10) || 0 : 0;
-  };
+  if (!e.url || !e.token) return send(res, { a: SEED_A, b: SEED_B, note: 'KV not configured' });
 
   if (req.method === 'POST') {
     let body = '';
@@ -42,24 +58,28 @@ module.exports = function handler(req, res) {
       let v = 'a';
       try { v = (JSON.parse(body || '{}').v === 'b') ? 'b' : 'a'; } catch (e) { v = 'a'; }
       const key = v === 'a' ? KA : KB;
-      kvCmd(e.url, e.token, 'incr', key)
+      const other = v === 'a' ? KB : KA;
+      // Ensure baseline exists before incrementing.
+      kvCmd(e.url, e.token, 'setnx', key + '/' + (v === 'a' ? SEED_A : SEED_B))
+        .then(function () {
+          return kvCmd(e.url, e.token, 'incr', key);
+        })
         .then(function (j) {
           const n = getNum(j);
-          return Promise.all([
-            Promise.resolve(v === 'a' ? n : null),
-            kvCmd(e.url, e.token, 'get', v === 'a' ? KB : KA).then(getNum)
-          ]).then(function (r) {
-            send(res, { a: v === 'a' ? n : r[1], b: v === 'b' ? n : r[1] });
+          return kvCmd(e.url, e.token, 'get', other).then(function (oj) {
+            return send(res, v === 'a' ? { a: n, b: getNum(oj) } : { a: getNum(oj), b: n });
           });
         })
-        .catch(function () { send(res, { a: 0, b: 0 }); });
+        .catch(function () { send(res, { a: SEED_A, b: SEED_B }); });
     });
     return;
   }
 
-  Promise.all([kvCmd(e.url, e.token, 'get', KA), kvCmd(e.url, e.token, 'get', KB)])
-    .then(function (items) {
-      send(res, { a: getNum(items[0]), b: getNum(items[1]) });
+  counts(e.url, e.token)
+    .then(function (c) {
+      if (c.a === 0 && c.b === 0) return ensureSeed(e.url, e.token);
+      return c;
     })
-    .catch(function () { send(res, { a: 0, b: 0 }); });
+    .then(function (c) { send(res, c); })
+    .catch(function () { send(res, { a: SEED_A, b: SEED_B }); });
 };
