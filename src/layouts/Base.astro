@@ -260,7 +260,7 @@ const ogUrl = ogImage
       document.querySelectorAll('a[href^="https://mail.google.com/mail/"]').forEach(g => g.addEventListener('click', () => ea('gmail', 'compose')));
       document.querySelectorAll('a[aria-label="LinkedIn"]').forEach(x => x.addEventListener('click', () => ea('social', 'linkedin')));
       document.querySelectorAll('a[aria-label="GitHub"]').forEach(x => x.addEventListener('click', () => ea('social', 'github')));
-      function clock2() { const e = document.getElementById('clock2'); if (e) { e.textContent = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }); } } clock2(); setInterval(clock2, 1000);
+      function clock2() { const t = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }); const e = document.getElementById('clock2'); if (e) e.textContent = t; const c = document.getElementById('clock'); if (c) c.textContent = '⏱ ' + t; } clock2(); setInterval(clock2, 1000);
       const prog = document.getElementById('progress');
       if (prog && !window.__hasProgress) {
         window.__hasProgress = true;
