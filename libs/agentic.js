@@ -149,14 +149,23 @@ module.exports = async function handler(req, res) {
   if (n > RL_MAX) return res.status(429).json({ error: 'rate limited' });
   kv([['LPUSH', 'agentic:runs', JSON.stringify({ at: new Date().toISOString(), goal: m.goal.slice(0, 120) })], ['LTRIM', 'agentic:runs', 0, 99]]);
 
+  const pasted = Array.isArray(b.serpResults) ? b.serpResults.filter(function (x) { return x && (x.title || x.snippet); }).slice(0, 8) : null;
   const key = (process.env.GROQ_API_KEY || '').trim();
   const fb = fallback(m);
   if (!key) return res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0 }, fb));
 
-  let serpResults = null, serpQ = '';
-  try { serpQ = serpQuery(m); serpResults = await serp(serpQ); } catch (e) { serpResults = null; }
+  let serpResults = null, serpQ = '', serpBlock = null, serpBlockedHint = false;
+  if (pasted && pasted.length) {
+    serpResults = pasted; serpQ = 'pasted results';
+  } else {
+    try { serpQ = serpQuery(m); serpResults = await serp(serpQ); } catch (e) { serpResults = null; }
+    if (!Array.isArray(serpResults) || !serpResults.length) {
+      serpResults = null;
+      if (!process.env.SERP_API_KEY && !process.env.BRAVE_API_KEY) serpBlockedHint = true;
+    }
+  }
   const serpCount = Array.isArray(serpResults) ? serpResults.length : 0;
-  const serpBlock = serpCount ? { query: serpQ, text: formatSerp(serpResults) } : null;
+  if (serpCount) serpBlock = { query: serpQ, text: formatSerp(serpResults) };
 
   fetch(GROQ, {
     method: 'POST',

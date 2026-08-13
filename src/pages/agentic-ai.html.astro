@@ -107,6 +107,14 @@ const body = `<section class="lpage-wrap">
           <span id="agSerp" class="ag-mode serp" hidden></span>
           <span class="ag-hint">Try: “Sell 500 units of a D2C skincare brand in 60 days” or “Book 30 consultations for a local dental clinic”.</span>
         </div>
+        <div class="ag-adv">
+          <p id="serpHint" class="ag-hint" hidden style="color:var(--accent)">Live web search was blocked. Paste a search-results page's HTML below to ground the Research Agent manually.</p>
+          <button type="button" class="ag-adv-toggle" id="serpToggle" aria-expanded="false" aria-controls="serpBody">⤵ Paste search HTML (manual fallback)</button>
+          <div class="ag-adv-body" id="serpBody" hidden>
+            <textarea id="serpPaste" placeholder="Paste the HTML of a Google / DuckDuckGo search-results page here. The Research Agent will use those results to ground its plan — handy when live search is blocked." rows="4"></textarea>
+            <span class="ag-hint">Optional. Leave empty to let Hive fetch live results itself.</span>
+          </div>
+        </div>
       </div>
       <div class="ag-stage" id="agStage" hidden>
         <div class="ag-orch" id="agOrch"></div>
@@ -237,6 +245,43 @@ const body = `<section class="lpage-wrap">
 
     const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budget = $('budgetInput');
     const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), plan = $('agPlan'), modeEl = $('agMode'), serpEl = $('agSerp');
+    const serpToggle = $('serpToggle'), serpBody = $('serpBody'), serpPaste = $('serpPaste'), serpHint = $('serpHint');
+
+    if (serpToggle && serpBody) {
+      serpToggle.addEventListener('click', function () {
+        const on = serpBody.hidden;
+        serpBody.hidden = !on;
+        serpToggle.setAttribute('aria-expanded', on ? 'true' : 'false');
+        serpToggle.textContent = on ? '⤴ Hide search HTML paste' : '⤵ Paste search HTML (manual fallback)';
+      });
+      if (serpPaste) serpPaste.value = '';
+    }
+
+    function stripTags(s) { return String(s || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>'); }
+
+    function parsePasted(html) {
+      if (!html) return [];
+      const out = [];
+      const titleRe = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+      const titles = [];
+      let m;
+      while ((m = titleRe.exec(html))) {
+        const href = m[1] || '';
+        const um = href.match(/uddg=([^&]+)/);
+        let link = '';
+        if (um) { try { link = decodeURIComponent(um[1]); } catch (e) {} }
+        titles.push({ title: stripTags(m[2]), link: link });
+      }
+      const snips = ((html.match(/<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g) || [])
+        .map(function (s) { return stripTags(s.replace(/^<a[^>]*>/, '').replace(/<\/a>$/, '')); }))
+        .concat(((html.match(/<div[^>]*class="[^"]*snippet[^"]*"[^>]*>([\s\S]*?)<\/div>/gi) || []).map(function (s) { return stripTags(s.replace(/^<div[^>]*>/, '').replace(/<\/div>$/, '')); })));
+      for (let i = 0; i < titles.length && out.length < 8; i++) {
+        let domain = '';
+        try { domain = new URL(titles[i].link || '').hostname.replace(/^www\./, ''); } catch (e) {}
+        out.push({ title: titles[i].title, link: titles[i].link, domain: domain, snippet: snips[i] || snips[0] || '' });
+      }
+      return out;
+    }
 
     function logLine(cls, html) {
       const d = document.createElement('div');
@@ -297,11 +342,13 @@ const body = `<section class="lpage-wrap">
       reset();
 
       let data;
+      const pastedHtml = serpPaste ? serpPaste.value.trim() : '';
+      const pastedResults = parsePasted(pastedHtml);
       try {
         const res = await fetch('/api/agentic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim() })
+          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined })
         });
         if (!res.ok) throw new Error('bad');
         data = await res.json();
@@ -317,8 +364,19 @@ const body = `<section class="lpage-wrap">
         modeEl.textContent = data.mode === 'ai' ? '● LIVE LLM' : (data.mode === 'offline' ? '● OFFLINE DEMO' : '● RULE-BASED FALLBACK');
       }
       if (serpEl) {
-        if (data.serpUsed) { serpEl.hidden = false; serpEl.textContent = '🔎 LIVE SERP · ' + (data.serpCount || 0) + ' results'; logLine('t', 'research grounded in live SERP (' + (data.serpCount || 0) + ' results) for "' + esc(data.serpQuery || '') + '"'); }
-        else serpEl.hidden = true;
+        if (data.serpUsed) {
+          serpEl.hidden = false;
+          const source = (data.serpQuery === 'pasted results') ? '📋 PASTED SEARCH' : '🔎 LIVE SERP';
+          serpEl.textContent = source + ' · ' + (data.serpCount || 0) + ' results';
+          logLine('t', 'research grounded in ' + (source === 'PASTED SEARCH' ? 'pasted search results' : 'live SERP') + ' (' + (data.serpCount || 0) + ' results)');
+        } else {
+          serpEl.hidden = true;
+          if (data.serpBlocked && serpHint) {
+            serpHint.hidden = false;
+            if (serpBody) serpBody.hidden = false;
+            if (serpToggle) { serpToggle.setAttribute('aria-expanded', 'true'); serpToggle.textContent = '⤴ Hide search HTML paste'; }
+          }
+        }
       }
 
       orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(data.orchestrator || 'Planning Hive…') + '</span>';
