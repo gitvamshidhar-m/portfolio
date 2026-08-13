@@ -17,7 +17,9 @@ const faqLd = JSON.stringify({
     { "@type": "Question", name: "What is agentic AI in digital marketing?", acceptedAnswer: { "@type": "Answer", text: "A set of autonomous agents that read a goal, pick their own tools, take action, check the result, and loop back to improve — instead of running fixed 'if this then that' rules you pre-wrote. Research, strategy, content, media, analytics and optimization happen without a human in every step." } },
     { "@type": "Question", name: "How is agentic AI different from marketing automation?", acceptedAnswer: { "@type": "Answer", text: "Automation executes the rules you defined; it cannot react to something you didn't anticipate. Agentic AI handles the unexpected — it decides what to do next based on live results, like a senior team would." } },
     { "@type": "Question", name: "Is the agent demo on this page real?", acceptedAnswer: { "@type": "Answer", text: "Yes. It calls a real LLM (Groq) to orchestrate the six agents, and when a search key is set the Research Agent is grounded with live SERP results. With no keys it falls back to a smart rule-based planner so the demo always returns a coherent campaign." } },
-    { "@type": "Question", name: "Where would I actually use this for my business?", acceptedAnswer: { "@type": "Answer", text: "Anywhere a goal needs a coordinated plan: launching a product, scaling paid media, building a content engine, or running an always-on improvement loop across channels — with your team approving the big calls." } }
+    { "@type": "Question", name: "Where would I actually use this for my business?", acceptedAnswer: { "@type": "Answer", text: "Anywhere a goal needs a coordinated plan: launching a product, scaling paid media, building a content engine, or running an always-on improvement loop across channels — with your team approving the big calls." } },
+    { "@type": "Question", name: "What does an agent's tool call actually look like?", acceptedAnswer: { "@type": "Answer", text: "The Media Agent emits a google_ads.create_campaign call carrying a requires_human_approval guardrail and a dry_run flag; the Analytics Agent reads performance via ga4.run_report. In production those calls hit the real Google Ads and GA4 APIs behind the same guardrails — this page only shows the orchestration." } },
+    { "@type": "Question", name: "Where does agentic AI still need a human?", acceptedAnswer: { "@type": "Answer", text: "On brand-safety, tone, hard spend caps, and a launch kill-switch. Models also guess in novel, low-data markets, so a human owns the high-downside calls while the agents handle the repeatable ~95% of the work." } }
   ]
 });
 const body = `<section class="lpage-wrap">
@@ -70,6 +72,22 @@ const body = `<section class="lpage-wrap">
       <div class="ab-variant"><b>📊 Analytics Agent</b><span class="ag-persona">The Truth-Teller</span><p>The number-obsessed skeptic. Wires tracking and stands up the KPI dashboard so every rupee is measurable.</p></div>
       <div class="ab-variant"><b>♻️ Optimizer Agent</b><span class="ag-persona">The Tinkerer</span><p>The restless experimenter. Flags losers, rotates winners, and feeds fresh signal back to research.</p></div>
     </div>
+    <div class="ag-pipeline" aria-hidden="true">
+      <div class="ag-pipe">
+        <div class="ag-node" style="--agc:#49b6ff"><span class="ag-nico">🔍</span><b>Research</b><i>The Scout</i></div>
+        <div class="ag-arrow">→</div>
+        <div class="ag-node" style="--agc:#8b7bff"><span class="ag-nico">🧭</span><b>Strategy</b><i>The Architect</i></div>
+        <div class="ag-arrow">→</div>
+        <div class="ag-node" style="--agc:#ff6fae"><span class="ag-nico">✍️</span><b>Content</b><i>The Wordsmith</i></div>
+        <div class="ag-arrow">→</div>
+        <div class="ag-node" style="--agc:#ff9e5c"><span class="ag-nico">📣</span><b>Media</b><i>The Operator</i></div>
+        <div class="ag-arrow">→</div>
+        <div class="ag-node" style="--agc:#2ff3c0"><span class="ag-nico">📊</span><b>Analytics</b><i>The Truth-Teller</i></div>
+        <div class="ag-arrow">→</div>
+        <div class="ag-node" style="--agc:#8affc1"><span class="ag-nico">♻️</span><b>Optimizer</b><i>The Tinkerer</i></div>
+      </div>
+      <div class="ag-loop">↩︎ The Optimizer loops fresh signal back to <b>Research</b> — the Hive keeps improving on its own.</div>
+    </div>
   </div>
 
   <div class="wrap" id="demo" style="margin-top:44px;scroll-margin-top:90px">
@@ -105,6 +123,32 @@ const body = `<section class="lpage-wrap">
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Research sizes the audience, Strategy sets the plan, Content writes the assets, Media launches the campaigns, Analytics measures them, and the Optimizer keeps improving — each one handing its output to the next.</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Do I lose control if agents act autonomously?</summary><p style="color:var(--muted);margin-top:8px">No. The demo shows the plan and the loop; in production you set guardrails — humans approve the big calls (budget, launches) while agents handle the repetitive ones.</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Can this plug into my actual ad accounts and CRM?</summary><p style="color:var(--muted);margin-top:8px">Yes — that's the build. The agents call real tools (ad platforms, GA4, your CRM) behind a guardrailed workflow. This page is the safe, read-only showcase of the orchestration.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What does an agent's tool call actually look like?</summary>
+        <p style="color:var(--muted);margin-top:8px">Read-only mock of what the Media Agent emits before a human approves a launch. In production the same call hits the real Google Ads + GA4 APIs behind the guardrail.</p>
+        <pre class="ag-trace">{
+  "agent": "media",
+  "tool": "google_ads.create_campaign",
+  "guardrail": "requires_human_approval",
+  "dry_run": true,
+  "params": {
+    "name": "Hive · PM SaaS · LinkedIn",
+    "objective": "LEAD",
+    "budget": { "daily": 3000, "currency": "INR" },
+    "audience": { "lookalike": "analytics:demo_audience", "exclude": ["existing_customers"] },
+    "tracking": { "ga4_event": "generate_lead", "click_id": "gclid" }
+  },
+  "result": "VALIDATED · awaiting human approval"
+}</pre>
+        <pre class="ag-trace">{
+  "agent": "analytics",
+  "tool": "ga4.run_report",
+  "params": { "metrics": ["conversions", "cost_per_conversion"], "dimensions": ["campaign"], "date_range": "last_7d" },
+  "result": { "pm_saas_linkedin": { "conversions": 41, "cpa_inr": 734 } }
+}</pre>
+      </details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Where does agentic AI still need a human?</summary>
+        <p style="color:var(--muted);margin-top:8px">Agentic AI is brilliant at execution, not judgment. In the builds I ship, a human stays on the calls that have real downside: brand-safety and tone (no agent ships copy that could read as tone-deaf), hard spend caps so a rogue experiment can't blow the budget, and a kill-switch on any launch. Novel or low-data markets are where I still step in — models guess when there's no signal to ground them. The Hive owns the ~95% of repeatable work; I own the ~5% that needs scar tissue.</p>
+      </details>
     </div>
   </div>
 </section>`;
@@ -130,6 +174,16 @@ const body = `<section class="lpage-wrap">
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const $ = (id) => document.getElementById(id);
 
+    async function type(el, text) {
+      if (!el) return;
+      if (reduce) { el.textContent = text; return; }
+      el.textContent = '';
+      for (let i = 0; i < text.length; i++) {
+        el.textContent += text[i];
+        await sleep(14);
+      }
+    }
+
     function clientFallback(goal, budget) {
       const g = String(goal || '').toLowerCase();
       let niche = 'general';
@@ -144,18 +198,18 @@ const body = `<section class="lpage-wrap">
         : ['Meta Ads', 'Google Ads', 'LinkedIn', 'Email / CRM', 'Content + SEO'];
       const bud = (budget && budget.trim()) ? budget.trim() : (niche === 'b2b_saas' ? '₹2.5L–₹4L / mo' : niche === 'local_service' ? '₹60k–₹1.2L / mo' : '₹1.5L–₹3L / mo');
       const core = goal.charAt(0).toUpperCase() + goal.slice(1);
-      const ag = (id, name, role, tools, thinking, action, output) => ({ id, name, role, tools, thinking, action, output, status: 'done' });
+      const ag = (id, name, role, tools, thinking, action, output, live) => ({ id, name, role, tools, thinking, action, output, live, status: 'done' });
       return {
         mode: 'offline',
         goal: goal,
         orchestrator: 'Research sizes the audience, Strategy sets channels + budget, Content + Media ship the launch, Analytics measures, Optimizer closes the loop.',
         agents: [
-          ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'], 'Maps who actually buys and where they hang out for: "' + core + '".', 'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.', 'Primary ICP + best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.'),
-          ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'], 'Turns research into a focused plan instead of spraying budget.', 'Allocates "' + bud + '" across the highest-intent channels only.', 'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 test split — handed to Content.'),
-          ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.'),
-          ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'], 'Builds the campaigns exactly as Content + Strategy specified.', 'Launches ' + channels[0] + ' with the winning hooks and tight audiences.', 'Live campaigns with audience sync + budget caps — handed to Analytics.'),
-          ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'], 'Makes sure every rupee is measurable before it scales.', 'Wires GA4 + pixels and stands up a one-screen KPI dashboard.', 'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.'),
-          ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.',           'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.')
+          ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'], 'Maps who actually buys and where they hang out for: "' + core + '".', 'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.', 'Primary ICP + best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.', 'Sizing the audience via live SERP…'),
+          ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'], 'Turns the research into a focused plan instead of spraying budget.', 'Allocates "' + bud + '" across the highest-intent channels only.', 'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.', 'Turning signal into a focused plan…'),
+          ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.', 'Drafting hooks + landing copy in brand voice…'),
+          ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'], 'Builds the campaigns exactly as Content + Strategy specified.', 'Launches ' + channels[0] + ' with the winning hooks and tight audiences.', 'Live campaigns with audience sync + budget caps — handed to Analytics.', 'Building & launching the campaigns…'),
+          ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'], 'Makes sure every rupee is measurable before it scales.', 'Wires GA4 + pixels and stands up a one-screen KPI dashboard.', 'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.', 'Wiring tracking + the KPI dashboard…'),
+          ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.', 'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.', 'Spinning up the experiment loop…')
         ],
         campaignPlan: {
           channels: channels,
@@ -201,15 +255,19 @@ const body = `<section class="lpage-wrap">
           '<div><div class="ag-name">' + esc(a.name || 'Agent') + '</div><div class="ag-role">' + esc(a.role || '') + '</div>' + (meta.persona ? '<span class="ag-persona">' + esc(meta.persona) + '</span>' : '') + '</div>' +
           '<span class="ag-status">queued</span>' +
         '</div>' +
+        '<div class="ag-live"></div>' +
         '<div class="ag-tools">' + (Array.isArray(a.tools) ? a.tools.map((t) => '<span>' + esc(t) + '</span>').join('') : '') + '</div>' +
         '<div class="ag-field think"><span class="k">Thinking</span><p></p></div>' +
         '<div class="ag-field act"><span class="k">Action</span><p></p></div>' +
-        '<div class="ag-field out"><span class="k">Output</span><p></p></div>';
+        '<div class="ag-field out"><span class="k">Output</span><p></p></div>' +
+        '<div class="ag-handoff"></div>';
       const status = card.querySelector('.ag-status');
       const thinkP = card.querySelector('.ag-field.think p');
       const actP = card.querySelector('.ag-field.act p');
       const outP = card.querySelector('.ag-field.out p');
-      return { card, status, thinkP, actP, outP };
+      const liveEl = card.querySelector('.ag-live');
+      const handoffEl = card.querySelector('.ag-handoff');
+      return { card, status, thinkP, actP, outP, liveEl, handoffEl };
     }
 
     async function run() {
@@ -250,7 +308,9 @@ const body = `<section class="lpage-wrap">
       orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(data.orchestrator || 'Planning Hive…') + '</span>';
       logLine('a', 'orchestrator: ' + esc(data.orchestrator || 'starting'));
 
-      for (const a of data.agents) {
+      const seq = data.agents;
+      for (let i = 0; i < seq.length; i++) {
+        const a = seq[i];
         const id = (a.id || '').toLowerCase();
         const ui = makeCard(a);
         agents.appendChild(ui.card);
@@ -261,14 +321,20 @@ const body = `<section class="lpage-wrap">
         if (line) line.classList.add('on');
         ui.status.textContent = 'thinking'; ui.status.className = 'ag-status thinking';
         ui.card.classList.add('active');
-        logLine('a', (a.name || 'agent') + ' — thinking…');
+        const liveTxt = a.live || ((a.name || 'Agent') + ' working');
+        logLine('a', (a.name || 'agent') + ' — ' + liveTxt);
+        await type(ui.liveEl, liveTxt + '…');
         await sleep(THINK);
         ui.thinkP.textContent = a.thinking || '';
         await sleep(STEP);
         ui.actP.textContent = a.action || '';
         ui.outP.textContent = a.output || '';
+        ui.liveEl.textContent = liveTxt;
+        ui.liveEl.classList.add('done');
         ui.status.textContent = 'done'; ui.status.className = 'ag-status done';
         ui.card.classList.remove('active'); ui.card.classList.add('done');
+        const next = seq[i + 1];
+        if (next && ui.handoffEl) ui.handoffEl.innerHTML = '↓ hands off to ' + esc(next.name);
         logLine('', (a.name || 'agent') + ' → ' + esc((a.output || '').slice(0, 90)));
         await sleep(STEP * 0.35);
       }

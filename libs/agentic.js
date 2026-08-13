@@ -19,12 +19,12 @@ function sys() {
     + '  "goal":"<echo the goal, trimmed>",\n'
     + '  "orchestrator":"<one-line plan: how the agents will split the work>",\n'
     + '  "agents":[\n'
-    + '    {"id":"research","name":"Research Agent","persona":"The Scout","role":"Market & audience intelligence","tools":["web_search","analytics"],"thinking":"<1 sentence: what it reasons about, skeptical of assumptions>","action":"<1 sentence: the concrete step it takes>","output":"<1-2 sentences: the specific finding it hands to the next agent>","status":"done"},\n'
-    + '    {"id":"strategy","name":"Strategy Agent","persona":"The Architect","role":"Positioning, channels & budget","tools":["planner"],"thinking":"...","action":"...","output":"... references the research agent\'s finding","status":"done"},\n'
-    + '    {"id":"content","name":"Content Agent","persona":"The Wordsmith","role":"Copy, creative & brand voice","tools":["llm_writer","brand_voice"],"thinking":"...","action":"...","output":"... references the strategy","status":"done"},\n'
-    + '    {"id":"media","name":"Media Buying Agent","persona":"The Operator","role":"Campaign build & targeting","tools":["ad_platform","audience_sync"],"thinking":"...","action":"...","output":"... references the content + strategy","status":"done"},\n'
-    + '    {"id":"analytics","name":"Analytics Agent","persona":"The Truth-Teller","role":"Tracking, KPIs & dashboards","tools":["ga4","pixel"],"thinking":"...","action":"...","output":"... defines how success is measured","status":"done"},\n'
-    + '    {"id":"optimizer","name":"Optimizer Agent","persona":"The Tinkerer","role":"Always-on improvement loop","tools":["experiment","alert"],"thinking":"...","action":"...","output":"... closes the loop back to research","status":"done"}\n'
+    + '    {"id":"research","name":"Research Agent","persona":"The Scout","role":"Market & audience intelligence","tools":["web_search","analytics"],"thinking":"<1 sentence: what it reasons about, skeptical of assumptions>","action":"<1 sentence: the concrete step it takes>","output":"<1-2 sentences: the specific finding it hands to the next agent>","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","status":"done"},\n'
+    + '    {"id":"strategy","name":"Strategy Agent","persona":"The Architect","role":"Positioning, channels & budget","tools":["planner"],"thinking":"...","action":"...","output":"... references the research agent\'s finding","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","status":"done"},\n'
+    + '    {"id":"content","name":"Content Agent","persona":"The Wordsmith","role":"Copy, creative & brand voice","tools":["llm_writer","brand_voice"],"thinking":"...","action":"...","output":"... references the strategy","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","status":"done"},\n'
+    + '    {"id":"media","name":"Media Buying Agent","persona":"The Operator","role":"Campaign build & targeting","tools":["ad_platform","audience_sync"],"thinking":"...","action":"...","output":"... references the content + strategy","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","status":"done"},\n'
+    + '    {"id":"analytics","name":"Analytics Agent","persona":"The Truth-Teller","role":"Tracking, KPIs & dashboards","tools":["ga4","pixel"],"thinking":"...","action":"...","output":"... defines how success is measured","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","status":"done"},\n'
+    + '    {"id":"optimizer","name":"Optimizer Agent","persona":"The Tinkerer","role":"Always-on improvement loop","tools":["experiment","alert"],"thinking":"...","action":"...","output":"... closes the loop back to research","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","status":"done"}\n'
     + '  ],\n'
     + '  "campaignPlan":{\n'
     + '    "channels":["<channel>","<channel>"],\n'
@@ -35,7 +35,7 @@ function sys() {
     + '  "summary":"<2-3 sentence wrap-up a client would read>"\n'
     + '}\n'
     + 'You have a LIVE SERP tool — real search results are passed in the user message under "LIVE SEARCH CONTEXT". The Research Agent MUST ground its output in them (reference real domains/sources), and later agents must build on that research.\n'
-    + 'Rules: be concrete and specific to the GOAL (name real channels, real numbers, real tactics). Keep every field tight (1-2 sentences). Never invent a separate JSON block. Output MUST be parseable JSON.';
+    + 'Rules: be concrete and specific to the GOAL (name real channels, real numbers, real tactics). Keep every field tight (1-2 sentences). Every agent MUST include a "live" field: 4-8 words, present continuous, describing what that agent is doing right now (shown as a live streaming status while it works, e.g. "sizing audience via live SERP"). Never invent a separate JSON block. Output MUST be parseable JSON.';
 }
 function userMessage(m, serpBlock) {
   return 'GOAL: ' + (m.goal || '') + '\n'
@@ -69,7 +69,7 @@ function fallback(m) {
   const channels = channelSet(niche);
   const budget = (m.budget && String(m.budget).trim()) || (niche === 'b2b_saas' ? '₹2.5L–₹4L / mo' : niche === 'local_service' ? '₹60k–₹1.2L / mo' : '₹1.5L–₹3L / mo');
   const core = goal.charAt(0).toUpperCase() + goal.slice(1);
-  const ag = (id, name, role, tools, thinking, action, output) => ({ id, name, role, tools, thinking, action, output, status: 'done' });
+  const ag = (id, name, role, tools, thinking, action, output, live) => ({ id, name, role, tools, thinking, action, output, live, status: 'done' });
   return {
     goal: goal,
     orchestrator: 'Research sizes the audience, Strategy sets channels + budget, Content + Media ship the launch, Analytics measures, Optimizer closes the loop.',
@@ -77,27 +77,33 @@ function fallback(m) {
       ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'],
         'Maps who actually buys and where they hang out for: "' + core + '".',
         'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.',
-        'Primary ICP + 3 best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.'),
+        'Primary ICP + 3 best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.',
+        'Sizing the audience via live SERP…'),
       ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'],
         'Turns the research into a focused plan instead of spraying budget.',
         'Allocates "' + budget + '" across the highest-intent channels only.',
-        'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.'),
+        'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.',
+        'Turning signal into a focused plan…'),
       ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'],
         'Writes in the brand voice the strategy defined, not generic filler.',
         'Drafts hook variants, landing page and ad copy mapped to the ICP.',
-        '3 hook angles + 1 landing page ready for Media to launch — handed to Media.'),
+        '3 hook angles + 1 landing page ready for Media to launch — handed to Media.',
+        'Drafting hooks + landing copy in brand voice…'),
       ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'],
         'Builds the campaigns exactly as Content + Strategy specified.',
         'Launches ' + channels[0] + ' with the winning hooks and tight audiences.',
-        'Live campaigns with audience sync + budget caps — handed to Analytics.'),
+        'Live campaigns with audience sync + budget caps — handed to Analytics.',
+        'Building & launching the campaigns…'),
       ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'],
         'Makes sure every rupee is measurable before it scales.',
         'Wires GA4 + pixels and stands up a one-screen KPI dashboard.',
-        'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.'),
+        'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.',
+        'Wiring tracking + the KPI dashboard…'),
       ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'],
         'Keeps improving using the KPIs Analytics defined.',
         'Auto-flags underperforming ads and rotates in the next hook variant.',
-        'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.')
+        'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.',
+        'Spinning up the experiment loop…')
     ],
     campaignPlan: {
       channels: channels,
