@@ -16,9 +16,9 @@ const faqLd = JSON.stringify({
   mainEntity: [
     { "@type": "Question", name: "What is agentic AI in digital marketing?", acceptedAnswer: { "@type": "Answer", text: "A set of autonomous agents that read a goal, pick their own tools, take action, check the result, and loop back to improve — instead of running fixed 'if this then that' rules you pre-wrote. Research, strategy, content, media, analytics and optimization happen without a human in every step." } },
     { "@type": "Question", name: "How is agentic AI different from marketing automation?", acceptedAnswer: { "@type": "Answer", text: "Automation executes the rules you defined; it cannot react to something you didn't anticipate. Agentic AI handles the unexpected — it decides what to do next based on live results, like a senior team would." } },
-    { "@type": "Question", name: "Is the agent demo on this page real?", acceptedAnswer: { "@type": "Answer", text: "Yes. It calls a real LLM (Groq) to orchestrate the six agents, and when a search key is set the Research Agent is grounded with live SERP results. With no keys it falls back to a smart rule-based planner so the demo always returns a coherent campaign." } },
+    { "@type": "Question", name: "Is the agent demo on this page real?", acceptedAnswer: { "@type": "Answer", text: "Yes. It calls a real LLM (Groq) to orchestrate the six agents, then each agent actually invokes a real tool — a live web search (SERP), a budget allocator, ROAS/CPL calculators, a market-size funnel, a copy writer. What you see on the cards is the real return value of that tool, streamed live, with the elapsed time. If no API keys are set it still runs the same tools and falls back to a rule-based plan for the thinking." } },
     { "@type": "Question", name: "Where would I actually use this for my business?", acceptedAnswer: { "@type": "Answer", text: "Anywhere a goal needs a coordinated plan: launching a product, scaling paid media, building a content engine, or running an always-on improvement loop across channels — with your team approving the big calls." } },
-    { "@type": "Question", name: "What does an agent's tool call actually look like?", acceptedAnswer: { "@type": "Answer", text: "The Media Agent emits a google_ads.create_campaign call carrying a requires_human_approval guardrail and a dry_run flag; the Analytics Agent reads performance via ga4.run_report. In production those calls hit the real Google Ads and GA4 APIs behind the same guardrails — this page only shows the orchestration." } },
+    { "@type": "Question", name: "What does an agent's tool call actually look like?", acceptedAnswer: { "@type": "Answer", text: "Each agent invokes a real, runnable tool and shows the actual return value on its card — the Research Agent runs a live web search, the Strategy Agent splits a budget, the Media Agent computes projected ROAS, the Analytics Agent derives CPL/CTR. In production those tools would be bound to your real Google Ads and GA4 APIs behind the same guardrails — this page executes a safe, read-only set." } },
     { "@type": "Question", name: "Where does agentic AI still need a human?", acceptedAnswer: { "@type": "Answer", text: "On brand-safety, tone, hard spend caps, and a launch kill-switch. Models also guess in novel, low-data markets, so a human owns the high-downside calls while the agents handle the repeatable ~95% of the work." } }
   ]
 });
@@ -194,6 +194,7 @@ const body = `<section class="lpage-wrap">
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const qs = (obj) => { try { return JSON.stringify(obj).slice(0, 140); } catch (e) { return ''; } };
     const $ = (id) => document.getElementById(id);
 
     async function type(el, text) {
@@ -381,14 +382,50 @@ const body = `<section class="lpage-wrap">
       const pastedHtml = serpPaste ? serpPaste.value.trim() : '';
       const pastedResults = parsePasted(pastedHtml);
       try {
+        if (window._shareRunId) {
+          const rid = window._shareRunId;
+          window._shareRunId = '';
+          const rr = await fetch('/api/agentic?run=' + encodeURIComponent(rid), { cache: 'no-store' });
+          if (rr.ok) {
+            const j = await rr.json();
+            if (j && Array.isArray(j.agents) && j.agents.length) { data = j; logLine('t', 'replaying shared run ' + rid); }
+            else throw new Error('empty');
+          } else { throw new Error('bad'); }
+        } else {
         const res = await fetch('/api/agentic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined })
+          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined, stream: true })
         });
         if (!res.ok) throw new Error('bad');
-        data = await res.json();
-        if (!data || !Array.isArray(data.agents) || !data.agents.length) throw new Error('empty');
+        // NDJSON stream: tool events arrive live, final 'plan' event has the full result.
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx); buf = buf.slice(idx + 1);
+            if (!line.trim()) continue;
+            let ev = null;
+            try { ev = JSON.parse(line); } catch (e) { continue; }
+            if (ev.event === 'tool') {
+              const ok = ev.exec && ev.exec.ok;
+              logLine(ok ? 't' : 'a', (AGENT_META[ev.id] ? (AGENT_META[ev.id].icon + ' ') : '🔧 ') + '<b>' + esc(ev.tool || 'tool') + '</b> ' + (ok ? 'executed in ' + ev.exec.ms + 'ms' : 'failed — fallback used'));
+            } else if (ev.event === 'serp') {
+              if (ev.used) logLine('t', 'research grounded in ' + (ev.query === 'pasted results' ? 'pasted search results' : 'live SERP') + ' (' + ev.count + ' results)');
+            } else if (ev.event === 'orch') {
+              logLine('a', 'orchestrator planning…');
+            } else if (ev.event === 'plan' && ev.data && Array.isArray(ev.data.agents) && ev.data.agents.length) {
+              data = ev.data;
+            }
+          }
+        }
+        if (!data) throw new Error('empty');
+        }
       } catch (e) {
         data = clientFallback(g, budget.value.trim());
         logLine('a', 'live API unreachable — using built-in planner');
@@ -442,7 +479,20 @@ const body = `<section class="lpage-wrap">
         ui.outP.textContent = a.output || '';
         ui.liveEl.textContent = liveTxt;
         ui.liveEl.classList.add('done');
-        if (a.call && ui.callEl) ui.callEl.innerHTML = '<span class="ag-calltool">' + esc(a.call) + '</span> <span class="ag-callres">' + esc(a.result || '') + '</span>';
+        if (a.call && ui.callEl) {
+          const exec = a.exec || null;
+          const toolName = esc(a.call || (exec && exec.tool));
+          const argsText = (a.toolArgs && Object.keys(a.toolArgs).length)
+            ? ' ' + esc(qs(a.toolArgs))
+            : '';
+          if (exec && exec.ok) {
+            ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + argsText + '</span><span class="ag-callres real">' + esc(a.result || '') + '</span><span class="ag-callms">' + exec.ms + 'ms</span>';
+          } else if (exec && !exec.ok) {
+            ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + argsText + '</span><span class="ag-callres err">' + esc((exec.error || 'tool failed')) + '</span>';
+          } else {
+            ui.callEl.innerHTML = '<span class="ag-calltool">' + toolName + '</span> <span class="ag-callres">' + esc(a.result || '') + '</span>';
+          }
+        }
         ui.status.textContent = 'done'; ui.status.className = 'ag-status done';
         ui.card.classList.remove('active'); ui.card.classList.add('done');
         const next = seq[i + 1];
@@ -524,7 +574,9 @@ const body = `<section class="lpage-wrap">
       const shareBtn = document.getElementById('agShareBtn');
       if (shareBtn) {
         shareBtn.addEventListener('click', function () {
-          const h = '#' + encodeURIComponent(JSON.stringify({ goal: goal.value, niche: niche.value, budget: budget.value }));
+          const payload = { goal: goal.value, niche: niche.value, budget: budget.value };
+          if (d && d.runId && d.replayed === false) payload.runId = d.runId;
+          const h = '#' + encodeURIComponent(JSON.stringify(payload));
           copyText(location.origin + location.pathname + h).then(function () {
             shareBtn.textContent = '✓ Link copied';
             setTimeout(function () { shareBtn.textContent = '🔗 Share'; }, 1800);
@@ -538,7 +590,7 @@ const body = `<section class="lpage-wrap">
     runBtn.addEventListener('click', run);
     goal.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
 
-    // Deep-link: /agentic-ai.html#{"goal":...,"niche":...,"budget":...} auto-runs Hive.
+    // Deep-link: /agentic-ai.html#{"goal":...,"runId":...} auto-runs Hive (or replays that exact run).
     (function () {
       try {
         const h = location.hash && location.hash.length > 4 ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : null;
@@ -546,6 +598,7 @@ const body = `<section class="lpage-wrap">
           if (h.goal) goal.value = String(h.goal).slice(0, 600);
           if (h.niche) niche.value = String(h.niche).slice(0, 120);
           if (h.budget) budget.value = String(h.budget).slice(0, 120);
+          window._shareRunId = h.runId || '';
           setTimeout(run, 350);
         }
       } catch (e) {}

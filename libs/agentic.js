@@ -4,6 +4,8 @@ const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
 const GROQ_TIMEOUT = 15000;
 const { serp, serpQuery, formatSerp } = require('./tools/serp');
+const { runTool, fmtResult } = require('./tools/exec');
+const crypto = require('crypto');
 
 const RL_MAX = 6, RL_WIN_SEC = 60;
 const _mem = { hits: {}, last: 0 };
@@ -29,6 +31,17 @@ async function isRateLimited(key) {
   return _mem.hits[key] > RL_MAX;
 }
 function kv(pipe) { if (!KV_URL || !KV_TOKEN) return Promise.resolve(); return fetch(String(KV_URL).replace(/\/$/, '') + '/pipeline', { method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(pipe) }).catch(function () {}); }
+async function kvGet(key) {
+  if (!KV_URL || !KV_TOKEN) return null;
+  try {
+    const r = await fetch(String(KV_URL).replace(/\/$/, '') + '/get/' + encodeURIComponent(key), {
+      method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN }
+    });
+    const j = await r.json();
+    return (j && j.result != null) ? j.result : null;
+  } catch (e) { return null; }
+}
+function runId(m) { return crypto.createHash('sha1').update(String(m.goal || '') + '|' + String(m.niche || '') + '|' + String(m.budget || '')).digest('hex').slice(0, 12); }
 
 const AGENTS = ['research', 'strategy', 'content', 'media', 'analytics', 'optimizer'];
 
@@ -39,12 +52,12 @@ function sys(domainList) {
     + '  "goal":"<echo the goal, trimmed>",\n'
     + '  "orchestrator":"<one-line plan: how the agents will split the work>",\n'
     + '  "agents":[\n'
-    + '    {"id":"research","name":"Research Agent","persona":"The Scout","role":"Market & audience intelligence","tools":["web_search","analytics"],"thinking":"<1 sentence: what it reasons about, skeptical of assumptions>","action":"<1 sentence: the concrete step it takes>","output":"<1-2 sentences: the specific finding it hands to the next agent>","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","call":"<concrete tool id this agent invokes, e.g. google_ads.create_campaign or ga4.run_report or serp.search>","result":"<one-line mock return the tool emits, e.g. VALIDATED · 41 conversions · INR 734 CPA>","status":"done"},\n'
-    + '    {"id":"strategy","name":"Strategy Agent","persona":"The Architect","role":"Positioning, channels & budget","tools":["planner"],"thinking":"...","action":"...","output":"... references the research agent\'s finding","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","call":"<concrete tool id this agent invokes, e.g. google_ads.create_campaign or ga4.run_report or serp.search>","result":"<one-line mock return the tool emits, e.g. VALIDATED · 41 conversions · INR 734 CPA>","status":"done"},\n'
-    + '    {"id":"content","name":"Content Agent","persona":"The Wordsmith","role":"Copy, creative & brand voice","tools":["llm_writer","brand_voice"],"thinking":"...","action":"...","output":"... references the strategy","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","call":"<concrete tool id this agent invokes, e.g. google_ads.create_campaign or ga4.run_report or serp.search>","result":"<one-line mock return the tool emits, e.g. VALIDATED · 41 conversions · INR 734 CPA>","status":"done"},\n'
-    + '    {"id":"media","name":"Media Buying Agent","persona":"The Operator","role":"Campaign build & targeting","tools":["ad_platform","audience_sync"],"thinking":"...","action":"...","output":"... references the content + strategy","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","call":"<concrete tool id this agent invokes, e.g. google_ads.create_campaign or ga4.run_report or serp.search>","result":"<one-line mock return the tool emits, e.g. VALIDATED · 41 conversions · INR 734 CPA>","status":"done"},\n'
-    + '    {"id":"analytics","name":"Analytics Agent","persona":"The Truth-Teller","role":"Tracking, KPIs & dashboards","tools":["ga4","pixel"],"thinking":"...","action":"...","output":"... defines how success is measured","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","call":"<concrete tool id this agent invokes, e.g. google_ads.create_campaign or ga4.run_report or serp.search>","result":"<one-line mock return the tool emits, e.g. VALIDATED · 41 conversions · INR 734 CPA>","status":"done"},\n'
-    + '    {"id":"optimizer","name":"Optimizer Agent","persona":"The Tinkerer","role":"Always-on improvement loop","tools":["experiment","alert"],"thinking":"...","action":"...","output":"... closes the loop back to research","live":"<4-8 words, present continuous, what this agent is doing right now, e.g. sizing audience via live SERP>","call":"<concrete tool id this agent invokes, e.g. google_ads.create_campaign or ga4.run_report or serp.search>","result":"<one-line mock return the tool emits, e.g. VALIDATED · 41 conversions · INR 734 CPA>","status":"done"}\n'
+    + '    {"id":"research","name":"Research Agent","persona":"The Scout","role":"Market & audience intelligence","tools":["serp.search"],"thinking":"<1 sentence: what it reasons about, skeptical of assumptions>","action":"<1 sentence: the concrete step it takes>","output":"<2 sentences: the specific finding it hands to the next agent>","live":"<4-8 words, present continuous, what this agent is doing right now>","call":"serp.search","toolArgs":{"q":"<a real keyword or question this agent would search>"},"result":"<predicted one-line tool outcome>","status":"done"},\n'
+    + '    {"id":"strategy","name":"Strategy Agent","persona":"The Architect","role":"Positioning, channels & budget","tools":["planner.allocate"],"thinking":"...","action":"...","output":"... references the research findings","live":"...","call":"planner.allocate","toolArgs":{"total":123456,"channels":["<channel>","<channel>"],"weights":[0.5,0.5]},"result":"...","status":"done"},\n'
+    + '    {"id":"content","name":"Content Agent","persona":"The Wordsmith","role":"Copy, creative & brand voice","tools":["llm.draft"],"thinking":"...","action":"...","output":"... references the strategy","live":"...","call":"llm.draft","toolArgs":{"brief":"<a short brief for the copy>"},"result":"...","status":"done"},\n'
+    + '    {"id":"media","name":"Media Buying Agent","persona":"The Operator","role":"Campaign build & targeting","tools":["calc.roi"],"thinking":"...","action":"...","output":"... references the content + strategy","live":"...","call":"calc.roi","toolArgs":{"revenue":450000,"spend":150000},"result":"...","status":"done"},\n'
+    + '    {"id":"analytics","name":"Analytics Agent","persona":"The Truth-Teller","role":"Tracking, KPIs & dashboards","tools":["calc.cpl"],"thinking":"...","action":"...","output":"... defines how success is measured","live":"...","call":"calc.cpl","toolArgs":{"spend":90000,"leads":120,"clicks":3000,"impressions":100000},"result":"...","status":"done"},\n'
+    + '    {"id":"optimizer","name":"Optimizer Agent","persona":"The Tinkerer","role":"Always-on improvement loop","tools":["market.sizer"],"thinking":"...","action":"...","output":"... closes the loop back to research","live":"...","call":"market.sizer","toolArgs":{"searches":25000,"ctr":0.04,"conv":0.03,"aov":1500},"result":"...","status":"done"}\n'
     + '  ],\n'
     + '  "campaignPlan":{\n'
     + '    "channels":["<channel>","<channel>"],\n'
@@ -56,7 +69,14 @@ function sys(domainList) {
     + '}\n'
     + 'You have a LIVE SERP tool — real search results are passed in the user message under "LIVE SEARCH CONTEXT". The Research Agent MUST ground its output in them (reference real domains/sources), and later agents must build on that research.\n'
     + (domainList ? 'REAL SOURCES available to cite: ' + domainList + '. The Research Agent MUST name at least one of these real domains in its "output" (e.g. "signal from example.com"), and later agents must build on that research.\n' : '')
-    + 'Rules: be concrete and specific to the GOAL (name real channels, real numbers, real tactics). Keep every field tight (1-2 sentences). Every agent MUST include a "live" field: 4-8 words, present continuous, describing what that agent is doing right now (shown as a live streaming status while it works, e.g. "sizing audience via live SERP"). Every agent MUST include a "call" field: the concrete tool it invokes (e.g. google_ads.create_campaign, ga4.run_report, serp.search, llm_writer, planner.allocate, experiment.rotate) and a "result" field: a one-line mock of what that tool returns (e.g. "VALIDATED · 41 conversions · INR 734 CPA"). Never invent a separate JSON block. Output MUST be parseable JSON.';
+    + 'Rules: be concrete and specific to the GOAL (name real channels, real numbers, real tactics). Keep every field tight (1-2 sentences). Every agent MUST include a "live" field: 4-8 words, present continuous, describing what that agent is doing right now. Every agent MUST include a "call" field — one of these REAL tools, with a matching "toolArgs" object:\n'
+    + '  serp.search      {q:"<keyword>"}                    — live web search\n'
+    + '  planner.allocate {total:<number>, channels:[..], weights:[..]} — budget split\n'
+    + '  calc.roi         {revenue:<number>, spend:<number>} — ROAS\n'
+    + '  calc.cpl         {spend,leads,clicks,impressions}   — CPL/CTR\n'
+    + '  market.sizer     {searches,ctr,conv,aov}            — market funnel\n'
+    + '  llm.draft        {brief:"<copy brief>"}             — draft hook/ad line\n'
+    + 'Recommended: research→serp.search, strategy→planner.allocate, content→llm.draft, media→calc.roi, analytics→calc.cpl, optimizer→market.sizer. The "result" field is a PREDICTION only — the server will actually execute the tool and replace it with the real return value. Never invent a separate JSON block. Output MUST be parseable JSON.';
 }
 function userMessage(m, serpBlock) {
   return 'GOAL: ' + (m.goal || '') + '\n'
@@ -90,47 +110,47 @@ function fallback(m) {
   const channels = channelSet(niche);
   const budget = (m.budget && String(m.budget).trim()) || (niche === 'b2b_saas' ? '₹2.5L–₹4L / mo' : niche === 'local_service' ? '₹60k–₹1.2L / mo' : '₹1.5L–₹3L / mo');
   const core = goal.charAt(0).toUpperCase() + goal.slice(1);
-  const ag = (id, name, role, tools, thinking, action, output, live, call, result) => ({ id, name, role, tools, thinking, action, output, live, call, result, status: 'done' });
+  const ag = (id, name, role, tools, thinking, action, output, live, call, toolArgs, result) => ({ id, name, role, tools, thinking, action, output, live, call, toolArgs, result, status: 'done' });
   return {
     goal: goal,
     orchestrator: 'Research sizes the audience, Strategy sets channels + budget, Content + Media ship the launch, Analytics measures, Optimizer closes the loop.',
     agents: [
-      ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'],
+      ag('research', 'Research Agent', 'Market & audience intelligence', ['serp.search'],
         'Maps who actually buys and where they hang out for: "' + core + '".',
         'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.',
         'Primary ICP + 3 best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.',
         'Sizing the audience via live SERP…',
-        'serp.search', '3 competitor angles · 12.4k monthly searches · top intent "best ' + (channels[0] || 'channel') + '"'),
-      ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'],
+        'serp.search', { q: goal }, '3 competitor angles · top intent identified'),
+      ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner.allocate'],
         'Turns the research into a focused plan instead of spraying budget.',
         'Allocates "' + budget + '" across the highest-intent channels only.',
         'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.',
         'Turning signal into a focused plan…',
-        'planner.allocate', budget + ' · 70/30 split · top 2 channels'),
-      ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'],
+        'planner.allocate', { total: 200000, channels: channels.slice(0, 3), weights: [0.4, 0.3, 0.3] }, budget + ' · top channels'),
+      ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm.draft'],
         'Writes in the brand voice the strategy defined, not generic filler.',
         'Drafts hook variants, landing page and ad copy mapped to the ICP.',
         '3 hook angles + 1 landing page ready for Media to launch — handed to Media.',
         'Drafting hooks + landing copy in brand voice…',
-        'llm_writer', '3 hooks + 1 landing page · brand voice 98% match'),
-      ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'],
+        'llm.draft', { brief: core }, '3 hooks + 1 landing page'),
+      ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['calc.roi'],
         'Builds the campaigns exactly as Content + Strategy specified.',
         'Launches ' + channels[0] + ' with the winning hooks and tight audiences.',
         'Live campaigns with audience sync + budget caps — handed to Analytics.',
         'Building & launching the campaigns…',
-        'google_ads.create_campaign', 'VALIDATED · awaiting human approval · daily ' + budget),
-      ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'],
+        'calc.roi', { revenue: 450000, spend: 150000 }, 'ROAS projected from the launch mix'),
+      ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['calc.cpl'],
         'Makes sure every rupee is measurable before it scales.',
         'Wires GA4 + pixels and stands up a one-screen KPI dashboard.',
         'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.',
         'Wiring tracking + the KPI dashboard…',
-        'ga4.run_report', 'CPL ₹734 · CTR 3.1% · demo rate 4.2%'),
-      ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'],
+        'calc.cpl', { spend: 88080, leads: 120, clicks: 3000, impressions: 100000 }, 'CPL, CTR from the media plan'),
+      ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['market.sizer'],
         'Keeps improving using the KPIs Analytics defined.',
         'Auto-flags underperforming ads and rotates in the next hook variant.',
         'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.',
         'Spinning up the experiment loop…',
-        'experiment.rotate', '2 losers paused · next hook variant queued')
+        'market.sizer', { searches: 25000, ctr: 0.04, conv: 0.03, aov: 1500 }, 'funnel estimate')
     ],
     campaignPlan: {
       channels: channels,
@@ -209,7 +229,9 @@ function normalizeAgent(a) {
     output: String(a.output || d.output || '').slice(0, 400),
     live: String(a.live || d.live || ((a.name || 'Agent') + ' working')).slice(0, 120),
     call: String(a.call || d.call || '').slice(0, 120),
+    toolArgs: (a.toolArgs && typeof a.toolArgs === 'object') ? a.toolArgs : {},
     result: String(a.result || d.result || '').slice(0, 200),
+    exec: (a.exec && typeof a.exec === 'object') ? a.exec : null,
     status: 'done'
   };
 }
@@ -229,7 +251,21 @@ function safePlan(obj) {
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/agentic with {goal, niche?, budget?, channels?}' });
+  const url2 = new URL(req.url || '/', 'http://localhost');
+
+  // Replay a past run (share link): GET /api/agentic?run=<id>
+  if (req.method === 'GET' && url2.searchParams.get('run')) {
+    const v = await kvGet('agentic:run:' + String(url2.searchParams.get('run')).slice(0, 64));
+    if (v) {
+      try {
+        const c = JSON.parse(v);
+        if (c && c.plan) { c.plan.replayed = true; return res.json(c.plan); }
+      } catch (e) {}
+    }
+    return res.status(404).json({ error: 'run not found' });
+  }
+
+  if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/agentic with {goal, niche?, budget?, channels?, stream?} — real tools now execute per agent.' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
   let b = {};
   try { b = req.body || {}; } catch (e) {}
@@ -243,43 +279,75 @@ module.exports = async function handler(req, res) {
   if (await isRateLimited(ipOf(req) + ':agentic')) return res.status(429).json({ error: 'rate limited' });
   kv([['LPUSH', 'agentic:runs', JSON.stringify({ at: new Date().toISOString(), goal: m.goal.slice(0, 120) })], ['LTRIM', 'agentic:runs', 0, 99]]);
 
+  const stream = !!(b.stream);
+  if (stream) res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  const send = function (obj) { if (stream) res.write(JSON.stringify(obj) + '\n'); };
+  const finish = function (obj) {
+    obj.replayed = false;
+    obj.runId = runId(m);
+    send({ event: 'plan', data: obj });
+    try { kv([['SET', 'agentic:run:' + obj.runId, JSON.stringify({ at: Date.now(), plan: obj })], ['EXPIRE', 'agentic:run:' + obj.runId, 604800]]); } catch (e) {}
+    if (stream) res.end();
+    else res.json(obj);
+  };
+
+  let budgetNum = parseInt(String(m.budget || '').replace(/[^0-9]/g, ''), 10) || 200000;
+  if (!budgetNum || budgetNum < 10000) budgetNum = 200000;
+
+  // Research grounds on live SERP so its real tool call is satisfied even without a key.
+  let serpQ = serpQuery(m);
+  let serpLive = null;
   const pasted = Array.isArray(b.serpResults) ? b.serpResults.filter(function (x) { return x && (x.title || x.snippet); }).slice(0, 8) : null;
-  const key = (process.env.GROQ_API_KEY || '').trim();
+  if (pasted && pasted.length) { serpLive = pasted; serpQ = 'pasted results'; }
+  else { try { serpLive = await serp(serpQ); } catch (e) {} }
+  if (!Array.isArray(serpLive) || !serpLive.length) serpLive = null;
+
+  // Long-running orchestrator call (only when a key is set).
   const fb = fallback(m);
-  if (!key) return res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0, serpQuery: '' }, fb));
-
-  let serpResults = null, serpQ = '', serpBlock = null, serpBlockedHint = false;
-  if (pasted && pasted.length) {
-    serpResults = pasted; serpQ = 'pasted results';
-  } else {
-    try { serpQ = serpQuery(m); serpResults = await serp(serpQ); } catch (e) { serpResults = null; }
-    if (!Array.isArray(serpResults) || !serpResults.length) {
-      serpResults = null;
-      if (!process.env.SERP_API_KEY && !process.env.BRAVE_API_KEY) serpBlockedHint = true;
-    }
-  }
-  const serpCount = Array.isArray(serpResults) ? serpResults.length : 0;
-  if (serpCount) serpBlock = { query: serpQ, text: formatSerp(serpResults) };
-  const domains = Array.isArray(serpResults) && serpResults.length
-    ? serpResults.map(function (r) { return r.domain; }).filter(Boolean).slice(0, 6).join(', ')
-    : '';
-
-  const controller = new AbortController();
-  const timer = setTimeout(function () { controller.abort(); }, GROQ_TIMEOUT);
-  fetch(GROQ, {
-    method: 'POST',
-    signal: controller.signal,
-    headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1500, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys(domains) }, { role: 'user', content: userMessage(m, serpBlock) }] })
-  })
-    .then(function (r) { clearTimeout(timer); return r.json(); })
-    .then(function (j) {
+  let plan = fb, mode = 'template';
+  const key = (process.env.GROQ_API_KEY || '').trim();
+  if (key) {
+    const serpBlock = serpLive && serpLive.length ? { query: serpQ, text: formatSerp(serpLive) } : null;
+    const domains = serpLive && serpLive.length ? serpLive.map(function (r) { return r.domain; }).filter(Boolean).slice(0, 6).join(', ') : '';
+    try {
+      send({ event: 'orch', text: 'Orchestrator planning the agent run…' });
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, GROQ_TIMEOUT);
+      const r = await fetch(GROQ, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1700, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys(domains) }, { role: 'user', content: userMessage(m, serpBlock) }] })
+      });
+      clearTimeout(timer);
+      const j = await r.json();
       const text = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
       let out = null;
       try { out = JSON.parse(text); } catch (e) { const mm = text.match(/\{[\s\S]*\}/); if (mm) { try { out = JSON.parse(mm[0]); } catch (e2) {} } }
-      const plan = safePlan(out);
-      if (!plan) return res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0, serpQuery: '' }, fb));
-      res.json(Object.assign({ mode: 'ai', serpUsed: serpCount > 0, serpCount: serpCount, serpQuery: serpQ, serpBlocked: serpBlockedHint }, plan));
-    })
-    .catch(function () { clearTimeout(timer); res.json(Object.assign({ mode: 'template', serpUsed: false, serpCount: 0, serpQuery: '', serpBlocked: serpBlockedHint }, fb)); });
+      const p = safePlan(out);
+      if (p) { plan = p; mode = 'ai'; }
+    } catch (e) {}
+  }
+
+  // ---- Real execution loop: each agent's tool actually runs now ----
+  for (const a of plan.agents) {
+    const tool = a.call;
+    const args = a.toolArgs || {};
+    let exec;
+    if (tool === 'serp.search' && serpLive && serpLive.length) {
+      exec = { tool, args: { q: args.q || serpQ }, ok: true, result: serpLive.slice(0, 6), ms: 0 };
+    } else {
+      if (tool === 'planner.allocate' && !args.total) { args.total = budgetNum; args.weights = args.weights || [0.4, 0.3, 0.3]; args.channels = args.channels || ['Meta Ads', 'Google Ads', 'LinkedIn']; }
+      if (tool === 'calc.roi') { args.revenue = args.revenue || budgetNum * 3; args.spend = args.spend || budgetNum; }
+      if (tool === 'calc.cpl') { args.spend = args.spend || budgetNum; args.leads = args.leads || Math.round(budgetNum / 740); args.clicks = args.clicks || Math.round(budgetNum / 30); args.impressions = args.impressions || args.clicks * 35; }
+      if (tool === 'market.sizer') { args.searches = args.searches || 25000; args.ctr = args.ctr || 0.04; args.conv = args.conv || 0.03; args.aov = args.aov || 1500; }
+      exec = await runTool(tool, args);
+    }
+    a.exec = exec;
+    a.result = exec.ok ? ('REAL · ' + fmtResult(exec)) : (a.result + ' · (' + (exec.error || 'tool failed') + ')');
+    send({ event: 'tool', id: a.id, tool: tool, exec: { ok: exec.ok, ms: exec.ms, error: exec.error || null } });
+  }
+
+  send({ event: 'serp', used: !!serpLive, count: serpLive ? serpLive.length : 0, query: serpQ });
+  finish(Object.assign({ mode: mode, serpUsed: !!serpLive, serpCount: serpLive ? serpLive.length : 0, serpQuery: serpQ, serpBlocked: !serpLive }, plan));
 };
