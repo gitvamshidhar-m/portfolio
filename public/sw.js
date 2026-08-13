@@ -1,5 +1,5 @@
-/* vamshidharm service worker — v2 (live dashboard) */
-const CACHE = 'vamshidharm-v2';
+/* vamshidharm service worker — v3 (Hive v2 real-agent loop) */
+const CACHE = 'vamshidharm-v3';
 const CORE = [
   '/',
   '/about.html',

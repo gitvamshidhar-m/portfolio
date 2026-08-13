@@ -43,6 +43,63 @@ async function kvGet(key) {
 }
 function runId(m) { return crypto.createHash('sha1').update(String(m.goal || '') + '|' + String(m.niche || '') + '|' + String(m.budget || '')).digest('hex').slice(0, 12); }
 
+const REFLECT_START = { at: 0 };
+// Telemetry accumulator: every LLM call + tool execution contributes real numbers
+// (tokens, ms, estimated USD) so the run can report its actual cost & latency.
+const PRICE = { inPerM: 0.59, outPerM: 0.79 }; // Llama-3.3-70B on Groq, approx USD per 1M tokens
+let telemetry = { calls: 0, prompt: 0, completion: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } };
+function telAdd(report, usage, ms, rateMult) {
+  if (!report) report = {};
+  const p = (usage && usage.prompt_tokens) || 0, c = (usage && usage.completion_tokens) || 0;
+  report.calls = (report.calls || 0) + 1;
+  report.prompt = (report.prompt || 0) + p;
+  report.completion = (report.completion || 0) + c;
+  report.ms = (report.ms || 0) + (ms || 0);
+  report.cost = (report.cost || 0) + ((p * PRICE.inPerM + c * PRICE.outPerM) / 1e6) * (rateMult || 1);
+  return report;
+}
+
+// Is a reflected output good enough to ship, or should the agent reflect again?
+function quality(o, exec) {
+  const s = String((o && o.output) || '').trim();
+  if (s.length < 24) return false;
+  if (!/\d|₹|\$|%|https|example\.com|\.in/.test(s)) return false;
+  if (exec && exec.ok && /^[A-Z]{2,10}\s+/.test(s)) return false;
+  return true;
+}
+
+// Iterative reflection: 1..3 tight LLM passes. Each pass rewrites the handoff grounded
+// in the REAL tool return; we keep going only while the output fails the quality gate.
+async function reflectAgent(agent, exec, goal, key, telemetry) {
+  if (!key || !exec || !exec.ok) return;
+  if ((Date.now() - REFLECT_START.at) > 22000) return; // keep well under serverless cap
+  const sys = 'You are ' + (agent.name || 'an agent') + ' in an autonomous marketing team. A tool you invoked just returned real output. Write your handoff "output" (1-2 sentences) grounded strictly in that real return: name the actual numbers/domains/results. Sound specific and human, no hype, no emojis. Return ONLY JSON: {"output":"..."}.';
+  const base = 'GOAL: ' + String(goal || '').slice(0, 300) + '\nTOOL: ' + exec.tool + '\nREAL RESULT:\n' + fmtResult(exec);
+  let passes = 0;
+  while (passes < 3 && (Date.now() - REFLECT_START.at) <= 22000) {
+    passes++;
+    const prev = String(agent.output || '');
+    const user = base + (passes > 1 ? '\n\nYour previous handoff was too vague or empty: "' + prev.slice(0, 160) + '". Rewrite it to name concrete numbers/sources from the REAL RESULT above.' : '');
+    try {
+      const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, 8000);
+      const t0 = Date.now();
+      const r = await fetch(GROQ, {
+        method: 'POST', signal: c.signal,
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, temperature: 0.4, max_tokens: 120, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] })
+      });
+      clearTimeout(t);
+      const j = await r.json();
+      telAdd(telemetry, (j.usage) || null, Date.now() - t0);
+      const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+      let o = null; try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
+      if (o && o.output) agent.output = String(o.output).slice(0, 400);
+      if (quality(o, exec)) break;
+    } catch (e) { break; }
+  }
+  agent.reflection = { passes: passes, iterated: passes > 1 };
+}
+
 const AGENTS = ['research', 'strategy', 'content', 'media', 'analytics', 'optimizer'];
 
 function sys(domainList) {
@@ -302,35 +359,79 @@ module.exports = async function handler(req, res) {
   else { try { serpLive = await serp(serpQ); } catch (e) {} }
   if (!Array.isArray(serpLive) || !serpLive.length) serpLive = null;
 
-  // Long-running orchestrator call (only when a key is set).
+  // Long-running orchestrator call (only when a key is set). Streamed so the plan appears to compose live.
+  telemetry = { calls: 0, prompt: 0, completion: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } };
   const fb = fallback(m);
-  let plan = fb, mode = 'template';
+  let plan = fb, mode = 'template', cached = false, cacheMs = 0;
   const key = (process.env.GROQ_API_KEY || '').trim();
-  if (key) {
+  const compKey = 'agentic:comp:' + runId(m) + ':' + String(m.niche || '').slice(0, 20);
+  if (key && b.cache !== false) {
+    // Cache hit: reuse the composed plan, skip the LLM call (tools still re-execute live below).
+    const c0 = Date.now();
+    const v = await kvGet(compKey);
+    if (v) {
+      try {
+        const p0 = safePlan(JSON.parse(v));
+        if (p0) { plan = p0; mode = 'ai'; cached = true; cacheMs = Date.now() - c0; send({ event: 'cache', hit: true, ms: cacheMs }); }
+      } catch (e) {}
+    }
+  }
+  if (key && !cached) {
     const serpBlock = serpLive && serpLive.length ? { query: serpQ, text: formatSerp(serpLive) } : null;
     const domains = serpLive && serpLive.length ? serpLive.map(function (r) { return r.domain; }).filter(Boolean).slice(0, 6).join(', ') : '';
     try {
-      send({ event: 'orch', text: 'Orchestrator planning the agent run…' });
       const controller = new AbortController();
       const timer = setTimeout(function () { controller.abort(); }, GROQ_TIMEOUT);
       const r = await fetch(GROQ, {
         method: 'POST',
         signal: controller.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1700, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys(domains) }, { role: 'user', content: userMessage(m, serpBlock) }] })
+        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1700, stream: true, stream_options: { include_usage: true }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys(domains) }, { role: 'user', content: userMessage(m, serpBlock) }] })
       });
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let acc = '', sse = '', lastEmit = 0, orchMs = Date.now();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sse += dec.decode(value, { stream: true });
+        let lineEnd;
+        while ((lineEnd = sse.indexOf('\n')) >= 0) {
+          const line = sse.slice(0, lineEnd); sse = sse.slice(lineEnd + 1);
+          if (line.slice(0, 6) !== 'data: ') continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') continue;
+          try {
+            const j = JSON.parse(payload);
+            const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+            if (d) {
+              acc += d;
+              // Word-level streaming: emit small slices so the UI types out the composition.
+              if (acc.length - lastEmit >= 12) { send({ event: 'orch', text: acc }); lastEmit = acc.length; }
+            }
+            if (j.usage) telAdd(telemetry, j.usage, Date.now() - orchMs);
+          } catch (e2) {}
+        }
+      }
       clearTimeout(timer);
-      const j = await r.json();
-      const text = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+      if (acc.length) send({ event: 'orch', text: acc });
       let out = null;
-      try { out = JSON.parse(text); } catch (e) { const mm = text.match(/\{[\s\S]*\}/); if (mm) { try { out = JSON.parse(mm[0]); } catch (e2) {} } }
+      try { out = JSON.parse(acc); } catch (e) { const mm = acc.match(/\{[\s\S]*\}/); if (mm) { try { out = JSON.parse(mm[0]); } catch (e2) {} } }
       const p = safePlan(out);
-      if (p) { plan = p; mode = 'ai'; }
+      if (p) {
+        plan = p; mode = 'ai';
+        // Cache the composed plan (tools still re-execute live on every run).
+        try { await kv([['SET', compKey, JSON.stringify(plan)], ['EXPIRE', compKey, 1800]]); } catch (e) {}
+      }
     } catch (e) {}
   }
 
   // ---- Real execution loop: each agent's tool actually runs now ----
-  for (const a of plan.agents) {
+  // DAG schedule: 'research' must land first (its SERP enriches everyone's context),
+  // the remaining agents' tools are independent and run in PARALLEL.
+  REFLECT_START.at = Date.now();
+  let toolsTel = { calls: 0, ms: 0 };
+  const runOne = async (a) => {
     const tool = a.call;
     const args = a.toolArgs || {};
     let exec;
@@ -341,13 +442,44 @@ module.exports = async function handler(req, res) {
       if (tool === 'calc.roi') { args.revenue = args.revenue || budgetNum * 3; args.spend = args.spend || budgetNum; }
       if (tool === 'calc.cpl') { args.spend = args.spend || budgetNum; args.leads = args.leads || Math.round(budgetNum / 740); args.clicks = args.clicks || Math.round(budgetNum / 30); args.impressions = args.impressions || args.clicks * 35; }
       if (tool === 'market.sizer') { args.searches = args.searches || 25000; args.ctr = args.ctr || 0.04; args.conv = args.conv || 0.03; args.aov = args.aov || 1500; }
+      const t0 = Date.now();
       exec = await runTool(tool, args);
+      toolsTel.calls++; toolsTel.ms += exec.ms; 
+      const u = exec.tokens && (exec.tokens.prompt_tokens || exec.tokens.completion_tokens) ? { prompt_tokens: exec.tokens.prompt_tokens || 0, completion_tokens: exec.tokens.completion_tokens || 0 } : null;
+      if (u) telAdd(telemetry, u, exec.ms);
+      exec.ms = Date.now() - t0;
     }
-    a.exec = exec;
-    a.result = exec.ok ? ('REAL · ' + fmtResult(exec)) : (a.result + ' · (' + (exec.error || 'tool failed') + ')');
-    send({ event: 'tool', id: a.id, tool: tool, exec: { ok: exec.ok, ms: exec.ms, error: exec.error || null } });
+    return { a, exec };
+  };
+
+  // Serialize 'research' first so its live SERP grounding is visible before the burst.
+  const research = plan.agents.find((x) => x.id === 'research');
+  let first = null;
+  const rest = plan.agents.filter((x) => x.id !== 'research');
+  if (research) {
+    first = await runOne(research);
+    first.a.exec = first.exec;
+    first.a.realText = first.exec.ok ? fmtResult(first.exec) : '';
+    first.a.result = first.exec.ok ? first.a.realText : (first.a.result + ' · (' + (first.exec.error || 'tool failed') + ')');
+    send({ event: 'tool', id: first.a.id, tool: first.exec.tool, exec: { ok: first.exec.ok, ms: first.exec.ms, error: first.exec.error || null } });
+    await reflectAgent(first.a, first.exec, m.goal, key, telemetry);
+    if (first.a.exec && first.a.exec.ok) send({ event: 'reflect', id: first.a.id, output: first.a.output, passes: first.a.reflection ? first.a.reflection.passes : 1 });
   }
 
+  const results = await Promise.all(rest.map(runOne));
+  for (const { a, exec } of results) {
+    a.exec = exec;
+    a.realText = exec.ok ? fmtResult(exec) : '';
+    a.result = exec.ok ? a.realText : (a.result + ' · (' + (exec.error || 'tool failed') + ')');
+    send({ event: 'tool', id: a.id, tool: exec.tool, exec: { ok: exec.ok, ms: exec.ms, error: exec.error || null } });
+    await reflectAgent(a, exec, m.goal, key, telemetry);
+    if (a.exec && a.exec.ok) send({ event: 'reflect', id: a.id, output: a.output, passes: a.reflection ? a.reflection.passes : 1 });
+  }
+  telemetry.tools = toolsTel;
+
   send({ event: 'serp', used: !!serpLive, count: serpLive ? serpLive.length : 0, query: serpQ });
-  finish(Object.assign({ mode: mode, serpUsed: !!serpLive, serpCount: serpLive ? serpLive.length : 0, serpQuery: serpQ, serpBlocked: !serpLive }, plan));
+  send({ event: 'metrics', telemetry: telemetry, cached: cached, cacheMs: cacheMs });
+  const payloadP = Object.assign({ mode: mode, telemetry: telemetry, cached: cached, cacheMs: cacheMs, serpUsed: !!serpLive, serpCount: serpLive ? serpLive.length : 0, serpQuery: serpQ, serpBlocked: !serpLive }, plan);
+  if (b.compare) payloadP.fallback = fb; // LLM plan vs rule-based baseline, side by side
+  finish(payloadP);
 };

@@ -108,6 +108,7 @@ const body = `<section class="lpage-wrap">
           <span class="ag-hint">Try: “Sell 500 units of a D2C skincare brand in 60 days” or “Book 30 consultations for a local dental clinic”.</span>
         </div>
         <div class="ag-adv">
+          <label class="ag-check" id="compareWrap"><input type="checkbox" id="compareChk" /> <span>⚖ Compare LLM plan vs rule-based baseline</span></label>
           <p id="serpHint" class="ag-hint" hidden style="color:var(--accent)">Live web search was blocked. Paste a search-results page's HTML below to ground the Research Agent manually.</p>
           <button type="button" class="ag-adv-toggle" id="serpToggle" aria-expanded="false" aria-controls="serpBody">⤵ Paste search HTML (manual fallback)</button>
           <div class="ag-adv-body" id="serpBody" hidden>
@@ -241,8 +242,20 @@ const body = `<section class="lpage-wrap">
     }
 
     const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budget = $('budgetInput');
+    const compareChk = $('compareChk');
     const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), plan = $('agPlan'), modeEl = $('agMode'), serpEl = $('agSerp');
     const serpToggle = $('serpToggle'), serpBody = $('serpBody'), serpPaste = $('serpPaste'), serpHint = $('serpHint');
+    let tel = null; // last run telemetry: token/cost/latency ledger
+    let data = null; // last full plan payload (shared with the compare toggle)
+    let cmpVar = false; // compare-mode toggle state
+
+    function telLine(t) {
+      if (!t) return 'no LLM calls metered';
+      const tok = ((t.prompt || 0) + (t.completion || 0));
+      const toolN = (t.tools && t.tools.calls) || 0;
+      const toolMs = (t.tools && t.tools.ms) || 0;
+      return (t.prompt ? (t.calls + ' LLM calls · ' + tok.toLocaleString('en-IN') + ' tokens') : ('0 LLM calls')) + ' · ' + t.ms + 'ms LLM · ' + toolN + ' tools ' + toolMs + 'ms · ≈$' + ((t.cost || 0).toFixed(4)) + ' (est)';
+    }
 
     if (serpToggle && serpBody) {
       serpToggle.addEventListener('click', function () {
@@ -330,6 +343,7 @@ const body = `<section class="lpage-wrap">
     }
 
     function reset() {
+      cmpVar = false;
       agents.innerHTML = '';
       log.innerHTML = '';
       plan.hidden = true;
@@ -377,8 +391,7 @@ const body = `<section class="lpage-wrap">
       stage.hidden = false;
       plan.hidden = true;
       reset();
-
-      let data;
+      data = null;
       const pastedHtml = serpPaste ? serpPaste.value.trim() : '';
       const pastedResults = parsePasted(pastedHtml);
       try {
@@ -395,7 +408,7 @@ const body = `<section class="lpage-wrap">
         const res = await fetch('/api/agentic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined, stream: true })
+          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined, compare: !!compareChk, stream: true })
         });
         if (!res.ok) throw new Error('bad');
         // NDJSON stream: tool events arrive live, final 'plan' event has the full result.
@@ -417,8 +430,18 @@ const body = `<section class="lpage-wrap">
               logLine(ok ? 't' : 'a', (AGENT_META[ev.id] ? (AGENT_META[ev.id].icon + ' ') : '🔧 ') + '<b>' + esc(ev.tool || 'tool') + '</b> ' + (ok ? 'executed in ' + ev.exec.ms + 'ms' : 'failed — fallback used'));
             } else if (ev.event === 'serp') {
               if (ev.used) logLine('t', 'research grounded in ' + (ev.query === 'pasted results' ? 'pasted search results' : 'live SERP') + ' (' + ev.count + ' results)');
+            } else if (ev.event === 'cache') {
+              logLine('g', 'composition cache hit — skipped orchestrator LLM call (' + ev.ms + 'ms)');
+            } else if (ev.event === 'metrics') {
+              tel = ev.telemetry || null;
+              logLine('m', 'metrics · ' + telLine(ev.telemetry));
             } else if (ev.event === 'orch') {
-              logLine('a', 'orchestrator planning…');
+              if (ev.text) {
+                orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator composing:</b> <span class="ag-orch-txt">' + esc(ev.text.slice(-360)) + '</span><span class="ag-orch-dims">…</span></span>';
+                orch.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
+              }
+            } else if (ev.event === 'reflect') {
+              logLine('t', (AGENT_META[ev.id] ? AGENT_META[ev.id].icon + ' ' : '') + 'observed real tool result — handoff updated' + (ev.passes && ev.passes > 1 ? ' (' + ev.passes + ' reflect passes)' : ''));
             } else if (ev.event === 'plan' && ev.data && Array.isArray(ev.data.agents) && ev.data.agents.length) {
               data = ev.data;
             }
@@ -548,20 +571,45 @@ const body = `<section class="lpage-wrap">
       const chips = (Array.isArray(cp.channels) ? cp.channels : []).map((c) => '<span>' + esc(c) + '</span>').join('');
       const kpis = (Array.isArray(cp.kpis) ? cp.kpis : []).map((k) => '<li>' + esc(k) + '</li>').join('');
       const tl = (Array.isArray(cp.timeline) ? cp.timeline : []).map((t) => '<li>' + esc(t) + '</li>').join('');
+      // Compare mode: if the server paired a rule-based baseline, offer a toggle.
+      const cmpBtn = d.fallback
+        ? '<button type="button" class="btn" id="agCmpBtn">⇄ Compare rule-based baseline</button>'
+        : '';
+      // Real spend distribution from the Strategy agent's planner.allocate tool result.
+      let budgetBar = '';
+      const strat = (Array.isArray(d.agents) ? d.agents : []).find((ag) => ag.id === 'strategy');
+      const split = strat && strat.exec && strat.exec.ok && Array.isArray(strat.exec.result.split) ? strat.exec.result.split : null;
+      if (split && split.length) {
+        const rows = split.map((s, i) => {
+          const w = Math.round(parseFloat(s.share) || 0);
+          const hex = ['var(--accent2)', 'var(--accent)', '#ff6fae', '#ff9e5c', '#49b6ff'][i % 5];
+          return '<div class="ag-spend"><span class="ag-spend-name">' + esc(s.channel) + '</span><div class="ag-spend-track"><i style="width:' + w + '%;background:' + hex + '"></i></div><b>' + esc(s.share) + '</b></div>';
+        }).join('');
+        budgetBar = '<div class="blk"><b>Real spend split (planner.allocate)</b>' + rows + '</div>';
+      }
       const budgetTxt = cp.budget ? ('<div class="ag-budget"><b>Total:</b> ' + esc(cp.budget.total || '—') + (cp.budget.split ? ' &nbsp;·&nbsp; <b>Split:</b> ' + esc(cp.budget.split) : '') + '</div>') : '';
       const note = (d.mode && d.mode !== 'ai')
         ? '<div class="ag-note">Running on the built-in rule-based planner — connect a Groq + search key for live LLM grounding.</div>'
         : '';
       plan.innerHTML =
-        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions"><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
+        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn + '<button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
           '<div class="blk"><b>Budget</b>' + budgetTxt + '</div>' +
+          budgetBar +
           '<div class="blk"><b>KPIs</b><ul>' + (kpis || '<li>—</li>') + '</ul></div>' +
           '<div class="blk"><b>Timeline</b><ul>' + (tl || '<li>—</li>') + '</ul></div>' +
         '</div>' +
         note +
-        (d.summary ? '<div class="ag-summary">' + esc(d.summary) + '</div>' : '');
+        (d.summary ? '<div class="ag-summary">' + esc(d.summary) + '</div>' : '') +
+        (d.telemetry ? '<div class="ag-tel"><b>Run telemetry:</b> ' + esc(telLine(d.telemetry)) + (d.cached ? ' · composition cached' : '') + '</div>' : '');
+      const cmpBtn_ = document.getElementById('agCmpBtn');
+      if (cmpBtn_) {
+        cmpBtn_.addEventListener('click', function () {
+          cmpVar = !cmpVar;
+          renderPlan(cmpVar ? (d.fallback || d) : data);
+        });
+      }
       const copyBtn = document.getElementById('agCopyBtn');
       if (copyBtn) {
         copyBtn.addEventListener('click', function () {
