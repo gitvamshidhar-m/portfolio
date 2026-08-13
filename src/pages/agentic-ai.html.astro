@@ -117,6 +117,20 @@ const body = `<section class="lpage-wrap">
     </div>
   </div>
 
+  <div class="wrap" style="margin-top:44px">
+    <div class="ag-proof">
+      <div class="ag-proof-copy">
+        <span class="tag">Proof, not just a pitch</span>
+        <h2 style="font-size:clamp(20px,3vw,26px)">The loop works because the outcomes do</h2>
+        <p style="color:var(--muted);max-width:640px">Hive isn't a metaphor. The same research → optimize loop has shipped real results on live accounts — ROAS climbing <b style="color:var(--accent2)">3.2x → 5.5x</b> and CPL cut <b style="color:var(--accent2)">−30%</b>. Run the demo above, then see how the numbers get built.</p>
+        <div class="cta-row" style="justify-content:flex-start">
+          <a class="btn primary" href="/case-study.html">See the case-study builder →</a>
+          <a class="btn link-secondary" href="/audit.html">Get a free audit</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="wrap" style="margin-top:40px">
     <span class="tag">Common questions</span>
     <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
@@ -198,18 +212,18 @@ const body = `<section class="lpage-wrap">
         : ['Meta Ads', 'Google Ads', 'LinkedIn', 'Email / CRM', 'Content + SEO'];
       const bud = (budget && budget.trim()) ? budget.trim() : (niche === 'b2b_saas' ? '₹2.5L–₹4L / mo' : niche === 'local_service' ? '₹60k–₹1.2L / mo' : '₹1.5L–₹3L / mo');
       const core = goal.charAt(0).toUpperCase() + goal.slice(1);
-      const ag = (id, name, role, tools, thinking, action, output, live) => ({ id, name, role, tools, thinking, action, output, live, status: 'done' });
+      const ag = (id, name, role, tools, thinking, action, output, live, call, result) => ({ id, name, role, tools, thinking, action, output, live, call, result, status: 'done' });
       return {
         mode: 'offline',
         goal: goal,
         orchestrator: 'Research sizes the audience, Strategy sets channels + budget, Content + Media ship the launch, Analytics measures, Optimizer closes the loop.',
         agents: [
-          ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'], 'Maps who actually buys and where they hang out for: "' + core + '".', 'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.', 'Primary ICP + best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.', 'Sizing the audience via live SERP…'),
-          ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'], 'Turns the research into a focused plan instead of spraying budget.', 'Allocates "' + bud + '" across the highest-intent channels only.', 'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.', 'Turning signal into a focused plan…'),
-          ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.', 'Drafting hooks + landing copy in brand voice…'),
-          ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'], 'Builds the campaigns exactly as Content + Strategy specified.', 'Launches ' + channels[0] + ' with the winning hooks and tight audiences.', 'Live campaigns with audience sync + budget caps — handed to Analytics.', 'Building & launching the campaigns…'),
-          ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'], 'Makes sure every rupee is measurable before it scales.', 'Wires GA4 + pixels and stands up a one-screen KPI dashboard.', 'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.', 'Wiring tracking + the KPI dashboard…'),
-          ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.', 'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.', 'Spinning up the experiment loop…')
+          ag('research', 'Research Agent', 'Market & audience intelligence', ['web_search', 'analytics'], 'Maps who actually buys and where they hang out for: "' + core + '".', 'Pulls demand, competitor and audience signals across ' + channels.slice(0, 3).join(', ') + '.', 'Primary ICP + best channels identified: ' + channels.slice(0, 2).join(' and ') + ' — handed to Strategy.', 'Sizing the audience via live SERP…', 'serp.search', '3 competitor angles · 12.4k monthly searches'),
+          ag('strategy', 'Strategy Agent', 'Positioning, channels & budget', ['planner'], 'Turns the research into a focused plan instead of spraying budget.', 'Allocates "' + bud + '" across the highest-intent channels only.', 'Plan: lead with ' + channels[0] + ', then ' + (channels[1] || channels[0]) + '; 70/30 testing split — handed to Content.', 'Turning signal into a focused plan…', 'planner.allocate', bud + ' · 70/30 split · top 2 channels'),
+          ag('content', 'Content Agent', 'Copy, creative & brand voice', ['llm_writer', 'brand_voice'], 'Writes in the brand voice the strategy defined, not generic filler.', 'Drafts hook variants, landing page and ad copy mapped to the ICP.', '3 hook angles + 1 landing page ready for Media — handed to Media.', 'Drafting hooks + landing copy in brand voice…', 'llm_writer', '3 hooks + 1 landing page · brand voice 98% match'),
+          ag('media', 'Media Buying Agent', 'Campaign build & targeting', ['ad_platform', 'audience_sync'], 'Builds the campaigns exactly as Content + Strategy specified.', 'Launches ' + channels[0] + ' with the winning hooks and tight audiences.', 'Live campaigns with audience sync + budget caps — handed to Analytics.', 'Building & launching the campaigns…', 'google_ads.create_campaign', 'VALIDATED · awaiting human approval'),
+          ag('analytics', 'Analytics Agent', 'Tracking, KPIs & dashboards', ['ga4', 'pixel'], 'Makes sure every rupee is measurable before it scales.', 'Wires GA4 + pixels and stands up a one-screen KPI dashboard.', 'Tracking live; KPIs = CPL, CTR, demo rate, ROAS — handed to Optimizer.', 'Wiring tracking + the KPI dashboard…', 'ga4.run_report', 'CPL ₹734 · CTR 3.1% · demo rate 4.2%'),
+          ag('optimizer', 'Optimizer Agent', 'Always-on improvement loop', ['experiment', 'alert'], 'Keeps improving using the KPIs Analytics defined.', 'Auto-flags underperforming ads and rotates in the next hook variant.', 'Weekly experiment loop feeds fresh signal back to Research — Hive keeps learning.', 'Spinning up the experiment loop…', 'experiment.rotate', '2 losers paused · next hook variant queued')
         ],
         campaignPlan: {
           channels: channels,
@@ -260,14 +274,16 @@ const body = `<section class="lpage-wrap">
         '<div class="ag-field think"><span class="k">Thinking</span><p></p></div>' +
         '<div class="ag-field act"><span class="k">Action</span><p></p></div>' +
         '<div class="ag-field out"><span class="k">Output</span><p></p></div>' +
+        '<div class="ag-call"></div>' +
         '<div class="ag-handoff"></div>';
       const status = card.querySelector('.ag-status');
       const thinkP = card.querySelector('.ag-field.think p');
       const actP = card.querySelector('.ag-field.act p');
       const outP = card.querySelector('.ag-field.out p');
       const liveEl = card.querySelector('.ag-live');
+      const callEl = card.querySelector('.ag-call');
       const handoffEl = card.querySelector('.ag-handoff');
-      return { card, status, thinkP, actP, outP, liveEl, handoffEl };
+      return { card, status, thinkP, actP, outP, liveEl, callEl, handoffEl };
     }
 
     async function run() {
@@ -331,6 +347,7 @@ const body = `<section class="lpage-wrap">
         ui.outP.textContent = a.output || '';
         ui.liveEl.textContent = liveTxt;
         ui.liveEl.classList.add('done');
+        if (a.call && ui.callEl) ui.callEl.innerHTML = '<span class="ag-calltool">' + esc(a.call) + '</span> <span class="ag-callres">' + esc(a.result || '') + '</span>';
         ui.status.textContent = 'done'; ui.status.className = 'ag-status done';
         ui.card.classList.remove('active'); ui.card.classList.add('done');
         const next = seq[i + 1];
@@ -344,21 +361,71 @@ const body = `<section class="lpage-wrap">
       runBtn.textContent = '▶ Run again';
     }
 
+    function planToText(d) {
+      const cp = d.campaignPlan || {};
+      const L = [];
+      L.push('CAMPAIGN PLAN: ' + (d.goal || ''));
+      L.push('');
+      if (d.orchestrator) L.push('ORCHESTRATOR: ' + d.orchestrator);
+      L.push('');
+      (d.agents || []).forEach(function (a) {
+        L.push('• ' + (a.name || 'Agent') + (a.role ? ' (' + a.role + ')' : ''));
+        if (a.thinking) L.push('   thinking: ' + a.thinking);
+        if (a.action) L.push('   action:   ' + a.action);
+        if (a.output) L.push('   output:   ' + a.output);
+        if (a.call) L.push('   tool:     ' + a.call + (a.result ? (' → ' + a.result) : ''));
+      });
+      L.push('');
+      if (cp.channels && cp.channels.length) L.push('CHANNELS: ' + cp.channels.join(', '));
+      if (cp.budget) L.push('BUDGET: ' + (cp.budget.total || '') + (cp.budget.split ? (' · ' + cp.budget.split) : ''));
+      if (cp.kpis && cp.kpis.length) L.push('KPIs: ' + cp.kpis.join(', '));
+      if (cp.timeline && cp.timeline.length) L.push('TIMELINE:\n  - ' + cp.timeline.join('\n  - '));
+      if (d.summary) { L.push(''); L.push('SUMMARY: ' + d.summary); }
+      return L.join('\n');
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise(function (resolve, reject) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); resolve();
+        } catch (e) { reject(e); }
+      });
+    }
+
     function renderPlan(d) {
       const cp = d.campaignPlan || {};
       const chips = (Array.isArray(cp.channels) ? cp.channels : []).map((c) => '<span>' + esc(c) + '</span>').join('');
       const kpis = (Array.isArray(cp.kpis) ? cp.kpis : []).map((k) => '<li>' + esc(k) + '</li>').join('');
       const tl = (Array.isArray(cp.timeline) ? cp.timeline : []).map((t) => '<li>' + esc(t) + '</li>').join('');
       const budgetTxt = cp.budget ? ('<div class="ag-budget"><b>Total:</b> ' + esc(cp.budget.total || '—') + (cp.budget.split ? ' &nbsp;·&nbsp; <b>Split:</b> ' + esc(cp.budget.split) : '') + '</div>') : '';
+      const note = (d.mode && d.mode !== 'ai')
+        ? '<div class="ag-note">Running on the built-in rule-based planner — connect a Groq + search key for live LLM grounding.</div>'
+        : '';
       plan.innerHTML =
-        '<h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3>' +
+        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button></div>' +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
           '<div class="blk"><b>Budget</b>' + budgetTxt + '</div>' +
           '<div class="blk"><b>KPIs</b><ul>' + (kpis || '<li>—</li>') + '</ul></div>' +
           '<div class="blk"><b>Timeline</b><ul>' + (tl || '<li>—</li>') + '</ul></div>' +
         '</div>' +
+        note +
         (d.summary ? '<div class="ag-summary">' + esc(d.summary) + '</div>' : '');
+      const copyBtn = document.getElementById('agCopyBtn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+          copyText(planToText(d)).then(function () {
+            copyBtn.textContent = '✓ Copied';
+            setTimeout(function () { copyBtn.textContent = '⧉ Copy plan'; }, 1800);
+          }).catch(function () { copyBtn.textContent = 'Copy failed'; });
+        });
+      }
       plan.hidden = false;
       plan.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
     }

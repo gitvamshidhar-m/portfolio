@@ -1,12 +1,10 @@
 // SERP tool — grounds the Research Agent in real web search results.
-// Provider: SerpAPI (https://serpapi.com) by default. Configure via env:
-//   SERP_API_KEY  (required to run; otherwise the tool is a no-op)
-//   SERP_ENGINE   (optional, default 'google')
-// Returns an array of { title, link, snippet } or null if unavailable.
-function serp(query, opts) {
-  const key = (process.env.SERP_API_KEY || '').trim();
-  if (!key || !query) return Promise.resolve(null);
-  const num = String((opts && opts.num) || 8);
+// Providers (first key found wins):
+//   SERP_API_KEY  -> SerpAPI (https://serpapi.com), engine via SERP_ENGINE (default 'google')
+//   BRAVE_API_KEY -> Brave Search API (https://brave.com/search/api), free tier 2k queries/mo
+// If neither is set, the tool is a no-op and the agent falls back to its built-in planner.
+// Returns an array of { title, link, domain, snippet } or null if unavailable.
+function serpApi(query, num, key) {
   const url = new URL('https://serpapi.com/search.json');
   url.searchParams.set('api_key', key);
   url.searchParams.set('engine', (process.env.SERP_ENGINE || 'google'));
@@ -22,8 +20,37 @@ function serp(query, opts) {
         try { domain = new URL(o.link || '').hostname.replace(/^www\./, ''); } catch (e) {}
         return { title: o.title || '', link: o.link || '', domain: domain, snippet: o.snippet || '' };
       });
-    })
-    .catch(function () { return null; });
+    });
+}
+
+function brave(query, num, key) {
+  const url = new URL('https://api.search.brave.com/res/v1/web/search');
+  url.searchParams.set('q', query);
+  url.searchParams.set('count', num);
+  return fetch(url.toString(), {
+    method: 'GET',
+    headers: { Accept: 'application/json', 'X-Subscription-Token': key }
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      const res = (j && j.data && j.data.web && j.data.web.results) || [];
+      if (!res.length) return [];
+      return res.slice(0, 8).map(function (o) {
+        let domain = '';
+        try { domain = new URL(o.url || '').hostname.replace(/^www\./, ''); } catch (e) {}
+        return { title: o.title || '', link: o.url || '', domain: domain, snippet: o.description || '' };
+      });
+    });
+}
+
+function serp(query, opts) {
+  if (!query) return Promise.resolve(null);
+  const num = String((opts && opts.num) || 8);
+  const serpKey = (process.env.SERP_API_KEY || '').trim();
+  const braveKey = (process.env.BRAVE_API_KEY || '').trim();
+  if (serpKey) return serpApi(query, num, serpKey).catch(function () { return null; });
+  if (braveKey) return brave(query, num, braveKey).catch(function () { return null; });
+  return Promise.resolve(null);
 }
 
 function serpQuery(m) {
