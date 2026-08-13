@@ -1,8 +1,8 @@
 // SERP tool — grounds the Research Agent in real web search results.
-// Providers (first key found wins):
+// Providers (first available wins):
 //   SERP_API_KEY  -> SerpAPI (https://serpapi.com), engine via SERP_ENGINE (default 'google')
 //   BRAVE_API_KEY -> Brave Search API (https://brave.com/search/api), free tier 2k queries/mo
-// If neither is set, the tool is a no-op and the agent falls back to its built-in planner.
+//   (none)        -> best-effort DuckDuckGo HTML scrape (no key, but may be rate-limited/blocked)
 // Returns an array of { title, link, domain, snippet } or null if unavailable.
 function serpApi(query, num, key) {
   const url = new URL('https://serpapi.com/search.json');
@@ -43,6 +43,44 @@ function brave(query, num, key) {
     });
 }
 
+function decodeEnt(s) {
+  return String(s || '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, function (_, n) { return String.fromCharCode(+n); });
+}
+function stripTags(s) { return decodeEnt(String(s || '').replace(/<[^>]*>/g, '')); }
+
+function serpNoKey(query, num) {
+  const url = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(query);
+  return fetch(url, {
+    method: 'GET',
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36', Accept: 'text/html' }
+  })
+    .then(function (r) { return r.text(); })
+    .then(function (html) {
+      const titleRe = /<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+      const titles = [];
+      let m;
+      while ((m = titleRe.exec(html))) {
+        const href = m[1] || '';
+        const um = href.match(/uddg=([^&]+)/);
+        let link = '';
+        if (um) { try { link = decodeURIComponent(um[1]); } catch (e) {} }
+        titles.push({ title: stripTags(m[2]), link: link });
+      }
+      const snips = (html.match(/<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g) || [])
+        .map(function (s) { return stripTags(s.replace(/^<a[^>]*>/, '').replace(/<\/a>$/, '')); });
+      const out = [];
+      for (let i = 0; i < titles.length && out.length < (num || 8); i++) {
+        let domain = '';
+        try { domain = new URL(titles[i].link || '').hostname.replace(/^www\./, ''); } catch (e) {}
+        out.push({ title: titles[i].title, link: titles[i].link, domain: domain, snippet: snips[i] || '' });
+      }
+      return out;
+    });
+}
+
 function serp(query, opts) {
   if (!query) return Promise.resolve(null);
   const num = String((opts && opts.num) || 8);
@@ -50,7 +88,7 @@ function serp(query, opts) {
   const braveKey = (process.env.BRAVE_API_KEY || '').trim();
   if (serpKey) return serpApi(query, num, serpKey).catch(function () { return null; });
   if (braveKey) return brave(query, num, braveKey).catch(function () { return null; });
-  return Promise.resolve(null);
+  return serpNoKey(query, num).catch(function () { return null; });
 }
 
 function serpQuery(m) {
