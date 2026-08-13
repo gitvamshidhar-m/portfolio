@@ -1,5 +1,5 @@
-/* vamshidharm service worker — v1 */
-const CACHE = 'vamshidharm-v1';
+/* vamshidharm service worker — v2 (live dashboard) */
+const CACHE = 'vamshidharm-v2';
 const CORE = [
   '/',
   '/about.html',
