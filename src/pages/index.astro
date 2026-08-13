@@ -728,6 +728,7 @@ if('serviceWorker' in navigator&&!window.__swRegistered){window.__swRegistered=t
 if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,referrer:document.referrer,ua:navigator.userAgent})}).catch(function(){});}
 </script>
 <script is:inline>
+window.whenIdle = function (cb) { if ('requestIdleCallback' in window) requestIdleCallback(cb, { timeout: 2500 }); else setTimeout(cb, 1); };
 (function(){
   var stage=document.getElementById('heroStage');
   if(!stage)return;
@@ -851,21 +852,21 @@ if(!window.__analyticsFired){window.__analyticsFired=true;fetch('/api/analytics'
     function ago(d) {
       try { var s = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 1000)); if (s < 3600) return Math.round(s / 60) + 'm ago'; if (s < 86400) return Math.round(s / 3600) + 'h ago'; return Math.round(s / 86400) + 'd ago'; } catch (e) { return ''; }
     }
-    fetch('/api/github', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+    whenIdle(function () { fetch('/api/github', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
       var cs = (j && j.commits) || [];
       if (!cs.length) { head.textContent = 'Commits rate-limited — see the repo directly.'; return; }
       head.textContent = '';
       list.innerHTML = cs.slice(0, 4).map(function (c) {
         return '<li><span class="cl-dot"></span><div class="cl-msg">' + String(c.message || '').replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div><div class="cl-meta"><span class="cl-ago">' + ago(c.date) + '</span></div></li>';
       }).join('');
-    }).catch(function () { head.textContent = 'Could not reach GitHub right now.'; });
+    }).catch(function () { head.textContent = 'Could not reach GitHub right now.'; }); });
   })();
 
-    refresh();
+    whenIdle(refresh);
     setInterval(refresh, 20000);
   })();
 
-    refresh();
+    whenIdle(refresh);
     setInterval(refresh, 30000);
   })();
   </script>
