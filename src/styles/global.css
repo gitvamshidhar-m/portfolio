@@ -104,10 +104,10 @@ p{text-wrap:pretty}
 
 /* hero */
 .hero{min-height:100vh;display:grid;align-items:center;position:relative;overflow:hidden}
-.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;z-index:0;animation:drift 18s ease-in-out infinite}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.22;z-index:0;animation:drift 18s ease-in-out infinite}
 .blob.b1{width:440px;height:440px;background:#6d5bff;top:-120px;left:-120px}
 .blob.b2{width:380px;height:380px;background:#2ff3c0;bottom:-100px;right:-100px;animation-delay:-6s}
-.blob.b3{width:300px;height:300px;background:#ff8a4c;top:40%;right:20%;animation-delay:-12s;opacity:.2}
+.blob.b3{width:300px;height:300px;background:#ff8a4c;top:40%;right:20%;animation-delay:-12s;opacity:.14}
 @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.15)}66%{transform:translate(-30px,30px) scale(.95)}}
 .hero-grid-bg{position:absolute;inset:0;z-index:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.35;mask-image:radial-gradient(circle at 50% 45%,#000 0%,transparent 75%)}
 #particles{position:absolute;inset:0;z-index:0;pointer-events:none}
@@ -118,14 +118,14 @@ p{text-wrap:pretty}
 .type-wrap .cursor{display:inline-block;width:3px;height:28px;background:var(--accent2);vertical-align:middle;margin-left:4px;animation:blink .8s step-end infinite}
 @keyframes blink{50%{opacity:0}}
 .hero p{color:var(--muted);font-size:clamp(15px,2vw,18px);max-width:660px;margin:0 auto;transform:translateZ(18px)}
-/* premium glass focal panel */
-.hero-pin::before{content:"";position:absolute;left:50%;top:42%;width:min(780px,92%);height:560px;transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(124,108,255,.22),rgba(47,243,192,.10) 42%,transparent 70%);filter:blur(46px);z-index:0;pointer-events:none}
-.hero .hero-inner{max-width:min(900px,95%);padding:clamp(28px,5vw,52px) clamp(20px,5vw,56px);border-radius:28px}
-.hero .hero-inner::before{content:"";position:absolute;inset:0;border-radius:28px;z-index:0;background:linear-gradient(180deg,color-mix(in srgb,var(--card) 70%,transparent),color-mix(in srgb,var(--card) 52%,transparent));border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.05) inset,0 40px 90px -50px rgba(124,108,255,.6);backdrop-filter:blur(16px) saturate(125%);-webkit-backdrop-filter:blur(16px) saturate(125%)}
-.hero .hero-inner::after{content:"";position:absolute;inset:0;border-radius:28px;padding:1px;z-index:1;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 70%,transparent),color-mix(in srgb,var(--accent2) 70%,transparent) 55%,transparent 80%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7;pointer-events:none}
+/* clean hero focal panel */
+.hero-pin::before{content:"";position:absolute;left:50%;top:40%;width:min(840px,94%);height:540px;transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(124,108,255,.14),rgba(47,243,192,.07) 46%,transparent 72%);filter:blur(44px);z-index:0;pointer-events:none}
+.hero .hero-inner{max-width:min(880px,95%);padding:clamp(22px,4vw,40px) clamp(16px,3vw,32px);border-radius:0}
+.hero .hero-inner::before,.hero .hero-inner::after{display:none}
 .hero .hero-inner > *{position:relative;z-index:2}
-.hero .tag{background:linear-gradient(135deg,var(--accent-soft),var(--accent2-soft));border-color:color-mix(in srgb,var(--accent) 32%,var(--line));color:var(--txt);margin-bottom:20px}
-.hero h1{margin-bottom:6px;text-shadow:0 2px 30px rgba(124,108,255,.22)}
+.hero .tag{background:transparent;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));color:var(--muted);margin-bottom:22px;border-radius:999px;padding:8px 16px;font-size:12.5px;letter-spacing:.4px}
+.hero .tag .refnote{color:var(--accent2)}
+.hero h1{margin-bottom:8px;text-shadow:none}
 .type-wrap{margin:20px 0 18px}
 .role-switch{margin-top:18px;margin-bottom:2px}
 .cta-row{margin-top:24px}
@@ -743,17 +743,12 @@ body.bs-open{overflow:hidden}
 .slotpick select{flex:1;min-width:150px}
 .slot-tz{align-self:center;font-size:12px;color:var(--accent2);font-weight:700;white-space:nowrap}
 @media(max-width:560px){.slot-tz{width:100%}}
-/* ---- hero floating proof chips ---- */
-.proof-chips{position:absolute;inset:0;z-index:1;pointer-events:none}
-.pchip{position:absolute;background:color-mix(in srgb,var(--card) 86%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:14px;padding:10px 14px;box-shadow:0 16px 40px -14px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04) inset;display:grid;gap:1px;animation:chipfloat 7s ease-in-out infinite;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.pchip b{font-size:15px;color:var(--txt);font-weight:800}
+/* ---- hero proof chips: clean inline stat row ---- */
+.proof-chips{position:relative;inset:auto;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:26px auto 0;max-width:760px;z-index:2;pointer-events:none}
+.pchip{position:relative;top:auto;left:auto;right:auto;bottom:auto;background:color-mix(in srgb,var(--card) 80%,transparent);border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow-soft);display:grid;gap:2px;text-align:center;min-width:118px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:none}
+.pchip b{font-size:16px;color:var(--txt);font-weight:800}
 .pchip span{font-size:11.5px;color:var(--muted)}
-.pc1{top:22%;right:max(8vw,40px);animation-delay:0s}
-.pc2{top:34%;left:max(8vw,40px);animation-delay:-1.4s}
-.pc3{bottom:24%;right:max(12vw,90px);animation-delay:-2.8s}
-.pc4{bottom:32%;left:max(12vw,90px);animation-delay:-4.2s}
-@keyframes chipfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-@media(max-width:1100px){.proof-chips{display:none}}
+@media(max-width:1100px){.proof-chips{display:flex}}
 /* ---- simplified single-screen hero ---- */
 .hero-main{min-height:min(92vh,760px);height:auto;display:grid;align-items:center;position:relative;overflow:hidden;padding:96px 0 40px}
 .hero-main .hero-grid-bg{position:absolute;inset:0;z-index:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.3;mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 75%)}
