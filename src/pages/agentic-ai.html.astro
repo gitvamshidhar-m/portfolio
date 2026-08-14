@@ -688,10 +688,14 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
               body: JSON.stringify({ text: txt })
             });
             if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j && j.error) || 'tts failed'); }
-            const url = URL.createObjectURL(await r.blob());
+            const blob = await r.blob();
+            if (!blob || blob.size < 500) throw new Error('empty audio');
+            const url = URL.createObjectURL(blob);
+            const reset = () => { URL.revokeObjectURL(url); ttsBtn.disabled = false; ttsBtn.textContent = '🔊 Hear plan'; };
             const au = new Audio(url);
-            au.onended = () => { URL.revokeObjectURL(url); ttsBtn.disabled = false; ttsBtn.textContent = '🔊 Hear plan'; };
-            au.play();
+            au.onended = reset;
+            au.onerror = () => { reset(); logLine('a', 'voice playback failed'); };
+            await au.play().catch(() => { reset(); logLine('a', 'tap play again — browser blocked autoplay'); });
             ttsBtn.textContent = '🔈 Playing…';
           } catch (e) {
             ttsBtn.disabled = false;

@@ -1,6 +1,9 @@
-// Single catch-all API router (Vercel Hobby caps at 12 serverless functions).
+// Single-segment API router (Vercel Hobby caps at 12 serverless functions).
 // All endpoint handlers live in ../libs and are lazy-required by path,
 // so this whole API surface counts as ONE function.
+// NOTE: Vercel filesystem functions only match ONE path segment (no catch-all),
+// so any deep sub-path (/api/agentic/stt, /api/agentic/tts) must be collapsed
+// by a vercel.json rewrite that forwards the remainder as a ?sub= query param.
 // NOTE: use literal require() paths (not variables) so Vercel's bundler (nft)
 // can statically trace and include each handler at build time.
 function getHandler(key) {
@@ -31,11 +34,14 @@ function getHandler(key) {
   }
 }
 
-function send404(res) {
-  res.statusCode = 404;
+function send(res, code, obj) {
+  if (res.writableEnded) return;
+  res.statusCode = code;
   res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify({ error: 'not found' }));
+  res.end(JSON.stringify(obj));
 }
+
+const HANDLER_TIMEOUT_MS = 60000;
 
 module.exports = function handler(req, res) {
   let pathname = '';
@@ -43,15 +49,17 @@ module.exports = function handler(req, res) {
   pathname = pathname.replace(/^\/api/, ''); // tolerate either /api/rag or /rag
   const key = pathname.replace(/^\/+/, '').split('?')[0].split('/')[0] || 'index';
   const fn = getHandler(key);
-  if (!fn) return send404(res);
-  try { return fn(req, res); } catch (e) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'handler error: ' + key }));
-  }
-  try { return fn(req, res); } catch (e) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'handler error: ' + key }));
+  if (!fn) return send(res, 404, { error: 'not found' });
+
+  // Guard: no handler may run forever. Streamed responses keep the socket open
+  // past their internal timeout, so give them comfortable headroom.
+  const timer = setTimeout(function () { send(res, 504, { error: 'timeout: ' + key }); }, HANDLER_TIMEOUT_MS);
+  try {
+    Promise.resolve(fn(req, res)).catch(function () {
+      send(res, 500, { error: 'handler error: ' + key });
+    }).finally(function () { clearTimeout(timer); });
+  } catch (e) {
+    clearTimeout(timer);
+    send(res, 500, { error: 'handler error: ' + key });
   }
 };
