@@ -325,6 +325,51 @@ function safePlan(obj) {
   return obj;
 }
 
+// Merge a model-revised plan back onto the ORIGINAL so an edit/follow-up never
+// wipes fields the model omitted (empty channels/budget/KPIs/timeline) or drops
+// whole agents/tool proofs. Only values the model actually returned override the
+// originals; everything else is carried forward from `base`.
+function mergePlan(base, revised) {
+  if (!revised || !Array.isArray(revised.agents) || !revised.agents.length) return base;
+  const out = JSON.parse(JSON.stringify(base || {}));
+  // Overlay the model's agent prose onto the original full agent list so no agent
+  // (or its live tool-exec proof) disappears when the model returns fewer entries.
+  const baseById = {};
+  (base && Array.isArray(base.agents) ? base.agents : []).forEach(function (a) { baseById[(a.id || '').toLowerCase()] = a; });
+  const revisedById = {};
+  revised.agents.forEach(function (a) { revisedById[(a.id || '').toLowerCase()] = a; });
+  out.agents = (base && Array.isArray(base.agents) ? base.agents : []).map(function (a) {
+    const r = revisedById[(a.id || '').toLowerCase()];
+    if (r) {
+      const copy = JSON.parse(JSON.stringify(a));
+      ['thinking', 'action', 'output', 'live', 'result', 'name'].forEach(function (k) {
+        if (String(r[k] || '').trim() && String(copy[k] || '') !== String(r[k])) copy[k] = String(r[k]).slice(0, k === 'output' ? 400 : k === 'result' ? 200 : 300);
+      });
+      return copy;
+    }
+    return a;
+  });
+  const revisedOnly = revised.agents.filter(function (r) { return !baseById[(r.id || '').toLowerCase()]; }).map(normalizeAgent).filter(Boolean);
+  if (revisedOnly.length) out.agents = out.agents.concat(revisedOnly);
+  if (!out.agents.length) out.agents = revised.agents;
+  const oc = revised.campaignPlan && typeof revised.campaignPlan === 'object' ? revised.campaignPlan : {};
+  const bc = out.campaignPlan && typeof out.campaignPlan === 'object' ? out.campaignPlan : {};
+  const mergeField = function (k) {
+    if (Array.isArray(oc[k]) && oc[k].length) bc[k] = oc[k].slice();
+  };
+  mergeField('channels');
+  mergeField('kpis');
+  mergeField('timeline');
+  if (oc.budget && typeof oc.budget === 'object' && (oc.budget.total || oc.budget.split)) bc.budget = oc.budget;
+  if (typeof oc === 'object' && oc.spendSplit) bc.spendSplit = oc.spendSplit;
+  out.campaignPlan = bc;
+  ['orchestrator', 'summary', 'goal'].forEach(function (k) {
+    if (String(revised[k] || '').trim()) out[k] = String(revised[k]).slice(0, k === 'summary' ? 600 : 400);
+  });
+  if (String(revised.followAnswer || '').trim()) out.followAnswer = String(revised.followAnswer).slice(0, 800);
+  return out;
+}
+
 // ---- Voice (multimodal): speech-to-text input + text-to-speech output ----
 const GROQ_AUDIO_TIMEOUT = 20000;
 function audioB64(body) { return String((body && body.audio) || '').slice(0, 3000000); }
@@ -437,7 +482,7 @@ async function handleFollow(req, res, key) {
     let o = null, out = null;
     try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
     if (o) {
-      out = safePlan(o.plan) || plan;
+      out = safePlan(o.plan) ? mergePlan(plan, o.plan) : plan;
       if (o.answer) out.followAnswer = String(o.answer).slice(0, 800);
       // Persist the revised plan so share links + chat thread keep using it.
       try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
@@ -481,7 +526,7 @@ async function handleSection(req, res, key) {
     const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
     let o = null, out = null;
     try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
-    if (o) { out = safePlan(o.plan) || plan; }
+    if (o) { out = safePlan(o.plan) ? mergePlan(plan, o.plan) : plan; }
     if (!out) return res.status(502).json({ error: 'model returned no plan' });
     try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
     return res.json({ plan: out, field: field, runId: runId });

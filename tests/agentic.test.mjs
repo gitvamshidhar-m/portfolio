@@ -104,8 +104,11 @@ function mockRes() {
   const lines = [];
   return {
     lines,
+    _c: 200,
     setHeader () {},
     writeHead () {},
+    status (c) { this._c = c; return this; },
+    json (o) { lines.push(JSON.stringify(o)); return this; },
     write (s) { lines.push(s.toString()); return true; },
     end (s) { if (s) lines.push(s.toString()); return true; }
   };
@@ -186,4 +189,53 @@ test('no key -> rule-based fallback with working tools, zero LLM calls', async (
   assert.equal(plan.data.mode, 'template');
   assert.equal(plan.data.telemetry.calls, 0, 'no key means no LLM calls metered');
   assert.ok(evs.filter((e) => e.event === 'tool').length >= 6, 'tools still execute (llm.draft falls back to a real rule line)');
+});
+
+test('follow/section never wipe campaignPlan even if the model drops it', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  const realFetch2 = global.fetch;
+  kvStore['agentic:run:mergetest'] = JSON.stringify({
+    at: Date.now(),
+    plan: {
+      goal: 'Launch D2C skincare',
+      orchestrator: 'Research sizes.',
+      agents: [{ id: 'research', name: 'Research Agent', platform: 1 }, { id: 'strategy', name: 'Strategy Agent', exec: { ok: true, result: { split: [{ channel: 'Meta', share: '50%' }] } } }],
+      campaignPlan: { channels: ['Meta Ads', 'Google'], budget: { total: '₹100k', split: '50/50' }, kpis: ['ROAS'], timeline: ['Week 1: go'] },
+      summary: 'plan ready'
+    }
+  });
+  // Model reply that accidentally drops campaignPlan/budget — the bug in the field.
+  global.fetch = async (url, opts) => {
+    const u = String(url);
+    if (u.includes('/pipeline')) {
+      const body = JSON.parse(opts.body || '[]'); const out = [];
+      for (const cmd of Array.isArray(body) ? body : []) {
+        if (cmd[0] === 'GET') out.push([kvStore[cmd[1]] != null ? kvStore[cmd[1]] : null]);
+        else if (cmd[0] === 'SET') { kvStore[cmd[1]] = cmd[2]; out.push(['OK']); }
+        else if (cmd[0] === 'INCR') out.push([[1]]);
+        else out.push(['OK']);
+      }
+      return { ok: true, json: async () => out };
+    }
+    if (u.includes('/get/')) { const k = decodeURIComponent(u.split('/get/')[1] || ''); return { ok: true, json: async () => (kvStore[k] != null ? { result: kvStore[k] } : {}) }; }
+    if (u.includes('kv.example.com')) { return { ok: true, json: async () => ({ ok: true }) }; }
+    if (u.includes('api.groq.com')) {
+      const bad = { answer: 'done.', plan: { goal: 'x', agents: [{ id: 'research', name: 'Research Agent' }] } };
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(bad) } }] }) };
+    }
+    return { json: async () => ({}) };
+  };
+  const handler = require('../libs/agentic.js');
+  await handler({ method: 'POST', url: '/?sub=follow', headers: {}, body: { runId: 'mergetest', question: '3 headlines', lang: 'en' } }, mockRes());
+  const stored = JSON.parse(kvStore['agentic:run:mergetest']);
+  const cp = stored.plan.campaignPlan;
+  assert.ok(Array.isArray(cp.channels) && cp.channels.length === 2, 'channels must survive (got ' + JSON.stringify(cp.channels) + ')');
+  assert.ok(cp.budget && cp.budget.total, 'budget must survive');
+  assert.ok(Array.isArray(cp.kpis) && cp.kpis.length, 'kpis must survive');
+  assert.ok(Array.isArray(cp.timeline) && cp.timeline.length, 'timeline must survive');
+  const strat = stored.plan.agents.find((a) => a.id === 'strategy');
+  assert.ok(strat && strat.exec && strat.exec.ok, 'tool exec proof must survive');
+  global.fetch = realFetch2;
 });
