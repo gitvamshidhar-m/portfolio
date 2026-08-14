@@ -103,6 +103,12 @@ const body = `<section class="lpage-wrap">
         </div>
         <div class="ag-runrow">
           <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Hive</button>
+          <select id="langSel" aria-label="Plan language" title="Plan language">
+            <option value="en">English</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+          </select>
           <button id="voiceBtn" class="btn" type="button" aria-label="Speak your goal into the mic" title="Speak your goal — it will be transcribed and run">🎤 Speak</button>
           <span id="agMode" class="ag-mode" hidden></span>
           <span id="agSerp" class="ag-mode serp" hidden></span>
@@ -124,6 +130,23 @@ const body = `<section class="lpage-wrap">
         <div class="ag-log" id="agLog"></div>
       </div>
       <div class="ag-plan" id="agPlan" hidden></div>
+      <div class="ag-follow" id="agFollow" hidden>
+        <div class="ag-follow-head"><b>💬 Ask the team a follow-up</b><span class="ag-hint">e.g. “Give me 3 ad headlines” · “Shift ₹50k to LinkedIn” · “make the timeline 8 weeks”</span></div>
+        <div class="ag-follow-row">
+          <input id="followInput" type="text" placeholder="Type a follow-up to refine the plan…" />
+          <button id="followBtn" class="btn" type="button">Ask →</button>
+        </div>
+        <div class="ag-follow-thread" id="followThread"></div>
+      </div>
+      <div class="ag-watch" id="agWatch">
+        <div class="ag-watch-head"><b>🔎 Competitor watch</b><span class="ag-hint">Add keywords — Hive checks SERPs and pings you when a new competitor appears.</span></div>
+        <div class="ag-follow-row">
+          <input id="watchInput" type="text" placeholder="Keyword, e.g. “best project management software”" />
+          <button id="watchAddBtn" class="btn" type="button">Watch →</button>
+          <button id="watchRunBtn" class="btn" type="button">↻ Check now</button>
+        </div>
+        <div class="ag-watch-list" id="watchList"></div>
+      </div>
     </div>
   </div>
 
@@ -246,6 +269,9 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
     const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), plan = $('agPlan'), modeEl = $('agMode'), serpEl = $('agSerp');
     const serpToggle = $('serpToggle'), serpBody = $('serpBody'), serpPaste = $('serpPaste'), serpHint = $('serpHint');
     const voiceBtn = $('voiceBtn');
+    const langSel = $('langSel');
+    const followEl = $('agFollow'), followInput = $('followInput'), followBtn = $('followBtn'), followThread = $('followThread');
+    const watchAddBtn = $('watchAddBtn'), watchInput = $('watchInput'), watchList = $('watchList'), watchRunBtn = $('watchRunBtn');
     let tel = null; // last run telemetry: token/cost/latency ledger
     let data = null; // last full plan payload (shared with the compare toggle)
     let cmpVar = false; // compare-mode toggle state
@@ -391,7 +417,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         const r = await fetch('/api/agentic/stt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ audio: b64, mime: type, lang: 'en' })
+          body: JSON.stringify({ audio: b64, mime: type, lang: langSel ? langSel.value : 'en' })
         });
         const j = await r.json();
         if (!r.ok) throw new Error((j && j.error) || 'transcription failed');
@@ -472,7 +498,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         const res = await fetch('/api/agentic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined, compare: true, stream: true })
+          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), lang: langSel ? langSel.value : 'en', serpResults: pastedResults.length ? pastedResults : undefined, compare: true, stream: true })
         });
         if (!res.ok) throw new Error('bad');
         // NDJSON stream: tool events arrive live, final 'plan' event has the full result.
@@ -656,7 +682,13 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         ? '<div class="ag-note">Running on the built-in rule-based planner — connect a Groq + search key for live LLM grounding.</div>'
         : '';
       plan.innerHTML =
-        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn + '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
+        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn +
+          '<button type="button" class="btn" id="agEditChannels">✎ Channels</button>' +
+          '<button type="button" class="btn" id="agEditKpis">✎ KPIs</button>' +
+          '<button type="button" class="btn" id="agEditTimeline">✎ Timeline</button>' +
+          '<button type="button" class="btn" id="agEditBudget">✎ Budget</button>' +
+          '<button type="button" class="btn" id="agPdfBtn">⬇ PDF</button>' +
+          '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
           '<div class="blk"><b>Budget</b>' + budgetTxt + '</div>' +
@@ -672,6 +704,70 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         cmpBtn_.addEventListener('click', function () {
           cmpVar = !cmpVar;
           renderPlan(cmpVar ? (d.fallback || d) : data);
+        });
+      }
+
+      // ---- Editable section: prompt → POST /api/agentic/section → re-render ----
+      const fieldVal = (f) => {
+        const cp2 = data.campaignPlan || {};
+        if (f === 'channels') return (cp2.channels || []).join(', ');
+        if (f === 'kpis') return (cp2.kpis || []).join('\n');
+        if (f === 'timeline') return (cp2.timeline || []).join('\n');
+        return cp2.budget ? (cp2.budget.total || '') : '';
+      };
+      const editable = { agEditChannels: 'channels', agEditKpis: 'kpis', agEditTimeline: 'timeline', agEditBudget: 'budget' };
+      ['agEditChannels', 'agEditKpis', 'agEditTimeline', 'agEditBudget'].forEach(function (id) {
+        const b = document.getElementById(id);
+        if (b) {
+          b.addEventListener('click', async function () {
+            const field = editable[id];
+            const cur = fieldVal(field);
+            const nv = prompt('Edit ' + field + (field === 'channels' ? ' (comma-separated)' : (field === 'kpis' || field === 'timeline' ? ' (one per line)' : ' (e.g. ₹250000 / $3000)')) + ':\n\nCurrent:\n' + cur, cur);
+            if (nv == null || !String(nv).trim() || String(nv).trim() === cur) return;
+            b.disabled = true; b.textContent = '⏳ revising…';
+            try {
+              const r = await fetch('/api/agentic/section', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runId: data.runId || '', field: field, value: String(nv).slice(0, 600), lang: langSel ? langSel.value : 'en' })
+              });
+              const j = await r.json();
+              if (!r.ok) throw new Error((j && j.error) || 'edit failed');
+              data = j.plan || data;
+              renderPlan(data);
+              logLine('t', '✎ ' + field + ' revised — plan regenerated');
+            } catch (e) {
+              b.disabled = false; b.textContent = '✎ ' + editable[id].charAt(0).toUpperCase() + editable[id].slice(1);
+              logLine('a', 'section edit failed — ' + String((e && e.message) || '') + '. Keep keys short & simple, or run again.');
+            }
+          });
+        }
+      });
+
+      // ---- PDF export: POST /api/agentic/pdf → download ----
+      const pdfBtn = document.getElementById('agPdfBtn');
+      if (pdfBtn) {
+        pdfBtn.addEventListener('click', async function () {
+          if (!data.runId) { logLine('a', 'no saved run to export — press 🔗 Share once to persist it'); return; }
+          pdfBtn.disabled = true; pdfBtn.textContent = '⏳ building PDF…';
+          try {
+            const r = await fetch('/api/agentic/pdf', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ runId: data.runId })
+            });
+            if (!r.ok) throw new Error('pdf failed');
+            const blob = await r.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'hive-plan-' + data.runId + '.pdf';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+            logLine('t', 'pdf exported');
+          } catch (e) {
+            logLine('a', 'pdf export failed — ' + String((e && e.message) || ''));
+          }
+          pdfBtn.disabled = false; pdfBtn.textContent = '⬇ PDF';
         });
       }
       const ttsBtn = document.getElementById('agTtsBtn');
@@ -706,8 +802,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
       }
       const copyBtn = document.getElementById('agCopyBtn');
       if (copyBtn) {
-        copyBtn.addEventListener('click', function () {
-          copyText(planToText(d)).then(function () {
+        copyBtn.addEventListener('click', function () {          copyText(planToText(d)).then(function () {
             copyBtn.textContent = '✓ Copied';
             setTimeout(function () { copyBtn.textContent = '⧉ Copy plan'; }, 1800);
           }).catch(function () { copyBtn.textContent = 'Copy failed'; });
@@ -726,11 +821,93 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         });
       }
       plan.hidden = false;
+      if (data && data.runId && followEl) followEl.hidden = false;
       plan.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
     }
 
     runBtn.addEventListener('click', run);
     goal.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
+
+    // ---- Follow-up chat: send question to /api/agentic/follow, render reply, re-render plan ----
+    function addFollowBubble(role, text) {
+      const el = document.createElement('div');
+      el.className = 'ag-follow-bubble ' + role;
+      el.textContent = text;
+      followThread.appendChild(el);
+      followThread.scrollTop = followThread.scrollHeight;
+    }
+    if (followBtn) {
+      followBtn.addEventListener('click', async function () {
+        const q = followInput.value.trim();
+        if (!q || !data || !data.runId) { if (!data || !data.runId) logLine('a', 'run first so there is a plan to revise'); return; }
+        followInput.value = '';
+        addFollowBubble('user', q);
+        followBtn.disabled = true; followBtn.textContent = '⏳ asking…';
+        try {
+          const r = await fetch('/api/agentic/follow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ runId: data.runId, question: q.slice(0, 600), lang: langSel ? langSel.value : 'en' })
+          });
+          const j = await r.json();
+          if (!r.ok) throw new Error((j && j.error) || 'follow-up failed');
+          addFollowBubble('bot', (j.answer || 'Done.'));
+          data = j.plan || data;
+          renderPlan(data);
+        } catch (e) {
+          addFollowBubble('bot', '⚠ ' + String((e && e.message) || 'follow-up failed'));
+        }
+        followBtn.disabled = false; followBtn.textContent = 'Ask →';
+      });
+      followInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') followBtn.click(); });
+    }
+
+    // ---- Competitor watch: list/add/remove keywords + trigger a check ----
+    function renderWatchList(items) {
+      watchList.innerHTML = (items || []).map(function (q) {
+        return '<div class="ag-watch-item"><span>' + esc(q) + '</span><button type="button" class="btn btn-mini" data-watch="' + esc(q) + '">✕</button></div>';
+      }).join('') || '<span class="ag-hint">No keywords yet — add one above.</span>';
+      Array.prototype.forEach.call(watchList.querySelectorAll('[data-watch]'), function (b) {
+        b.addEventListener('click', function () { watchRemove(b.getAttribute('data-watch')); });
+      });
+    }
+    async function watchLoad() {
+      try {
+        const r = await fetch('/api/watch', { cache: 'no-store' });
+        const j = await r.json();
+        renderWatchList(j.queries);
+      } catch (e) {}
+    }
+    async function watchRemove(q) {
+      await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', query: q }) });
+      watchLoad();
+    }
+    if (watchRunBtn) {
+      watchRunBtn.addEventListener('click', async function () {
+        watchRunBtn.disabled = true; watchRunBtn.textContent = '⏳ checking…';
+        logLine('t', '🔎 running competitor check — pings any new domain to Telegram');
+        try {
+          const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'run' }) });
+          const j = await r.json();
+          logLine(j && j.ok ? 't' : 'a', j && j.ok ? ('🔎 checked ' + (j.results || []).length + ' keyword(s)') : 'watch check failed');
+        } catch (e) {
+          logLine('a', 'watch check failed — ' + String((e && e.message) || ''));
+        }
+        watchRunBtn.disabled = false; watchRunBtn.textContent = '↻ Check now';
+      });
+    }
+    if (watchAddBtn) {
+      watchAddBtn.addEventListener('click', async function () {
+        const q = watchInput.value.trim();
+        if (!q) return;
+        watchInput.value = '';
+        await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', query: q.slice(0, 120) }) });
+        logLine('t', '🔎 now watching "' + q.slice(0, 60) + '" — checks run each morning');
+        watchLoad();
+      });
+      watchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') watchAddBtn.click(); });
+      watchLoad();
+    }
 
     // Deep-link: /agentic-ai.html#{"goal":...,"runId":...} auto-runs Hive (or replays that exact run).
     (function () {

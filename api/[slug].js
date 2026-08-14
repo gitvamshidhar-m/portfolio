@@ -30,6 +30,7 @@ function getHandler(key) {
     case 'track': return require('../libs/track');
     case 'views': return require('../libs/views');
     case 'who': return require('../libs/who');
+    case 'watch': return require('../libs/watch');
     default: return null;
   }
 }

@@ -12,6 +12,15 @@ const { serp, serpQuery, formatSerp } = require('./tools/serp');
 const { runTool, fmtResult } = require('./tools/exec');
 const crypto = require('crypto');
 
+// Regional languages (IN): plan fields are generated in the chosen language.
+const LANGS = {
+  en: { name: 'English', stt: 'en' },
+  hi: { name: 'Hindi', stt: 'hi' },
+  te: { name: 'Telugu', stt: 'te' },
+  ta: { name: 'Tamil', stt: 'ta' }
+};
+function langName(lang) { const x = LANGS[String(lang || 'en').slice(0, 2)]; return x ? x.name : 'English'; }
+
 const RL_MAX = 6, RL_WIN_SEC = 60;
 const _mem = { hits: {}, last: 0 };
 function ipOf(req) { return String((req.headers['x-forwarded-for'] || '').split(',')[0] || req.headers['x-real-ip'] || 'unknown').slice(0, 40); }
@@ -107,8 +116,12 @@ async function reflectAgent(agent, exec, goal, key, telemetry) {
 
 const AGENTS = ['research', 'strategy', 'content', 'media', 'analytics', 'optimizer'];
 
-function sys(domainList) {
+function sys(domainList, lang) {
+  const langInstruction = (lang && lang !== 'en')
+    ? 'Critical: the user requested the plan in ' + lang + '. Write every user-facing field — GOAL echo, orchestrator, each agent\'s thinking/action/output/live/result, campaignPlan channels/budget/kpis/timeline, and summary — in ' + lang + '. Keep tool names, agent IDs and the JSON keys in English. Only the prose values change language.\n'
+    : '';
   return 'You are the ORCHESTRATOR of a multi-agent digital-marketing system. Given a marketing GOAL you must plan and "run" a team of autonomous agents. Each agent independently thinks, picks tools, takes an action, and produces an output. Later agents must build on earlier agents\' outputs (handoffs), so the plan reads like a real autonomous workflow, not 6 disconnected blurbs.\n'
+    + langInstruction
     + 'Return ONLY valid minified JSON (no markdown, no commentary) with exactly this shape:\n'
     + '{\n'
     + '  "goal":"<echo the goal, trimmed>",\n'
@@ -146,7 +159,8 @@ function userMessage(m, serpBlock) {
     + (m.budget ? 'MONTHLY BUDGET: ' + m.budget + '\n' : '')
     + (m.channels ? 'PREFERRED CHANNELS: ' + m.channels + '\n' : '')
     + (serpBlock ? '\nLIVE SEARCH CONTEXT (real SERP results for "' + (serpBlock.query || '') + '"):\n' + serpBlock.text + '\n' : '')
-    + '\nRun Hive and return the JSON plan now.';
+    + '\nRun Hive and return the JSON plan now.'
+    + ((m.lang && m.lang !== 'en') ? ' IMPORTANT: write all prose in ' + m.lang + '.' : '');
 }
 
 function inferNiche(goal) {
@@ -347,14 +361,31 @@ async function handleStt(req, res, key) {
   }
 }
 
-// Text-to-speech: turns the plan summary into an mp3 the page plays back.
+// Text-to-speech: turns the plan summary into an mp3 the page plays back. The
+// bundled voice is English-only, so non-English requests are first translated
+// (cheap LLM call) so the audio never garbles Devanagari/Telugu/Tamil text.
 async function handleTts(req, res, key) {
   let b = {};
   try { b = req.body || {}; } catch (e) {}
-  const text = String(b.text || '').slice(0, 1200).trim();
+  let text = String(b.text || '').slice(0, 1200).trim();
+  const lang = langName(b.lang);
   if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
   if (!text) return res.status(400).json({ error: 'text is required' });
   if (await isRateLimited(ipOf(req) + ':agentic-tts')) return res.status(429).json({ error: 'rate limited' });
+  if (lang && lang !== 'English') {
+    try {
+      const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, 8000);
+      const tr = await fetch(GROQ, {
+        method: 'POST', signal: c.signal,
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, temperature: 0.2, max_tokens: 400, messages: [{ role: 'system', content: 'Translate the following ' + lang + ' text to natural English for a text-to-speech voiceover. Keep numbers and brand names. Output ONLY the English translation, no quotes, no commentary.' }, { role: 'user', content: text }] })
+      });
+      clearTimeout(t);
+      const tj = await tr.json();
+      const en = (tj.choices && tj.choices[0] && tj.choices[0].message && tj.choices[0].message.content) || '';
+      if (en.trim()) text = en.trim().slice(0, 1200);
+    } catch (e) {}
+  }
   try {
     const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_AUDIO_TIMEOUT);
     let r;
@@ -374,6 +405,141 @@ async function handleTts(req, res, key) {
   }
 }
 
+// ---- Follow-up chat: refine/expand an EXISTING run's plan via natural language ----
+// POST /api/agentic/follow  {runId, question, lang?}  → {answer, plan}
+async function handleFollow(req, res, key) {
+  let b = {};
+  try { b = req.body || {}; } catch (e) {}
+  const runId = String(b.runId || '').slice(0, 64);
+  const question = String(b.question || '').slice(0, 600).trim();
+  if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
+  if (!runId || !question) return res.status(400).json({ error: 'runId and question are required' });
+  if (await isRateLimited(ipOf(req) + ':agentic-follow')) return res.status(429).json({ error: 'rate limited' });
+  const raw = await kvGet('agentic:run:' + runId);
+  if (!raw) return res.status(404).json({ error: 'run not found' });
+  let plan = null;
+  try { plan = JSON.parse(raw).plan; } catch (e) {}
+  if (!plan) return res.status(404).json({ error: 'run not found' });
+  const lang = langName(b.lang);
+  const langInstr = (lang !== 'English') ? ' Write the reply prose and any updated field values in ' + lang + ' (keys/ids stay English).' : '';
+  const sysMsg = 'You are the ORCHESTRATOR of a multi-agent marketing system. The user is following up on an existing campaign plan. Read the plan JSON, answer their question, and REVISE the plan if the question asks for any change (budget, channels, KPI, timeline, summary, or agent outputs). Return ONLY JSON: {"answer":"<2-4 sentence reply to the user, referencing the plan>","plan":{<the full revised plan JSON — identical structure to the input, only fields that must change changed; if nothing changes, echo the input plan unchanged>}}.' + langInstr;
+  const userMsg = 'QUESTION: ' + question + '\n\nCURRENT PLAN (JSON):\n' + JSON.stringify(plan).slice(0, 16000);
+  try {
+    const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_TIMEOUT);
+    const r = await fetch(GROQ, {
+      method: 'POST', signal: c.signal,
+      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, temperature: 0.5, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }] })
+    });
+    clearTimeout(t);
+    const j = await r.json();
+    const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+    let o = null, out = null;
+    try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
+    if (o) {
+      out = safePlan(o.plan) || plan;
+      if (o.answer) out.followAnswer = String(o.answer).slice(0, 800);
+      // Persist the revised plan so share links + chat thread keep using it.
+      try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
+    }
+    if (!out) return res.status(502).json({ error: 'model returned no plan' });
+    return res.json({ answer: (o && o.answer) ? String(o.answer).slice(0, 800) : '', plan: out, runId: runId });
+  } catch (e) {
+    return res.status(502).json({ error: String((e && e.message) || 'follow-up failed') });
+  }
+}
+
+// ---- Editable sections: regenerate just ONE part of an existing plan ----
+// POST /api/agentic/section  {runId, field, value} → {plan, field}
+// field ∈ budget | channels | kpis | timeline | summary
+async function handleSection(req, res, key) {
+  let b = {};
+  try { b = req.body || {}; } catch (e) {}
+  const runId = String(b.runId || '').slice(0, 64);
+  const field = String(b.field || '');
+  const value = String(b.value || '').slice(0, 600).trim();
+  if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
+  if (!runId || !field) return res.status(400).json({ error: 'runId and field are required' });
+  if (!/^(budget|channels|kpis|timeline|summary)$/.test(field)) return res.status(400).json({ error: 'invalid field' });
+  if (!value) return res.status(400).json({ error: 'value is required' });
+  const raw = await kvGet('agentic:run:' + runId);
+  if (!raw) return res.status(404).json({ error: 'run not found' });
+  let plan = null;
+  try { plan = JSON.parse(raw).plan; } catch (e) {}
+  if (!plan) return res.status(404).json({ error: 'run not found' });
+  const lang = langName(b.lang);
+  const sysMsg = 'You are the ORCHESTRATOR editing one section of an existing campaign plan. The user changed the "' + field + '" section to: "' + value + '". Revise the plan and RETURN ONLY JSON: {"plan":{<full revised plan — same JSON structure; update the ' + field + ' section per the new value and, where it materially affects them, the agents outputs, summary and timeline>}}. Write user-facing prose in ' + lang + ' unless English is requested.';
+  try {
+    const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_TIMEOUT);
+    const r = await fetch(GROQ, {
+      method: 'POST', signal: c.signal,
+      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, temperature: 0.5, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: JSON.stringify(plan).slice(0, 16000) }] })
+    });
+    clearTimeout(t);
+    const j = await r.json();
+    const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+    let o = null, out = null;
+    try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
+    if (o) { out = safePlan(o.plan) || plan; }
+    if (!out) return res.status(502).json({ error: 'model returned no plan' });
+    try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
+    return res.json({ plan: out, field: field, runId: runId });
+  } catch (e) {
+    return res.status(502).json({ error: String((e && e.message) || 'edit failed') });
+  }
+}
+
+// ---- Plan → PDF export ----
+// POST /api/agentic/pdf {runId} → application/pdf
+async function handlePdf(req, res) {
+  let b = {};
+  try { b = req.body || {}; } catch (e) {}
+  const runId = String(b.runId || '').slice(0, 64);
+  if (!runId) return res.status(400).json({ error: 'runId is required' });
+  const raw = await kvGet('agentic:run:' + runId);
+  if (!raw) return res.status(404).json({ error: 'run not found' });
+  let plan = null;
+  try { plan = JSON.parse(raw).plan; } catch (e) {}
+  if (!plan) return res.status(404).json({ error: 'run not found' });
+  const PDFDocument = require('pdfkit');
+  const doc = new PDFDocument({ size: 'A4', margins: { top: 48, bottom: 48, left: 48, right: 48 } });
+  const chunks = [];
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="hive-plan-' + runId + '.pdf"');
+  doc.on('data', function (c) { chunks.push(c); });
+  doc.on('end', function () { res.end(Buffer.concat(chunks)); });
+  try {
+    const cp = plan.campaignPlan || {};
+    doc.fontSize(20).fillColor('#111').text('Hive Campaign Plan', { align: 'center' });
+    doc.moveDown(0.6);
+    doc.fontSize(12).fillColor('#555').text('Goal: ' + (plan.goal || ''), { align: 'center' });
+    doc.moveDown(1.2);
+    if (plan.orchestrator) { doc.fontSize(11).fillColor('#222').text(plan.orchestrator); doc.moveDown(0.8); }
+    doc.fontSize(13).fillColor('#444').text('The Agents'); doc.moveDown(0.3);
+    (plan.agents || []).forEach(function (a) {
+      doc.fontSize(11).fillColor('#111').text('• ' + (a.name || 'Agent') + (a.role ? ' (' + a.role + ')' : ''));
+      doc.fontSize(10).fillColor('#444').text('  Thinking: ' + (a.thinking || ''));
+      doc.fontSize(10).fillColor('#444').text('  Action:   ' + (a.action || ''));
+      doc.fontSize(10).fillColor('#444').text('  Output:   ' + (a.output || ''));
+      doc.fontSize(10).fillColor('#666').text('  Tool:     ' + (a.call || '') + (a.result ? ' → ' + a.result : ''));
+      doc.moveDown(0.4);
+    });
+    doc.fontSize(13).fillColor('#444').text('Campaign Plan'); doc.moveDown(0.3);
+    if (cp.channels) doc.fontSize(10).fillColor('#111').text('Channels: ' + cp.channels.join(', '));
+    if (cp.budget) doc.fontSize(10).fillColor('#111').text('Budget: ' + (cp.budget.total || '') + (cp.budget.split ? ' — ' + cp.budget.split : ''));
+    if (cp.kpis && cp.kpis.length) doc.fontSize(10).fillColor('#111').text('KPIs: ' + cp.kpis.join(' · '));
+    if (cp.timeline && cp.timeline.length) { doc.fontSize(10).fillColor('#111').text('Timeline:'); cp.timeline.forEach(function (t) { doc.fontSize(10).fillColor('#111').text('      • ' + t); }); }
+    if (plan.summary) { doc.moveDown(0.6); doc.fontSize(10.5).fillColor('#333').text('Summary: ' + plan.summary); }
+    if (plan.telemetry) { doc.moveDown(0.8); doc.fontSize(9).fillColor('#999').text('Telemetry: ' + JSON.stringify(plan.telemetry)); }
+    doc.end();
+  } catch (e) {
+    if (process.env.AGENTIC_PDF_DEBUG) console.error('hive-pdf:', e && (e.stack || e.message));
+    doc.end();
+    try { res.end(Buffer.from('')) } catch (e2) {}
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const url2 = new URL(req.url || '/', 'http://localhost');
@@ -387,6 +553,15 @@ module.exports = async function handler(req, res) {
   }
   if (sub === 'tts' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'tts')) {
     return handleTts(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  }
+  if (sub === 'follow' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'follow')) {
+    return handleFollow(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  }
+  if (sub === 'section' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'section')) {
+    return handleSection(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  }
+  if (sub === 'pdf' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'pdf')) {
+    return handlePdf(req, res);
   }
 
   // Replay a past run (share link): GET /api/agentic?run=<id>
@@ -409,7 +584,8 @@ module.exports = async function handler(req, res) {
     goal: String(b.goal || '').slice(0, 600).trim(),
     niche: String(b.niche || '').slice(0, 120).trim(),
     budget: String(b.budget || '').slice(0, 120).trim(),
-    channels: String(b.channels || '').slice(0, 200).trim()
+    channels: String(b.channels || '').slice(0, 200).trim(),
+    lang: langName(b.lang)
   };
   if (!m.goal) return res.status(400).json({ error: 'goal is required' });
   if (await isRateLimited(ipOf(req) + ':agentic')) return res.status(429).json({ error: 'rate limited' });
@@ -465,7 +641,7 @@ module.exports = async function handler(req, res) {
         method: 'POST',
         signal: controller.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1700, stream: true, stream_options: { include_usage: true }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys(domains) }, { role: 'user', content: userMessage(m, serpBlock) }] })
+        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1700, stream: true, stream_options: { include_usage: true }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sys(domains, m.lang) }, { role: 'user', content: userMessage(m, serpBlock) }] })
       });
       const reader = r.body.getReader();
       const dec = new TextDecoder();

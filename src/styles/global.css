@@ -1004,3 +1004,22 @@ body.bs-open{overflow:hidden}
 /* ===== Agent tool-call trace ===== */
 .ag-trace{margin:10px 0 0;background:#0b0b16;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.6;color:#cbb8ff;overflow:auto;white-space:pre}
 .ag-trace:last-child{margin-bottom:0}
+
+/* ===== Hive follow-up chat + competitor watch ===== */
+.ag-follow,.ag-watch{margin-top:18px;border:1px solid color-mix(in srgb,var(--accent2) 30%,var(--line));background:var(--card);border-radius:var(--radius-lg);padding:16px 18px}
+.ag-follow-head,.ag-watch-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ag-follow-head .ag-hint,.ag-watch-head .ag-hint{font-size:12px}
+.ag-follow-row{display:flex;gap:10px}
+.ag-follow-row input{flex:1;min-width:0;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font:inherit;font-size:13.5px}
+.ag-follow-row input:focus{outline:none;border-color:var(--accent)}
+.ag-follow-thread{display:grid;gap:8px;margin-top:12px;max-height:260px;overflow:auto}
+.ag-follow-bubble{max-width:82%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.ag-follow-bubble.user{justify-self:end;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-top-right-radius:3px}
+.ag-follow-bubble.bot{justify-self:start;background:var(--bg2);border:1px solid var(--line);border-top-left-radius:3px;color:var(--txt)}
+.ag-follow-bubble.bot:first-child{margin-top:6px}
+.ag-watch-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);background:var(--bg2);border-radius:10px;margin-top:8px;font-size:13px}
+.ag-watch-item .btn-mini{padding:3px 9px;font-size:12px;border-radius:8px;color:var(--muted)}
+.ag-watch-item .btn-mini:hover{color:#ff6f6f}
+.btn-mini{background:var(--card2);border:1px solid var(--line);cursor:pointer;color:var(--txt)}
+#langSel{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font:inherit;font-size:13px;cursor:pointer;max-width:170px}
+#langSel:focus{outline:none;border-color:var(--accent)}

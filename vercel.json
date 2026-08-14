@@ -1,7 +1,10 @@
 {
   "rewrites": [
     { "source": "/api/agentic/stt", "destination": "/api/agentic?sub=stt" },
-    { "source": "/api/agentic/tts", "destination": "/api/agentic?sub=tts" }
+    { "source": "/api/agentic/tts", "destination": "/api/agentic?sub=tts" },
+    { "source": "/api/agentic/follow", "destination": "/api/agentic?sub=follow" },
+    { "source": "/api/agentic/section", "destination": "/api/agentic?sub=section" },
+    { "source": "/api/agentic/pdf", "destination": "/api/agentic?sub=pdf" }
   ],
   "redirects": [
     {

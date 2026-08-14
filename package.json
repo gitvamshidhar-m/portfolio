@@ -16,7 +16,8 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@vercel/og": "^1.0.1",
-    "astro": "^7.2.0"
+    "astro": "^7.2.0",
+    "pdfkit": "^0.19.1"
   },
   "devDependencies": {
     "puppeteer-core": "^25.5.0"
