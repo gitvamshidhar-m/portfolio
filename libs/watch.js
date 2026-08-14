@@ -99,6 +99,16 @@ module.exports = function handler(req, res) {
     });
   }
   if (req.method === 'POST') {
+    // Guard write actions: when WATCH_ADMIN_TOKEN is set, the caller must send it
+    // as "Authorization: Bearer <token>" or "x-watch-token: <token>".
+    const adminToken = (process.env.WATCH_ADMIN_TOKEN || '').trim();
+    if (adminToken) {
+      const auth = String(req.headers['authorization'] || '');
+      const hdr = String(req.headers['x-watch-token'] || '');
+      if (auth !== 'Bearer ' + adminToken && hdr !== adminToken) {
+        return res.status(401).json({ error: 'unauthorized' });
+      }
+    }
     let b = {};
     try { b = req.body || {}; } catch (e) {}
     const action = String(b.action || '');

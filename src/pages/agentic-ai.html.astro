@@ -150,6 +150,18 @@ const body = `<section class="lpage-wrap">
     </div>
   </div>
 
+  <div class="ag-modal" id="agModal" role="dialog" aria-modal="true">
+    <div class="ag-modal-card">
+      <h4 id="agModalTitle">Edit section</h4>
+      <div class="ag-hint" id="agModalHint"></div>
+      <textarea id="agModalArea" spellcheck="false"></textarea>
+      <div class="ag-modal-actions">
+        <button type="button" class="btn" id="agModalCancel">Cancel</button>
+        <button type="button" class="btn primary" id="agModalSave">Save & revise →</button>
+      </div>
+    </div>
+  </div>
+
   <div class="wrap" style="margin-top:44px">
     <div class="ag-proof">
       <div class="ag-proof-copy">
@@ -270,6 +282,14 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
     const serpToggle = $('serpToggle'), serpBody = $('serpBody'), serpPaste = $('serpPaste'), serpHint = $('serpHint');
     const voiceBtn = $('voiceBtn');
     const langSel = $('langSel');
+    // Persist the chosen plan language so returning visitors keep their preference.
+    if (langSel) {
+      const savedLang = (function () { try { return localStorage.getItem('hiveLang'); } catch (e) { return null; } })();
+      if (savedLang && ['en', 'hi', 'te', 'ta'].indexOf(savedLang) >= 0) langSel.value = savedLang;
+      langSel.addEventListener('change', function () {
+        try { localStorage.setItem('hiveLang', langSel.value); } catch (e) {}
+      });
+    }
     const followEl = $('agFollow'), followInput = $('followInput'), followBtn = $('followBtn'), followThread = $('followThread');
     const watchAddBtn = $('watchAddBtn'), watchInput = $('watchInput'), watchList = $('watchList'), watchRunBtn = $('watchRunBtn');
     let tel = null; // last run telemetry: token/cost/latency ledger
@@ -446,6 +466,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
       const card = document.createElement('div');
       card.className = 'ag-card';
       const id = (a.id || '').toLowerCase();
+      card.setAttribute('data-agent', id);
       const meta = AGENT_META[id] || {};
       const icon = meta.icon || ICON[id] || '🤖';
       if (meta.color) card.style.setProperty('--agc', meta.color);
@@ -454,6 +475,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
           '<span class="ag-ico">' + icon + '</span>' +
           '<div><div class="ag-name">' + esc(a.name || 'Agent') + '</div><div class="ag-role">' + esc(a.role || '') + '</div>' + (meta.persona ? '<span class="ag-persona">' + esc(meta.persona) + '</span>' : '') + '</div>' +
           '<span class="ag-status">queued</span>' +
+          '<button type="button" class="ag-regen" title="Regenerate this agent">↻</button>' +
         '</div>' +
         '<div class="ag-live"></div>' +
         '<div class="ag-tools">' + (Array.isArray(a.tools) ? a.tools.map((t) => '<span>' + esc(t) + '</span>').join('') : '') + '</div>' +
@@ -658,12 +680,35 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
 
     function renderPlan(d) {
       const cp = d.campaignPlan || {};
-      const chips = (Array.isArray(cp.channels) ? cp.channels : []).map((c) => '<span>' + esc(c) + '</span>').join('');
-      const kpis = (Array.isArray(cp.kpis) ? cp.kpis : []).map((k) => '<li>' + esc(k) + '</li>').join('');
-      const tl = (Array.isArray(cp.timeline) ? cp.timeline : []).map((t) => '<li>' + esc(t) + '</li>').join('');
+      // Differential compare: when toggled, tag every item that differs between the
+      // plan being shown and the rule-based baseline so the changes pop at a glance.
+      const other = (d === data && d.fallback) ? d.fallback : (cmpVar && d !== data ? data : null);
+      const cmpAgainst = cmpVar ? (other && other.campaignPlan) : null;
+      const diffTag = (listA, listB) => {
+        const setB = new Set((listB || []).map((x) => String(x).trim().toLowerCase()));
+        return (listA || []).map((x) => {
+          if (cmpAgainst && !setB.has(String(x).trim().toLowerCase())) return '<mark class="ag-changed">' + esc(x) + '</mark>';
+          return '<span>' + esc(x) + '</span>';
+        }).join('');
+      };
+      const diffLi = (listA, listB) => {
+        const setB = new Set((listB || []).map((x) => String(x).trim().toLowerCase()));
+        return (listA || []).map((x) => {
+          if (cmpAgainst && !setB.has(String(x).trim().toLowerCase())) return '<li><mark class="ag-changed">' + esc(x) + '</mark></li>';
+          return '<li>' + esc(x) + '</li>';
+        }).join('');
+      };
+      const chips = (Array.isArray(cp.channels) ? diffTag(cp.channels, cmpAgainst ? cmpAgainst.channels : null) : '');
+      const kpis = (Array.isArray(cp.kpis) ? diffLi(cp.kpis, cmpAgainst ? cmpAgainst.kpis : null) : '');
+      const tl = (Array.isArray(cp.timeline) ? diffLi(cp.timeline, cmpAgainst ? cmpAgainst.timeline : null) : '');
+      let budgetDiff = false;
+      if (cmpAgainst && cp.budget) {
+        const bB = cmpAgainst.budget ? (cmpAgainst.budget.total + ' ' + (cmpAgainst.budget.split || '')) : '';
+        budgetDiff = (cp.budget.total + ' ' + (cp.budget.split || '')) !== bB;
+      }
       // Compare mode: if the server paired a rule-based baseline, offer a toggle.
       const cmpBtn = d.fallback
-        ? '<button type="button" class="btn" id="agCmpBtn">⇄ Compare rule-based baseline</button>'
+        ? '<button type="button" class="btn" id="agCmpBtn">' + (cmpVar ? '✓ Differences vs baseline shown' : '⇄ Highlight differences vs baseline') + '</button>'
         : '';
       // Real spend distribution from the Strategy agent's planner.allocate tool result.
       let budgetBar = '';
@@ -677,9 +722,12 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         }).join('');
         budgetBar = '<div class="blk"><b>Real spend split (planner.allocate)</b>' + rows + '</div>';
       }
-      const budgetTxt = cp.budget ? ('<div class="ag-budget"><b>Total:</b> ' + esc(cp.budget.total || '—') + (cp.budget.split ? ' &nbsp;·&nbsp; <b>Split:</b> ' + esc(cp.budget.split) : '') + '</div>') : '';
+      const budgetTxt = cp.budget ? ('<div class="ag-budget' + (budgetDiff ? ' ag-changed' : '') + '"><b>Total:</b> ' + esc(cp.budget.total || '—') + (cp.budget.split ? ' &nbsp;·&nbsp; <b>Split:</b> ' + esc(cp.budget.split) : '') + '</div>') : '';
       const note = (d.mode && d.mode !== 'ai')
         ? '<div class="ag-note">Running on the built-in rule-based planner — connect a Groq + search key for live LLM grounding.</div>'
+        : '';
+      const cmpLegend = (cmpVar && d.fallback)
+        ? '<div class="ag-diffnote"><span class="ag-changedmark">highlighted</span> items differ from the rule-based baseline</div>'
         : '';
       plan.innerHTML =
         '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn +
@@ -689,6 +737,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
           '<button type="button" class="btn" id="agEditBudget">✎ Budget</button>' +
           '<button type="button" class="btn" id="agPdfBtn">⬇ PDF</button>' +
           '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
+        cmpLegend +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
           '<div class="blk"><b>Budget</b>' + budgetTxt + '</div>' +
@@ -703,44 +752,94 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
       if (cmpBtn_) {
         cmpBtn_.addEventListener('click', function () {
           cmpVar = !cmpVar;
-          renderPlan(cmpVar ? (d.fallback || d) : data);
+          renderPlan(data);
         });
       }
 
-      // ---- Editable section: prompt → POST /api/agentic/section → re-render ----
+      // ---- Editable section: modal → POST /api/agentic/section → re-render ----
       const fieldVal = (f) => {
         const cp2 = data.campaignPlan || {};
         if (f === 'channels') return (cp2.channels || []).join(', ');
         if (f === 'kpis') return (cp2.kpis || []).join('\n');
         if (f === 'timeline') return (cp2.timeline || []).join('\n');
-        return cp2.budget ? (cp2.budget.total || '') : '';
+        return cp2.budget ? ((cp2.budget.total || '') + (cp2.budget.split ? ' — ' + cp2.budget.split : '')) : '';
       };
       const editable = { agEditChannels: 'channels', agEditKpis: 'kpis', agEditTimeline: 'timeline', agEditBudget: 'budget' };
+      const modal = $('agModal');
+      const modalTitle = $('agModalTitle'), modalHint = $('agModalHint'), modalArea = $('agModalArea'), modalSave = $('agModalSave'), modalCancel = $('agModalCancel');
+      let modalField = '';
+      if (modal) {
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+        modalCancel.addEventListener('click', closeModal);
+        modalArea.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+      }
+      function closeModal() { if (modal) modal.classList.remove('open'); }
+      function openModal(field) {
+        const labels = { channels: 'Channels', kpis: 'KPIs', timeline: 'Timeline', budget: 'Budget' };
+        const hints = {
+          channels: 'Comma-separated. e.g. Google Ads, Meta Ads, LinkedIn, YouTube',
+          kpis: 'One KPI per line.',
+          timeline: 'One milestone per line.',
+          budget: 'Total, plus an optional split. e.g. ₹300000 — 60/40'
+        };
+        modalField = field;
+        modalTitle.textContent = '✎ Edit ' + labels[field];
+        modalHint.textContent = hints[field];
+        modalArea.value = fieldVal(field);
+        modal.classList.add('open');
+        setTimeout(function () { modalArea.focus(); }, 30);
+      }
+      modalSave.addEventListener('click', async function () {
+        const field = modalField;
+        const nv = modalArea.value;
+        if (!String(nv).trim() || String(nv).trim() === fieldVal(field)) { closeModal(); return; }
+        closeModal();
+        const b = document.getElementById(Object.keys(editable).find((k) => editable[k] === field));
+        if (b) { b.disabled = true; b.textContent = '⏳ revising…'; }
+        try {
+          const r = await fetch('/api/agentic/section', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ runId: data.runId || '', field: field, value: String(nv).slice(0, 600), lang: langSel ? langSel.value : 'en', stream: true })
+          });
+          if (!r.ok) { let ej = {}; try { ej = await r.json(); } catch (e) {} throw new Error((ej && ej.error) || 'edit failed'); }
+          // NDJSON stream: a 'diff' event (what changed), then the revised 'plan'.
+          const reader = r.body.getReader();
+          const dec = new TextDecoder();
+          let buf = '', newData = null, diff = [];
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let idx;
+            while ((idx = buf.indexOf('\n')) >= 0) {
+              const line = buf.slice(0, idx); buf = buf.slice(idx + 1);
+              if (!line.trim()) continue;
+              let ev = null;
+              try { ev = JSON.parse(line); } catch (e) { continue; }
+              if (ev.event === 'diff') {
+                diff = ev.fields || [];
+                if (ev.telemetry) logLine('m', '✎ edit · ' + telLine(ev.telemetry));
+              } else if (ev.event === 'plan' && ev.data) {
+                newData = ev.data;
+              } else if (ev.event === 'error') {
+                throw new Error(ev.error || 'edit failed');
+              }
+            }
+          }
+          if (!newData) throw new Error('no plan in edit response');
+          data = newData;
+          renderPlan(data);
+          logLine('t', '✎ ' + field + ' revised — plan regenerated' + (diff.length ? ' · changed: ' + diff.join(', ') : ''));
+        } catch (e) {
+          logLine('a', 'section edit failed — ' + String((e && e.message) || '') + '. Keep keys short & simple, or run again.');
+        }
+        if (b) { b.disabled = false; b.textContent = '✎ ' + Object.keys(editable).find((k) => editable[k] === field).charAt(0).toUpperCase() + field; }
+      });
       ['agEditChannels', 'agEditKpis', 'agEditTimeline', 'agEditBudget'].forEach(function (id) {
         const b = document.getElementById(id);
         if (b) {
-          b.addEventListener('click', async function () {
-            const field = editable[id];
-            const cur = fieldVal(field);
-            const nv = prompt('Edit ' + field + (field === 'channels' ? ' (comma-separated)' : (field === 'kpis' || field === 'timeline' ? ' (one per line)' : ' (e.g. ₹250000 / $3000)')) + ':\n\nCurrent:\n' + cur, cur);
-            if (nv == null || !String(nv).trim() || String(nv).trim() === cur) return;
-            b.disabled = true; b.textContent = '⏳ revising…';
-            try {
-              const r = await fetch('/api/agentic/section', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ runId: data.runId || '', field: field, value: String(nv).slice(0, 600), lang: langSel ? langSel.value : 'en' })
-              });
-              const j = await r.json();
-              if (!r.ok) throw new Error((j && j.error) || 'edit failed');
-              data = j.plan || data;
-              renderPlan(data);
-              logLine('t', '✎ ' + field + ' revised — plan regenerated');
-            } catch (e) {
-              b.disabled = false; b.textContent = '✎ ' + editable[id].charAt(0).toUpperCase() + editable[id].slice(1);
-              logLine('a', 'section edit failed — ' + String((e && e.message) || '') + '. Keep keys short & simple, or run again.');
-            }
-          });
+          b.addEventListener('click', function () { openModal(editable[id]); });
         }
       });
 
@@ -828,6 +927,62 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
     runBtn.addEventListener('click', run);
     goal.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
 
+    // ---- Per-agent regenerate: redo one agent on the live plan, keep the rest ----
+    agents.addEventListener('click', async function (e) {
+      const btn = e.target.closest('.ag-regen');
+      if (!btn) return;
+      const card = btn.closest('.ag-card');
+      if (!card) return;
+      const agentId = card.getAttribute('data-agent');
+      if (!agentId || !data || !data.runId) return;
+      const prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const r = await fetch('/api/agentic/regenerate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ runId: data.runId, agentId: agentId })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error((j && j.error) || 'regenerate failed');
+        if (j.plan && Array.isArray(j.plan.agents)) {
+          const old = data;
+          data = j.plan;
+          const na = data.agents.find((x) => (x.id || '').toLowerCase() === agentId);
+          if (na) {
+            const ui = makeCard(na);
+            card.replaceWith(ui.card);
+            requestAnimationFrame(() => ui.card.classList.add('show'));
+            ui.status.textContent = 'done'; ui.status.className = 'ag-status done';
+            ui.card.classList.add('done');
+            ui.thinkP.textContent = na.thinking || '';
+            ui.actP.textContent = na.action || '';
+            ui.outP.textContent = na.output || '';
+            ui.liveEl.textContent = na.live || '';
+            if (na.call && ui.callEl) {
+              const exec = na.exec || null;
+              const toolName = esc(na.call || (exec && exec.tool));
+              const argsText = (na.toolArgs && Object.keys(na.toolArgs).length) ? ' ' + esc(qs(na.toolArgs)) : '';
+              if (exec && exec.ok) {
+                ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + argsText + '</span><span class="ag-callres real">' + esc(na.result || '') + '</span><span class="ag-callms">' + exec.ms + 'ms</span>';
+              } else if (exec && !exec.ok) {
+                ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + argsText + '</span><span class="ag-callres err">' + esc((exec.error || 'tool failed')) + '</span>';
+              } else {
+                ui.callEl.innerHTML = '<span class="ag-calltool">' + toolName + '</span> <span class="ag-callres">' + esc(na.result || '') + '</span>';
+              }
+            }
+            renderPlan(data);
+            logLine('t', (na.name || agentId) + ' regenerated on the live plan' + (j.telemetry ? ' · ' + telLine(j.telemetry) : ''));
+          }
+        }
+      } catch (e) {
+        logLine('a', 'regenerate failed — ' + String((e && e.message) || ''));
+      }
+      btn.disabled = false;
+      btn.textContent = prev;
+    });
+
     // ---- Follow-up chat: send question to /api/agentic/follow, render reply, re-render plan ----
     function addFollowBubble(role, text) {
       const el = document.createElement('div');
@@ -835,6 +990,13 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
       el.textContent = text;
       followThread.appendChild(el);
       followThread.scrollTop = followThread.scrollHeight;
+      return el;
+    }
+    function followTyping() {
+      const el = addFollowBubble('bot', '');
+      el.classList.add('typing');
+      el.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      return el;
     }
     if (followBtn) {
       followBtn.addEventListener('click', async function () {
@@ -843,19 +1005,47 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         followInput.value = '';
         addFollowBubble('user', q);
         followBtn.disabled = true; followBtn.textContent = '⏳ asking…';
+        const bubble = followTyping();
         try {
           const r = await fetch('/api/agentic/follow', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ runId: data.runId, question: q.slice(0, 600), lang: langSel ? langSel.value : 'en' })
+            body: JSON.stringify({ runId: data.runId, question: q.slice(0, 600), lang: langSel ? langSel.value : 'en', stream: true })
           });
-          const j = await r.json();
-          if (!r.ok) throw new Error((j && j.error) || 'follow-up failed');
-          addFollowBubble('bot', (j.answer || 'Done.'));
-          data = j.plan || data;
+          if (!r.ok) { let ej = {}; try { ej = await r.json(); } catch (e) {} throw new Error((ej && ej.error) || 'follow-up failed'); }
+          // NDJSON stream: first an 'answer' event (typing effect), then 'plan'.
+          const reader = r.body.getReader();
+          const dec = new TextDecoder();
+          let buf = '';
+          let newData = null;
+          let answer = '';
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let idx;
+            while ((idx = buf.indexOf('\n')) >= 0) {
+              const line = buf.slice(0, idx); buf = buf.slice(idx + 1);
+              if (!line.trim()) continue;
+              let ev = null;
+              try { ev = JSON.parse(line); } catch (e) { continue; }
+              if (ev.event === 'answer') {
+                answer = String(ev.text || '');
+                await type(bubble, answer);
+                if (ev.telemetry) logLine('m', 'follow-up · ' + telLine(ev.telemetry));
+              } else if (ev.event === 'plan' && ev.data) {
+                newData = ev.data;
+              } else if (ev.event === 'error') {
+                throw new Error(ev.error || 'follow-up failed');
+              }
+            }
+          }
+          if (!newData) throw new Error('no plan in follow-up response');
+          data = newData;
           renderPlan(data);
         } catch (e) {
-          addFollowBubble('bot', '⚠ ' + String((e && e.message) || 'follow-up failed'));
+          bubble.classList.remove('typing');
+          bubble.textContent = '⚠ ' + String((e && e.message) || 'follow-up failed');
         }
         followBtn.disabled = false; followBtn.textContent = 'Ask →';
       });
@@ -863,23 +1053,60 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
     }
 
     // ---- Competitor watch: list/add/remove keywords + trigger a check ----
-    function renderWatchList(items) {
+    function renderWatchList(items, last) {
       watchList.innerHTML = (items || []).map(function (q) {
         return '<div class="ag-watch-item"><span>' + esc(q) + '</span><button type="button" class="btn btn-mini" data-watch="' + esc(q) + '">✕</button></div>';
       }).join('') || '<span class="ag-hint">No keywords yet — add one above.</span>';
       Array.prototype.forEach.call(watchList.querySelectorAll('[data-watch]'), function (b) {
         b.addEventListener('click', function () { watchRemove(b.getAttribute('data-watch')); });
       });
+      // Show the most recent automated check (new competitors / rank moves).
+      const lastEl = document.createElement('div');
+      lastEl.className = 'ag-watch-note';
+      if (last && last.at) {
+        const when = new Date(last.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const found = (last.results || []).filter(function (r) { return (r.newCompetitors && r.newCompetitors.length) || (r.moves && r.moves.length); });
+        if (found.length) {
+          lastEl.innerHTML = '<b>Last check · ' + esc(when) + '</b><br>' + found.map(function (r) {
+            const bits = [];
+            if (r.newCompetitors && r.newCompetitors.length) bits.push('NEW: ' + r.newCompetitors.slice(0, 4).join(', '));
+            if (r.moves && r.moves.length) bits.push(r.moves.slice(0, 4).join(', '));
+            return '• ' + esc(r.query) + ': ' + esc(bits.join(' · '));
+          }).join('<br>');
+        } else {
+          lastEl.innerHTML = '<b>Last check · ' + esc(when) + '</b> — no new competitors, no rank moves across ' + ((last.results || []).length) + ' keyword(s).';
+        }
+      }
+      watchList.appendChild(lastEl);
     }
     async function watchLoad() {
       try {
         const r = await fetch('/api/watch', { cache: 'no-store' });
         const j = await r.json();
-        renderWatchList(j.queries);
+        renderWatchList(j.queries, j.last);
       } catch (e) {}
     }
+    // Write actions are guarded server-side by WATCH_ADMIN_TOKEN (when set).
+    // We keep the token in localStorage; if the API 401s, prompt once to store it.
+    function watchToken() {
+      try { return localStorage.getItem('hiveWatchToken') || ''; } catch (e) { return ''; }
+    }
+    async function watchWrite(body) {
+      let h = { 'Content-Type': 'application/json' };
+      const t = watchToken();
+      if (t) h['x-watch-token'] = t;
+      let r = await fetch('/api/watch', { method: 'POST', headers: h, body: JSON.stringify(body) });
+      if (r.status === 401) {
+        const tok = window.prompt('Enter the watch admin token to allow changes:');
+        if (!tok) throw new Error('authorization required');
+        try { localStorage.setItem('hiveWatchToken', tok); } catch (e) {}
+        h['x-watch-token'] = tok;
+        r = await fetch('/api/watch', { method: 'POST', headers: h, body: JSON.stringify(body) });
+      }
+      return r;
+    }
     async function watchRemove(q) {
-      await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', query: q }) });
+      try { await watchWrite({ action: 'remove', query: q }); } catch (e) { logLine('a', 'watch remove failed — ' + String((e && e.message) || '')); }
       watchLoad();
     }
     if (watchRunBtn) {
@@ -887,9 +1114,11 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         watchRunBtn.disabled = true; watchRunBtn.textContent = '⏳ checking…';
         logLine('t', '🔎 running competitor check — pings any new domain to Telegram');
         try {
-          const r = await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'run' }) });
+          const r = await watchWrite({ action: 'run' });
           const j = await r.json();
-          logLine(j && j.ok ? 't' : 'a', j && j.ok ? ('🔎 checked ' + (j.results || []).length + ' keyword(s)') : 'watch check failed');
+          logLine(j && j.ok ? 't' : 'a', j && j.ok ? ('🔎 checked ' + (j.results || []).length + ' keyword(s)') : ('watch check failed — ' + ((j && j.error) || '')));
+          renderWatchList((j.queries) || undefined, (j.last) || undefined);
+          watchLoad();
         } catch (e) {
           logLine('a', 'watch check failed — ' + String((e && e.message) || ''));
         }
@@ -901,8 +1130,13 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         const q = watchInput.value.trim();
         if (!q) return;
         watchInput.value = '';
-        await fetch('/api/watch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', query: q.slice(0, 120) }) });
-        logLine('t', '🔎 now watching "' + q.slice(0, 60) + '" — checks run each morning');
+        try {
+          const r = await watchWrite({ action: 'add', query: q.slice(0, 120) });
+          if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j && j.error) || 'add failed'); }
+          logLine('t', '🔎 now watching "' + q.slice(0, 60) + '" — checks run each morning');
+        } catch (e) {
+          logLine('a', 'watch add failed — ' + String((e && e.message) || ''));
+        }
         watchLoad();
       });
       watchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') watchAddBtn.click(); });

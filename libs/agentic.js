@@ -21,7 +21,7 @@ const LANGS = {
 };
 function langName(lang) { const x = LANGS[String(lang || 'en').slice(0, 2)]; return x ? x.name : 'English'; }
 
-const RL_MAX = 6, RL_WIN_SEC = 60;
+const RL_MAX = 20, RL_WIN_SEC = 60;
 const _mem = { hits: {}, last: 0 };
 function ipOf(req) { return String((req.headers['x-forwarded-for'] || '').split(',')[0] || req.headers['x-real-ip'] || 'unknown').slice(0, 40); }
 // KV-backed sliding-window rate limit (survives cold starts); in-memory fallback when KV is off.
@@ -459,7 +459,7 @@ async function handleFollow(req, res, key) {
   const question = String(b.question || '').slice(0, 600).trim();
   if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
   if (!runId || !question) return res.status(400).json({ error: 'runId and question are required' });
-  if (await isRateLimited(ipOf(req) + ':agentic-follow')) return res.status(429).json({ error: 'rate limited' });
+  if (await isRateLimited(ipOf(req) + ':' + runId + ':follow')) return res.status(429).json({ error: 'rate limited' });
   const raw = await kvGet('agentic:run:' + runId);
   if (!raw) return res.status(404).json({ error: 'run not found' });
   let plan = null;
@@ -467,17 +467,22 @@ async function handleFollow(req, res, key) {
   if (!plan) return res.status(404).json({ error: 'run not found' });
   const lang = langName(b.lang);
   const langInstr = (lang !== 'English') ? ' Write the reply prose and any updated field values in ' + lang + ' (keys/ids stay English).' : '';
-  const sysMsg = 'You are the ORCHESTRATOR of a multi-agent marketing system. The user is following up on an existing campaign plan. Read the plan JSON, answer their question, and REVISE the plan if the question asks for any change (budget, channels, KPI, timeline, summary, or agent outputs). Return ONLY JSON: {"answer":"<2-4 sentence reply to the user, referencing the plan>","plan":{<the full revised plan JSON — identical structure to the input, only fields that must change changed; if nothing changes, echo the input plan unchanged>}}.' + langInstr;
+  const sysMsg = 'You are the ORCHESTRATOR of a multi-agent marketing system. The user is following up on an existing campaign plan. Read the plan JSON, answer their question, and REVISE the plan if the question asks for any change (budget, channels, KPI, timeline, summary, or agent outputs). Be faithful to the existing plan: keep all unchanged fields exactly as they are. Return ONLY JSON: {"answer":"<2-4 sentence reply to the user, referencing the plan>","plan":{<the full revised plan JSON — identical structure to the input, only fields that must change changed; if nothing changes, echo the input plan unchanged>}}.' + langInstr;
   const userMsg = 'QUESTION: ' + question + '\n\nCURRENT PLAN (JSON):\n' + JSON.stringify(plan).slice(0, 16000);
+  const stream = !!(b.stream);
+  const t0 = Date.now();
+  if (stream) res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  const send = function (obj) { if (stream) res.write(JSON.stringify(obj) + '\n'); };
   try {
     const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_TIMEOUT);
     const r = await fetch(GROQ, {
       method: 'POST', signal: c.signal,
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, temperature: 0.5, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }] })
+      body: JSON.stringify({ model: MODEL, temperature: 0.3, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }] })
     });
     clearTimeout(t);
     const j = await r.json();
+    const tel = { calls: 1, prompt: (j.usage && j.usage.prompt_tokens) || 0, completion: (j.usage && j.usage.completion_tokens) || 0, ms: Date.now() - t0 };
     const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
     let o = null, out = null;
     try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
@@ -487,10 +492,18 @@ async function handleFollow(req, res, key) {
       // Persist the revised plan so share links + chat thread keep using it.
       try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
     }
-    if (!out) return res.status(502).json({ error: 'model returned no plan' });
-    return res.json({ answer: (o && o.answer) ? String(o.answer).slice(0, 800) : '', plan: out, runId: runId });
+    if (!out) { send({ event: 'error', error: 'model returned no plan' }); return stream ? res.end() : res.status(502).json({ error: 'model returned no plan' }); }
+    const answer = (o && o.answer) ? String(o.answer).slice(0, 800) : '';
+    if (stream) {
+      send({ event: 'answer', text: answer, telemetry: tel });
+      send({ event: 'plan', data: out });
+      res.end();
+    } else {
+      return res.json({ answer: answer, plan: out, runId: runId, telemetry: tel });
+    }
   } catch (e) {
-    return res.status(502).json({ error: String((e && e.message) || 'follow-up failed') });
+    if (stream) { send({ event: 'error', error: String((e && e.message) || 'follow-up failed') }); res.end(); }
+    else return res.status(502).json({ error: String((e && e.message) || 'follow-up failed') });
   }
 }
 
@@ -507,22 +520,28 @@ async function handleSection(req, res, key) {
   if (!runId || !field) return res.status(400).json({ error: 'runId and field are required' });
   if (!/^(budget|channels|kpis|timeline|summary)$/.test(field)) return res.status(400).json({ error: 'invalid field' });
   if (!value) return res.status(400).json({ error: 'value is required' });
+  if (await isRateLimited(ipOf(req) + ':' + runId + ':section')) return res.status(429).json({ error: 'rate limited' });
   const raw = await kvGet('agentic:run:' + runId);
   if (!raw) return res.status(404).json({ error: 'run not found' });
   let plan = null;
   try { plan = JSON.parse(raw).plan; } catch (e) {}
   if (!plan) return res.status(404).json({ error: 'run not found' });
   const lang = langName(b.lang);
-  const sysMsg = 'You are the ORCHESTRATOR editing one section of an existing campaign plan. The user changed the "' + field + '" section to: "' + value + '". Revise the plan and RETURN ONLY JSON: {"plan":{<full revised plan — same JSON structure; update the ' + field + ' section per the new value and, where it materially affects them, the agents outputs, summary and timeline>}}. Write user-facing prose in ' + lang + ' unless English is requested.';
+  const sysMsg = 'You are the ORCHESTRATOR editing one section of an existing campaign plan. The user changed the "' + field + '" section to: "' + value + '". Revise the plan and RETURN ONLY JSON: {"plan":{<full revised plan — same JSON structure; update the ' + field + ' section per the new value and, where it materially affects them, the agents outputs, summary and timeline>}}. Be faithful: keep every unchanged field byte-identical to the input. Write user-facing prose in ' + lang + ' unless English is requested.';
+  const t0 = Date.now();
+  const stream = !!(b.stream);
+  if (stream) res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  const send = function (obj) { if (stream) res.write(JSON.stringify(obj) + '\n'); };
   try {
     const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_TIMEOUT);
     const r = await fetch(GROQ, {
       method: 'POST', signal: c.signal,
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, temperature: 0.5, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: JSON.stringify(plan).slice(0, 16000) }] })
+      body: JSON.stringify({ model: MODEL, temperature: 0.3, max_tokens: 2200, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: JSON.stringify(plan).slice(0, 16000) }] })
     });
     clearTimeout(t);
     const j = await r.json();
+    const tel = { calls: 1, prompt: (j.usage && j.usage.prompt_tokens) || 0, completion: (j.usage && j.usage.completion_tokens) || 0, ms: Date.now() - t0 };
     const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
     let o = null, out = null;
     try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
@@ -530,18 +549,112 @@ async function handleSection(req, res, key) {
     if (!out) return res.status(502).json({ error: 'model returned no plan' });
     // The user's typed value is authoritative for the edited section — always
     // apply it, even if the model echoed the plan unchanged.
+    const before = {
+      channels: Array.isArray(plan.campaignPlan.channels) ? plan.campaignPlan.channels.slice() : [],
+      kpis: Array.isArray(plan.campaignPlan.kpis) ? plan.campaignPlan.kpis.slice() : [],
+      timeline: Array.isArray(plan.campaignPlan.timeline) ? plan.campaignPlan.timeline.slice() : [],
+      budget: plan.campaignPlan.budget ? plan.campaignPlan.budget.total : '',
+      summary: plan.summary || ''
+    };
     const cp = out.campaignPlan && typeof out.campaignPlan === 'object' ? out.campaignPlan : {};
     if (field === 'channels') cp.channels = value.split(/[,;\n]+/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
     if (field === 'kpis') cp.kpis = value.split(/\n+|;/).map(function (s) { return s.trim().replace(/^[-•*]\s*/, ''); }).filter(Boolean).slice(0, 8);
     if (field === 'timeline') cp.timeline = value.split(/\n+|;/).map(function (s) { return s.trim().replace(/^[-•*]\s*/, ''); }).filter(Boolean).slice(0, 10);
-    if (field === 'budget') cp.budget = { total: value.slice(0, 80), split: (cp.budget && cp.budget.split) || '' };
+    if (field === 'budget') cp.budget = splitBudget(value, (cp.budget && cp.budget.split) || '');
     if (field === 'summary') out.summary = value.slice(0, 600);
     out.campaignPlan = cp;
+    const after = {
+      channels: Array.isArray(cp.channels) ? cp.channels.slice() : [],
+      kpis: Array.isArray(cp.kpis) ? cp.kpis.slice() : [],
+      timeline: Array.isArray(cp.timeline) ? cp.timeline.slice() : [],
+      budget: cp.budget ? cp.budget.total : '',
+      summary: out.summary || ''
+    };
+    const diff = fieldLabels().filter(function (f) { return JSON.stringify(before[f]) !== JSON.stringify(after[f]); });
     try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
-    return res.json({ plan: out, field: field, runId: runId });
+    if (stream) {
+      send({ event: 'diff', fields: diff, telemetry: tel });
+      send({ event: 'plan', data: out });
+      res.end();
+      return;
+    }
+    return res.json({ plan: out, field: field, runId: runId, diff: diff, telemetry: tel });
   } catch (e) {
+    if (stream) { send({ event: 'error', error: String((e && e.message) || 'edit failed') }); res.end(); return; }
     return res.status(502).json({ error: String((e && e.message) || 'edit failed') });
   }
+}
+
+// "₹3,00,000" or "₹3L — 60/40" or "300000/200000" → { total, split }
+function splitBudget(value, fallbackSplit) {
+  const v = String(value || '').trim();
+  const dashMatch = v.match(/^(.*?)(?:\s*[-–—]\s*|\s+split[:]\s*)(.*)$/);
+  if (dashMatch) {
+    const total = dashMatch[1].trim().slice(0, 80);
+    const split = dashMatch[2].replace(/^[\s:]+/, '').slice(0, 80);
+    return { total: total, split: split };
+  }
+  const slash = v.split('/');
+  if (slash.length >= 2 && slash[0].trim() && slash[1].trim()) return { total: v.slice(0, 80), split: v.slice(0, 80) };
+  return { total: v.slice(0, 80), split: fallbackSplit || '' };
+}
+function fieldLabels() { return ['channels', 'kpis', 'timeline', 'budget', 'summary']; }
+
+// ---- Regenerate ONE agent: redo a single agent's thinking/action/output given
+// the rest of the plan's current state (and its real tool result, if executed).
+// POST /api/agentic/regenerate {runId, agentId} → {plan, agentId}
+async function handleRegenerate(req, res, key) {
+  let b = {};
+  try { b = req.body || {}; } catch (e) {}
+  const runId = String(b.runId || '').slice(0, 64);
+  const agentId = String(b.agentId || '').toLowerCase().slice(0, 40);
+  if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
+  if (!runId || !agentId) return res.status(400).json({ error: 'runId and agentId are required' });
+  if (await isRateLimited(ipOf(req) + ':' + runId + ':regenerate')) return res.status(429).json({ error: 'rate limited' });
+  const raw = await kvGet('agentic:run:' + runId);
+  if (!raw) return res.status(404).json({ error: 'run not found' });
+  let plan = null;
+  try { plan = JSON.parse(raw).plan; } catch (e) {}
+  if (!plan) return res.status(404).json({ error: 'run not found' });
+  const idx = (Array.isArray(plan.agents) ? plan.agents : []).findIndex(function (a) { return (a.id || '').toLowerCase() === agentId; });
+  if (idx < 0) return res.status(404).json({ error: 'agent not found in plan' });
+  const agent = plan.agents[idx];
+  const t0 = Date.now();
+  try {
+    const sysMsg = 'You are "' + (agent.name || agentId) + '" (the ' + (agent.role || 'agent') + ') in an autonomous marketing team. Regenerate ONLY your own thinking/action/output for the campaign, building on the CURRENT state of the other agents and the campaign plan. Stay faithful to your tool call; do not change your id, tools, persona, or other agents. Return ONLY JSON: {"thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences grounded in the plan and, if given, your REAL tool result>","live":"<4-8 words present continuous>"}.';
+    const userMsg = 'GOAL: ' + (plan.goal || '') + '\nYOU: ' + JSON.stringify({ id: agent.id, tools: agent.tools, call: agent.call, toolArgs: agent.toolArgs, exec: agent.exec }, null, 1) + '\nOTHER AGENTS + PLAN (JSON):\n' + JSON.stringify({ agents: (plan.agents || []).filter(function (a) { return (a.id || '').toLowerCase() !== agentId; }), campaignPlan: plan.campaignPlan, orchestrator: plan.orchestrator, summary: plan.summary }).slice(0, 16000);
+    const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_TIMEOUT);
+    const r = await fetch(GROQ, {
+      method: 'POST', signal: c.signal,
+      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, temperature: 0.4, max_tokens: 400, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysMsg }, { role: 'user', content: userMsg }] })
+    });
+    clearTimeout(t);
+    const j = await r.json();
+    const tel = { calls: 1, prompt: (j.usage && j.usage.prompt_tokens) || 0, completion: (j.usage && j.usage.completion_tokens) || 0, ms: Date.now() - t0 };
+    const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+    let o = null;
+    try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
+    if (!o || (!o.output && !o.thinking)) return res.status(502).json({ error: 'model returned nothing usable' });
+    const out = JSON.parse(JSON.stringify(plan));
+    const upd = out.agents[idx];
+    if (o.thinking) upd.thinking = String(o.thinking).slice(0, 300);
+    if (o.action) upd.action = String(o.action).slice(0, 300);
+    if (o.output) upd.output = String(o.output).slice(0, 400);
+    if (o.live) upd.live = String(o.live).slice(0, 120);
+    out.agents[idx] = upd;
+    try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
+    return res.json({ plan: out, agentId: agentId, telemetry: tel });
+  } catch (e) {
+    return res.status(502).json({ error: String((e && e.message) || 'regenerate failed') });
+  }
+}
+
+function pdfSafe(s) {
+  return String(s || '')
+    .replace(/\u20B9/g, 'Rs.')                 // ₹ → Rs. (Helvetica/WinAnsi can't render it)
+    .replace(/[^\x00-\xFF]/g, '')              // drop other non-Latin glyphs Helvetica lacks
+    .trim();
 }
 
 // ---- Plan → PDF export ----
@@ -567,25 +680,25 @@ async function handlePdf(req, res) {
     const cp = plan.campaignPlan || {};
     doc.fontSize(20).fillColor('#111').text('Hive Campaign Plan', { align: 'center' });
     doc.moveDown(0.6);
-    doc.fontSize(12).fillColor('#555').text('Goal: ' + (plan.goal || ''), { align: 'center' });
+    doc.fontSize(12).fillColor('#555').text('Goal: ' + pdfSafe(plan.goal || ''), { align: 'center' });
     doc.moveDown(1.2);
-    if (plan.orchestrator) { doc.fontSize(11).fillColor('#222').text(plan.orchestrator); doc.moveDown(0.8); }
+    if (plan.orchestrator) { doc.fontSize(11).fillColor('#222').text(pdfSafe(plan.orchestrator)); doc.moveDown(0.8); }
     doc.fontSize(13).fillColor('#444').text('The Agents'); doc.moveDown(0.3);
     (plan.agents || []).forEach(function (a) {
-      doc.fontSize(11).fillColor('#111').text('• ' + (a.name || 'Agent') + (a.role ? ' (' + a.role + ')' : ''));
-      doc.fontSize(10).fillColor('#444').text('  Thinking: ' + (a.thinking || ''));
-      doc.fontSize(10).fillColor('#444').text('  Action:   ' + (a.action || ''));
-      doc.fontSize(10).fillColor('#444').text('  Output:   ' + (a.output || ''));
-      doc.fontSize(10).fillColor('#666').text('  Tool:     ' + (a.call || '') + (a.result ? ' → ' + a.result : ''));
+      doc.fontSize(11).fillColor('#111').text('• ' + pdfSafe(a.name || 'Agent') + (a.role ? ' (' + pdfSafe(a.role) + ')' : ''));
+      doc.fontSize(10).fillColor('#444').text('  Thinking: ' + pdfSafe(a.thinking || ''));
+      doc.fontSize(10).fillColor('#444').text('  Action:   ' + pdfSafe(a.action || ''));
+      doc.fontSize(10).fillColor('#444').text('  Output:   ' + pdfSafe(a.output || ''));
+      doc.fontSize(10).fillColor('#666').text('  Tool:     ' + pdfSafe(a.call || '') + (a.result ? ' → ' + pdfSafe(a.result) : ''));
       doc.moveDown(0.4);
     });
     doc.fontSize(13).fillColor('#444').text('Campaign Plan'); doc.moveDown(0.3);
-    if (cp.channels) doc.fontSize(10).fillColor('#111').text('Channels: ' + cp.channels.join(', '));
-    if (cp.budget) doc.fontSize(10).fillColor('#111').text('Budget: ' + (cp.budget.total || '') + (cp.budget.split ? ' — ' + cp.budget.split : ''));
-    if (cp.kpis && cp.kpis.length) doc.fontSize(10).fillColor('#111').text('KPIs: ' + cp.kpis.join(' · '));
-    if (cp.timeline && cp.timeline.length) { doc.fontSize(10).fillColor('#111').text('Timeline:'); cp.timeline.forEach(function (t) { doc.fontSize(10).fillColor('#111').text('      • ' + t); }); }
-    if (plan.summary) { doc.moveDown(0.6); doc.fontSize(10.5).fillColor('#333').text('Summary: ' + plan.summary); }
-    if (plan.telemetry) { doc.moveDown(0.8); doc.fontSize(9).fillColor('#999').text('Telemetry: ' + JSON.stringify(plan.telemetry)); }
+    if (cp.channels) doc.fontSize(10).fillColor('#111').text('Channels: ' + pdfSafe(cp.channels.join(', ')));
+    if (cp.budget) doc.fontSize(10).fillColor('#111').text('Budget: ' + pdfSafe(cp.budget.total || '') + (cp.budget.split ? ' — ' + pdfSafe(cp.budget.split) : ''));
+    if (cp.kpis && cp.kpis.length) doc.fontSize(10).fillColor('#111').text('KPIs: ' + pdfSafe(cp.kpis.join(' · ')));
+    if (cp.timeline && cp.timeline.length) { doc.fontSize(10).fillColor('#111').text('Timeline:'); cp.timeline.forEach(function (t) { doc.fontSize(10).fillColor('#111').text('      • ' + pdfSafe(t)); }); }
+    if (plan.summary) { doc.moveDown(0.6); doc.fontSize(10.5).fillColor('#333').text('Summary: ' + pdfSafe(plan.summary)); }
+    if (plan.telemetry) { doc.moveDown(0.8); doc.fontSize(9).fillColor('#999').text('Telemetry: ' + pdfSafe(JSON.stringify(plan.telemetry))); }
     doc.end();
   } catch (e) {
     if (process.env.AGENTIC_PDF_DEBUG) console.error('hive-pdf:', e && (e.stack || e.message));
@@ -616,6 +729,9 @@ module.exports = async function handler(req, res) {
   }
   if (sub === 'pdf' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'pdf')) {
     return handlePdf(req, res);
+  }
+  if (sub === 'regenerate' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'regenerate')) {
+    return handleRegenerate(req, res, String(process.env.GROQ_API_KEY || '').trim());
   }
 
   // Replay a past run (share link): GET /api/agentic?run=<id>

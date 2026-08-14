@@ -247,3 +247,175 @@ test('follow/section never wipe campaignPlan even if the model drops it', async 
   assert.ok(afterEdit.plan.campaignPlan.budget && afterEdit.plan.campaignPlan.budget.total, 'budget still survives section edit');
   global.fetch = realFetch2;
 });
+
+test('budget edit preserves the split and surfaces a diff', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  const realFetch3 = global.fetch;
+  kvStore['agentic:run:budgettest'] = JSON.stringify({
+    at: Date.now(),
+    plan: {
+      goal: 'D2C launch',
+      orchestrator: 'Research sizes.',
+      agents: [{ id: 'research', name: 'Research Agent' }],
+      campaignPlan: { channels: ['Meta Ads'], budget: { total: '₹100,000', split: '40/30' }, kpis: ['ROAS'], timeline: ['Week 1'] },
+      summary: 'ready'
+    }
+  });
+  global.fetch = async (url, opts) => {
+    const u = String(url);
+    const body = JSON.parse(opts.body || '[]');
+    if (u.includes('/pipeline')) {
+      const out = [];
+      for (const cmd of Array.isArray(body) ? body : []) {
+        if (cmd[0] === 'GET') out.push([kvStore[cmd[1]] != null ? kvStore[cmd[1]] : null]);
+        else if (cmd[0] === 'SET') { kvStore[cmd[1]] = cmd[2]; out.push(['OK']); }
+        else out.push(['OK']);
+      }
+      return { ok: true, json: async () => out };
+    }
+    if (u.includes('/get/')) { const k = decodeURIComponent(u.split('/get/')[1] || ''); return { ok: true, json: async () => (kvStore[k] != null ? { result: kvStore[k] } : {}) }; }
+    if (u.includes('kv.example.com')) { return { ok: true, json: async () => ({ ok: true }) }; }
+    if (u.includes('api.groq.com')) {
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ plan: { goal: 'x', agents: [] } }) } }] }) };
+    }
+    return { json: async () => ({}) };
+  };
+  const handler = require('../libs/agentic.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/?sub=section', headers: {}, body: { runId: 'budgettest', field: 'budget', value: '₹300,000 — 60/40', lang: 'en', stream: true } }, res);
+  const evs = parseStreamEvents(res.lines);
+  const diffEv = evs.find((e) => e.event === 'diff');
+  const planEv = evs.find((e) => e.event === 'plan');
+  assert.ok(planEv && planEv.data.campaignPlan.budget.total === '₹300,000', 'new total must be applied');
+  assert.ok(planEv.data.campaignPlan.budget.split === '60/40', 'split must parse from "₹300,000 — 60/40"');
+  assert.ok(diffEv && diffEv.fields.indexOf('budget') >= 0, 'diff event must include budget');
+  // A bare total without a split keeps the previous split.
+  const res2 = mockRes();
+  await handler({ method: 'POST', url: '/?sub=section', headers: {}, body: { runId: 'budgettest', field: 'budget', value: '₹250,000', lang: 'en' } }, res2);
+  const j2 = parseStreamEvents(res2.lines).find((e) => e.event === 'plan');
+  const plan2 = j2 ? j2.data : JSON.parse(res2.lines[0]).plan;
+  assert.equal(plan2.campaignPlan.budget.total, '₹250,000');
+  assert.equal(plan2.campaignPlan.budget.split, '60/40', 'a bare total must preserve the existing split');
+  global.fetch = realFetch3;
+});
+
+test('regenerate updates only the target agent and persists the revision', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  const realFetch4 = global.fetch;
+  kvStore['agentic:run:regen'] = JSON.stringify({
+    at: Date.now(),
+    plan: {
+      goal: 'D2C launch',
+      orchestrator: 'Research sizes.',
+      agents: [
+        { id: 'research', name: 'Research Agent', thinking: 'old', action: 'old', output: 'old', live: 'old', call: 'serp.search', toolArgs: { q: 'skincare india' }, result: 'snippets', exec: { ok: true, ms: 12 } },
+        { id: 'strategy', name: 'Strategy Agent', thinking: 'keep me', action: 'keep', output: 'untouched', live: 'keep', call: 'planner.allocate', exec: { ok: true, ms: 9 } }
+      ],
+      campaignPlan: { channels: ['Meta Ads'], budget: { total: '₹100k' }, kpis: ['ROAS'], timeline: ['Week 1'] },
+      summary: 'ready'
+    }
+  });
+  global.fetch = async (url, opts) => {
+    const u = String(url);
+    const body = JSON.parse(opts.body || '[]');
+    if (u.includes('/pipeline')) {
+      const out = [];
+      for (const cmd of Array.isArray(body) ? body : []) {
+        if (cmd[0] === 'GET') out.push([kvStore[cmd[1]] != null ? kvStore[cmd[1]] : null]);
+        else if (cmd[0] === 'SET') { kvStore[cmd[1]] = cmd[2]; out.push(['OK']); }
+        else out.push(['OK']);
+      }
+      return { ok: true, json: async () => out };
+    }
+    if (u.includes('/get/')) { const k = decodeURIComponent(u.split('/get/')[1] || ''); return { ok: true, json: async () => (kvStore[k] != null ? { result: kvStore[k] } : {}) }; }
+    if (u.includes('kv.example.com')) { return { ok: true, json: async () => ({ ok: true }) }; }
+    if (u.includes('api.groq.com')) {
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ thinking: 'fresh', action: 'do', output: 'new line', live: 'working now' }) } }] }) };
+    }
+    return { json: async () => ({}) };
+  };
+  const handler = require('../libs/agentic.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/?sub=regenerate', headers: {}, body: { runId: 'regen', agentId: 'research' } }, res);
+  const out = JSON.parse(res.lines[0]);
+  assert.ok(out.plan, 'regenerate should return the revised plan');
+  const research = out.plan.agents.find((a) => a.id === 'research');
+  const strategy = out.plan.agents.find((a) => a.id === 'strategy');
+  assert.equal(research.thinking, 'fresh', 'target agent thinking should be regenerated');
+  assert.equal(research.output, 'new line', 'target agent output should be regenerated');
+  assert.equal(strategy.output, 'untouched', 'other agents must stay untouched');
+  assert.ok(strategy.thinking === 'keep me', 'other agents thinking untouched');
+  const stored = JSON.parse(kvStore['agentic:run:regen']);
+  assert.equal(stored.plan.agents.find((a) => a.id === 'research').output, 'new line', 'revision should persist to KV');
+  global.fetch = realFetch4;
+});
+
+test('follow streams an answer event then a plan event', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  const realFetch5 = global.fetch;
+  kvStore['agentic:run:streamfol'] = JSON.stringify({ at: Date.now(), plan: { goal: 'D2C', orchestrator: 'o', agents: [{ id: 'research', name: 'Research Agent' }], campaignPlan: { channels: ['Meta Ads'], budget: { total: '₹100k' }, kpis: ['ROAS'], timeline: ['Week 1'] }, summary: 's' } });
+  global.fetch = async (url, opts) => {
+    const u = String(url);
+    const body = JSON.parse(opts.body || '[]');
+    if (u.includes('/pipeline')) {
+      const out = [];
+      for (const cmd of Array.isArray(body) ? body : []) {
+        if (cmd[0] === 'GET') out.push([kvStore[cmd[1]] != null ? kvStore[cmd[1]] : null]);
+        else if (cmd[0] === 'SET') { kvStore[cmd[1]] = cmd[2]; out.push(['OK']); }
+        else out.push(['OK']);
+      }
+      return { ok: true, json: async () => out };
+    }
+    if (u.includes('/get/')) { const k = decodeURIComponent(u.split('/get/')[1] || ''); return { ok: true, json: async () => (kvStore[k] != null ? { result: kvStore[k] } : {}) }; }
+    if (u.includes('kv.example.com')) { return { ok: true, json: async () => ({ ok: true }) }; }
+    if (u.includes('api.groq.com')) {
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ answer: 'Here are 3 headlines.', plan: { goal: 'D2C', orchestrator: 'o', agents: [{ id: 'research', name: 'Research Agent' }], campaignPlan: { channels: ['Meta Ads', 'TikTok'], budget: { total: '₹100k' }, kpis: ['ROAS'], timeline: ['Week 1'] }, summary: 's' } }) } }], usage: { prompt_tokens: 5, completion_tokens: 6 } }) };
+    }
+    return { json: async () => ({}) };
+  };
+  const handler = require('../libs/agentic.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/?sub=follow', headers: {}, body: { runId: 'streamfol', question: 'give me 3 ad headlines', lang: 'en', stream: true } }, res);
+  const evs = parseStreamEvents(res.lines);
+  const ansEv = evs.find((e) => e.event === 'answer');
+  const planEv = evs.find((e) => e.event === 'plan');
+  assert.ok(ansEv && ansEv.text.indexOf('3 headlines') >= 0, 'answer event should carry the reply text');
+  assert.ok(ansEv.telemetry && ansEv.telemetry.calls === 1, 'follow answer should include telemetry');
+  assert.ok(planEv && Array.isArray(planEv.data.campaignPlan.channels) && planEv.data.campaignPlan.channels.indexOf('TikTok') >= 0, 'revised plan should stream after the answer');
+  global.fetch = realFetch5;
+});
+
+// Verify the section edit handler no longer wipes the split and that the old
+// "prompt → section (JSON)" path still returns diff+telemetry.
+test('section JSON path returns diff + telemetry, budget split survives', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  const realFetch6 = global.fetch;
+  kvStore['agentic:run:jsonsect'] = JSON.stringify({ at: Date.now(), plan: { goal: 'D2C', orchestrator: 'o', agents: [{ id: 'research', name: 'Research Agent' }], campaignPlan: { channels: ['Meta Ads'], budget: { total: '₹50k', split: '30/30' }, kpis: ['ROAS'], timeline: ['Week 1'] }, summary: 's' } });
+  global.fetch = async (url, opts) => {
+    const u = String(url);
+    const body = JSON.parse(opts.body || '[]');
+    if (u.includes('/pipeline')) {
+      const out = [];
+      for (const cmd of Array.isArray(body) ? body : []) {
+        if (cmd[0] === 'GET') out.push([kvStore[cmd[1]] != null ? kvStore[cmd[1]] : null]);
+        else if (cmd[0] === 'SET') { kvStore[cmd[1]] = cmd[2]; out.push(['OK']); }
+        else out.push(['OK']);
+      }
+      return { ok: true, json: async () => out };
+    }
+    if (u.includes('/get/')) { const k = decodeURIComponent(u.split('/get/')[1] || ''); return { ok: true, json: async () => (kvStore[k] != null ? { result: kvStore[k] } : {}) }; }
+    if (u.includes('kv.example.com')) { return { ok: true, json: async () => ({ ok: true }) }; }
+    if (u.includes('api.groq.com')) { return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ plan: {} }) } }] }) }; }
+    return { json: async () => ({}) };
+  };
+  const handler = require('../libs/agentic.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/?sub=section', headers: {}, body: { runId: 'jsonsect', field: 'kpis', value: 'ROAS\nCPA', lang: 'en' } }, res);
+  const j = JSON.parse(res.lines[0]);
+  assert.deepEqual(j.diff, ['kpis'], 'JSON path should return which fields changed');
+  assert.ok(j.telemetry && j.telemetry.calls === 1, 'JSON path should meter LLM usage');
+  assert.ok(j.plan.campaignPlan.budget.split === '30/30', 'split should survive a KPI edit');
+  global.fetch = realFetch6;
+});
