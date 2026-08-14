@@ -237,5 +237,13 @@ test('follow/section never wipe campaignPlan even if the model drops it', async 
   assert.ok(Array.isArray(cp.timeline) && cp.timeline.length, 'timeline must survive');
   const strat = stored.plan.agents.find((a) => a.id === 'strategy');
   assert.ok(strat && strat.exec && strat.exec.ok, 'tool exec proof must survive');
+
+  // Section edits are authoritative: the typed value must ALWAYS apply, even if
+  // the model echoes the plan unchanged (the model reply above does just that).
+  kvStore['agentic:run:mergetest'] = JSON.stringify({ at: Date.now(), plan: JSON.parse(kvStore['agentic:run:mergetest']).plan });
+  await handler({ method: 'POST', url: '/?sub=section', headers: {}, body: { runId: 'mergetest', field: 'channels', value: 'Meta, TikTok, Pinterest', lang: 'en' } }, mockRes());
+  const afterEdit = JSON.parse(kvStore['agentic:run:mergetest']);
+  assert.deepEqual(afterEdit.plan.campaignPlan.channels, ['Meta', 'TikTok', 'Pinterest'], 'typed channels must apply over the echoed plan');
+  assert.ok(afterEdit.plan.campaignPlan.budget && afterEdit.plan.campaignPlan.budget.total, 'budget still survives section edit');
   global.fetch = realFetch2;
 });

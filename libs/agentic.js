@@ -528,6 +528,15 @@ async function handleSection(req, res, key) {
     try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
     if (o) { out = safePlan(o.plan) ? mergePlan(plan, o.plan) : plan; }
     if (!out) return res.status(502).json({ error: 'model returned no plan' });
+    // The user's typed value is authoritative for the edited section — always
+    // apply it, even if the model echoed the plan unchanged.
+    const cp = out.campaignPlan && typeof out.campaignPlan === 'object' ? out.campaignPlan : {};
+    if (field === 'channels') cp.channels = value.split(/[,;\n]+/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
+    if (field === 'kpis') cp.kpis = value.split(/\n+|;/).map(function (s) { return s.trim().replace(/^[-•*]\s*/, ''); }).filter(Boolean).slice(0, 8);
+    if (field === 'timeline') cp.timeline = value.split(/\n+|;/).map(function (s) { return s.trim().replace(/^[-•*]\s*/, ''); }).filter(Boolean).slice(0, 10);
+    if (field === 'budget') cp.budget = { total: value.slice(0, 80), split: (cp.budget && cp.budget.split) || '' };
+    if (field === 'summary') out.summary = value.slice(0, 600);
+    out.campaignPlan = cp;
     try { await kv([['SET', 'agentic:run:' + runId, JSON.stringify({ at: Date.now(), plan: out })], ['EXPIRE', 'agentic:run:' + runId, 604800]]); } catch (e) {}
     return res.json({ plan: out, field: field, runId: runId });
   } catch (e) {
