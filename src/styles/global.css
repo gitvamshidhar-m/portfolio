@@ -1049,3 +1049,6 @@ mark.ag-changed{background:color-mix(in srgb,var(--accent2) 28%,transparent);col
 .btn-mini{background:var(--card2);border:1px solid var(--line);cursor:pointer;color:var(--txt)}
 #langSel{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font:inherit;font-size:13px;cursor:pointer;max-width:170px}
 #langSel:focus{outline:none;border-color:var(--accent)}
+#themeToggle{background:transparent;border:1px solid var(--line);color:var(--muted);cursor:pointer;padding:6px 10px;border-radius:8px;font-size:14px}
+#themeToggle:hover{color:var(--accent2)}
+html.dark{--bg2:#1a1a24;--card:#1e1e2a;--line:#4a4a5a;--muted:#8888a0}
