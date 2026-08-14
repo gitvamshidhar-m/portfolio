@@ -17,6 +17,17 @@ before(() => {
   process.env.KV_REST_API_TOKEN = 'test';
   global.fetch = async (url, opts) => {
     const u = String(url);
+    if (u.includes('/pipeline')) {
+      const body = JSON.parse((opts && opts.body) || '[]');
+      const out = [];
+      for (const cmd of Array.isArray(body) ? body : []) {
+        if (cmd[0] === 'GET') out.push([kvStore[cmd[1]] != null ? kvStore[cmd[1]] : null]);
+        else if (cmd[0] === 'SET') { kvStore[cmd[1]] = cmd[2]; out.push(['OK']); }
+        else if (cmd[0] === 'INCR') out.push([[1]]);
+        else out.push(['OK']);
+      }
+      return json(out);
+    }
     if (u.includes('/get/')) {
       const k = decodeURIComponent(u.split('/get/')[1] || '');
       return json(kvStore[k] != null ? { result: kvStore[k] } : {});

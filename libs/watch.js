@@ -7,22 +7,22 @@ const TG_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const TG_CHAT = (process.env.TELEGRAM_CHAT_ID || '').trim();
 const { serp } = require('./tools/serp');
 
-function kvCmd(action, key) {
+function kvPipe(cmds) {
   if (!KV_URL || !KV_TOKEN) return Promise.resolve(null);
-  const base = String(KV_URL).replace(/\/$/, '');
-  const url = (Array.isArray(key) ? key : [key]).map(encodeURIComponent).join('/');
-  return fetch(base + '/' + action + '/' + url, {
+  return fetch(String(KV_URL).replace(/\/$/, '') + '/pipeline', {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + KV_TOKEN }
+    headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmds)
   }).then(function (r) { return r.json(); }).catch(function () { return null; });
 }
-function kvGet(key) { return kvCmd('get', key).then(function (j) { return (j && j.result != null) ? j.result : null; }); }
+function kvGet(key) {
+  if (!KV_URL || !KV_TOKEN) return Promise.resolve(null);
+  return fetch(String(KV_URL).replace(/\/$/, '') + '/get/' + encodeURIComponent(key), {
+    method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN }
+  }).then(function (r) { return r.json(); }).then(function (j) { return (j && j.result != null) ? j.result : null; }).catch(function () { return null; });
+}
 function kvSet(key, val, ttlSec) {
-  const base = String(KV_URL).replace(/\/$/, '');
-  const url = base + '/set/' + encodeURIComponent(key) + '?value=' + encodeURIComponent(String(val));
-  return fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN } })
-    .then(function () { return fetch(base + '/expire/' + encodeURIComponent(key) + '/' + (ttlSec || 86400), { method: 'POST', headers: { Authorization: 'Bearer ' + KV_TOKEN } }); })
-    .catch(function () {});
+  return kvPipe([['SET', key, String(val)], ['EXPIRE', key, ttlSec || 86400]]);
 }
 async function getQueries() {
   const v = await kvGet('watch:queries');
