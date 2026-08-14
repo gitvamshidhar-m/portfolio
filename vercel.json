@@ -1,4 +1,8 @@
 {
+  "rewrites": [
+    { "source": "/api/agentic/stt", "destination": "/api/agentic?sub=stt" },
+    { "source": "/api/agentic/tts", "destination": "/api/agentic?sub=tts" }
+  ],
   "redirects": [
     {
       "source": "/(.*\\.html)/",

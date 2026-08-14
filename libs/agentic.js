@@ -378,10 +378,16 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const url2 = new URL(req.url || '/', 'http://localhost');
 
-  // Sub-routes: /api/agentic/stt and /api/agentic/tts (voice in/out)
-  const seg = url2.pathname.split('/').filter(Boolean);
-  if (seg[seg.length - 1] === 'stt') return handleStt(req, res, String(process.env.GROQ_API_KEY || '').trim());
-  if (seg[seg.length - 1] === 'tts') return handleTts(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  // Sub-routes: /api/agentic/stt and /api/agentic/tts (voice in/out).
+  // Vercel filesystem functions only match single-segment paths, so vercel.json
+  // rewrites collapse /api/agentic/{stt,tts} into /api/agentic?sub=...
+  const sub = url2.searchParams.get('sub');
+  if (sub === 'stt' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'stt')) {
+    return handleStt(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  }
+  if (sub === 'tts' || (sub === null && url2.pathname.split('/').filter(Boolean).pop() === 'tts')) {
+    return handleTts(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  }
 
   // Replay a past run (share link): GET /api/agentic?run=<id>
   if (req.method === 'GET' && url2.searchParams.get('run')) {
