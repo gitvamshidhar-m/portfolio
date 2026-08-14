@@ -1,4 +1,9 @@
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_STT = 'https://api.groq.com/openai/v1/audio/transcriptions';
+const GROQ_TTS = 'https://api.groq.com/openai/v1/audio/speech';
+const STT_MODEL = process.env.GROQ_STT_MODEL || 'whisper-large-v3-turbo';
+const TTS_MODEL = process.env.GROQ_TTS_MODEL || 'canopylabs/orpheus-v1-english';
+const TTS_VOICE = process.env.GROQ_TTS_VOICE || 'austin';
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
@@ -306,9 +311,77 @@ function safePlan(obj) {
   return obj;
 }
 
+// ---- Voice (multimodal): speech-to-text input + text-to-speech output ----
+const GROQ_AUDIO_TIMEOUT = 20000;
+function audioB64(body) { return String((body && body.audio) || '').slice(0, 3000000); }
+
+// Speech-to-text: the page records the mic, sends base64 audio, and we transcribe via Groq Whisper.
+async function handleStt(req, res, key) {
+  let b = {};
+  try { b = req.body || {}; } catch (e) {}
+  const b64 = audioB64(b);
+  if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
+  if (!b64) return res.status(400).json({ error: 'audio is required' });
+  if (await isRateLimited(ipOf(req) + ':agentic-stt')) return res.status(429).json({ error: 'rate limited' });
+  let buf;
+  try { buf = Buffer.from(b64, 'base64'); } catch (e) { return res.status(400).json({ error: 'bad base64' }); }
+  if (!buf || buf.length < 200) return res.status(400).json({ error: 'audio too small' });
+  try {
+    const mime = String(b.mime || 'audio/webm').slice(0, 60);
+    const ext = (mime.indexOf('mp4') >= 0 || mime.indexOf('m4a') >= 0) ? 'm4a' : (mime.indexOf('ogg') >= 0 ? 'ogg' : 'webm');
+    const fd = new FormData();
+    fd.append('model', STT_MODEL);
+    fd.append('file', new Blob([buf], { type: mime }), 'hive-voice.' + ext);
+    if (b.lang) fd.append('language', String(b.lang).slice(0, 8));
+    const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_AUDIO_TIMEOUT);
+    let r;
+    try {
+      r = await fetch(GROQ_STT, { method: 'POST', signal: c.signal, headers: { Authorization: 'Bearer ' + key }, body: fd });
+    } finally { clearTimeout(t); }
+    const j = await r.json();
+    const text = (j && j.text) ? String(j.text).trim() : '';
+    if (!r.ok || !text) return res.status(502).json({ error: (j && j.error && j.error.message) || 'transcription failed' });
+    return res.json({ text: text.slice(0, 600) });
+  } catch (e) {
+    return res.status(502).json({ error: String((e && e.message) || 'transcription failed') });
+  }
+}
+
+// Text-to-speech: turns the plan summary into an mp3 the page plays back.
+async function handleTts(req, res, key) {
+  let b = {};
+  try { b = req.body || {}; } catch (e) {}
+  const text = String(b.text || '').slice(0, 1200).trim();
+  if (!key) return res.status(400).json({ error: 'GROQ_API_KEY not set' });
+  if (!text) return res.status(400).json({ error: 'text is required' });
+  if (await isRateLimited(ipOf(req) + ':agentic-tts')) return res.status(429).json({ error: 'rate limited' });
+  try {
+    const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, GROQ_AUDIO_TIMEOUT);
+    let r;
+    try {
+      r = await fetch(GROQ_TTS, { method: 'POST', signal: c.signal, headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: TTS_MODEL, input: text, voice: String(b.voice || TTS_VOICE).slice(0, 40), response_format: 'mp3' }) });
+    } finally { clearTimeout(t); }
+    if (!r.ok) {
+      const t2 = await r.text().catch(function () { return ''; });
+      return res.status(502).json({ error: 'tts failed: ' + t2.slice(0, 120) });
+    }
+    const ab = await r.arrayBuffer();
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(Buffer.from(ab));
+  } catch (e) {
+    return res.status(502).json({ error: String((e && e.message) || 'tts failed') });
+  }
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const url2 = new URL(req.url || '/', 'http://localhost');
+
+  // Sub-routes: /api/agentic/stt and /api/agentic/tts (voice in/out)
+  const seg = url2.pathname.split('/').filter(Boolean);
+  if (seg[seg.length - 1] === 'stt') return handleStt(req, res, String(process.env.GROQ_API_KEY || '').trim());
+  if (seg[seg.length - 1] === 'tts') return handleTts(req, res, String(process.env.GROQ_API_KEY || '').trim());
 
   // Replay a past run (share link): GET /api/agentic?run=<id>
   if (req.method === 'GET' && url2.searchParams.get('run')) {

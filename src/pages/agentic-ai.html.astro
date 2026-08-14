@@ -103,6 +103,7 @@ const body = `<section class="lpage-wrap">
         </div>
         <div class="ag-runrow">
           <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Hive</button>
+          <button id="voiceBtn" class="btn" type="button" aria-label="Speak your goal into the mic" title="Speak your goal — it will be transcribed and run">🎤 Speak</button>
           <span id="agMode" class="ag-mode" hidden></span>
           <span id="agSerp" class="ag-mode serp" hidden></span>
           <span class="ag-hint">Try: “Sell 500 units of a D2C skincare brand in 60 days” or “Book 30 consultations for a local dental clinic”.</span>
@@ -241,10 +242,10 @@ const body = `<section class="lpage-wrap">
       };
     }
 
-    const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budget = $('budgetInput');
-    const compareChk = $('compareChk');
+const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budget = $('budgetInput');
     const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), plan = $('agPlan'), modeEl = $('agMode'), serpEl = $('agSerp');
     const serpToggle = $('serpToggle'), serpBody = $('serpBody'), serpPaste = $('serpPaste'), serpHint = $('serpHint');
+    const voiceBtn = $('voiceBtn');
     let tel = null; // last run telemetry: token/cost/latency ledger
     let data = null; // last full plan payload (shared with the compare toggle)
     let cmpVar = false; // compare-mode toggle state
@@ -342,6 +343,69 @@ const body = `<section class="lpage-wrap">
       log.scrollTop = log.scrollHeight;
     }
 
+    // ---- Voice input: record the mic, transcribe via /api/agentic/stt, then auto-run ----
+    let rec = null, recChunks = [], recStream = null;
+    function vLabel(on) { return on ? '⏺ Recording… tap to stop' : '🎤 Speak'; }
+    async function vStart() {
+      if (rec && rec.state === 'recording') { vStop(); return; }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { logLine('a', 'mic needs HTTPS or a supported browser'); return; }
+      try {
+        recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mime = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : 'audio/webm';
+        rec = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+        recChunks = [];
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) recChunks.push(e.data); };
+        rec.onstop = vSend;
+        rec.start();
+        voiceBtn.textContent = vLabel(true);
+        voiceBtn.classList.add('rec');
+        setTimeout(function () { if (rec && rec.state === 'recording') vStop(); }, 20000);
+      } catch (e) {
+        voiceBtn.textContent = vLabel(false);
+        logLine('a', 'mic unavailable — check permission');
+      }
+    }
+    function vStop() {
+      try { if (rec && rec.state !== 'inactive') rec.stop(); } catch (e) {}
+      if (recStream) recStream.getTracks().forEach(function (t) { t.stop(); });
+      recStream = null;
+    }
+    async function vSend() {
+      voiceBtn.textContent = '⏳ Transcribing…';
+      const type = rec ? (rec.mimeType || 'audio/webm') : 'audio/webm';
+      const blob = new Blob(recChunks, { type: type });
+      recChunks = [];
+      if (blob.size < 1000) {
+        voiceBtn.textContent = vLabel(false);
+        voiceBtn.classList.remove('rec');
+        logLine('a', 'nothing heard — try again');
+        return;
+      }
+      try {
+        const b64 = await new Promise(function (resolve, reject) {
+          const fr = new FileReader();
+          fr.onload = function () { resolve(String(fr.result).split(',')[1] || ''); };
+          fr.onerror = reject;
+          fr.readAsDataURL(blob);
+        });
+        const r = await fetch('/api/agentic/stt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audio: b64, mime: type, lang: 'en' })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error((j && j.error) || 'transcription failed');
+        goal.value = String(j.text || '').trim();
+        logLine('t', '🎤 heard: "' + goal.value.slice(0, 100) + '"' + (goal.value.length > 100 ? '…' : ''));
+        if (goal.value) run();
+      } catch (e) {
+        logLine('a', 'transcription failed — type the goal instead');
+      }
+      voiceBtn.textContent = vLabel(false);
+      voiceBtn.classList.remove('rec');
+    }
+    if (voiceBtn) voiceBtn.addEventListener('click', vStart);
+
     function reset() {
       cmpVar = false;
       agents.innerHTML = '';
@@ -408,7 +472,7 @@ const body = `<section class="lpage-wrap">
         const res = await fetch('/api/agentic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined, compare: !!compareChk, stream: true })
+          body: JSON.stringify({ goal: g, niche: niche.value.trim(), budget: budget.value.trim(), serpResults: pastedResults.length ? pastedResults : undefined, compare: true, stream: true })
         });
         if (!res.ok) throw new Error('bad');
         // NDJSON stream: tool events arrive live, final 'plan' event has the full result.
@@ -592,7 +656,7 @@ const body = `<section class="lpage-wrap">
         ? '<div class="ag-note">Running on the built-in rule-based planner — connect a Groq + search key for live LLM grounding.</div>'
         : '';
       plan.innerHTML =
-        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn + '<button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
+        '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn + '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
           '<div class="blk"><b>Budget</b>' + budgetTxt + '</div>' +
@@ -608,6 +672,32 @@ const body = `<section class="lpage-wrap">
         cmpBtn_.addEventListener('click', function () {
           cmpVar = !cmpVar;
           renderPlan(cmpVar ? (d.fallback || d) : data);
+        });
+      }
+      const ttsBtn = document.getElementById('agTtsBtn');
+      if (ttsBtn) {
+        ttsBtn.addEventListener('click', async function () {
+          const txt = (d.summary || planToText(d)).slice(0, 1200);
+          if (!txt.trim()) return;
+          try {
+            ttsBtn.disabled = true;
+            ttsBtn.textContent = '⏳ Speaking…';
+            const r = await fetch('/api/agentic/tts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: txt })
+            });
+            if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j && j.error) || 'tts failed'); }
+            const url = URL.createObjectURL(await r.blob());
+            const au = new Audio(url);
+            au.onended = () => { URL.revokeObjectURL(url); ttsBtn.disabled = false; ttsBtn.textContent = '🔊 Hear plan'; };
+            au.play();
+            ttsBtn.textContent = '🔈 Playing…';
+          } catch (e) {
+            ttsBtn.disabled = false;
+            ttsBtn.textContent = '🔊 Hear plan';
+            logLine('a', 'voice playback unavailable right now');
+          }
         });
       }
       const copyBtn = document.getElementById('agCopyBtn');

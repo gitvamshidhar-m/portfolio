@@ -871,6 +871,9 @@ body.bs-open{overflow:hidden}
 .ag-row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
 .ag-row>*{flex:1 1 200px}
 .ag-runrow{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}
+#voiceBtn{transition:color .2s,background .2s,border-color .2s}
+#voiceBtn.rec{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:color-mix(in srgb,var(--accent) 70%,var(--line));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent);animation:ag-pulse 1.2s infinite}
+@keyframes ag-pulse{0%,100%{opacity:1}50%{opacity:.72}}
 .ag-hint{font-size:12.5px;color:var(--muted)}
 .ag-adv{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
 .ag-adv-toggle{background:none;border:0;color:var(--accent2);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 0}
