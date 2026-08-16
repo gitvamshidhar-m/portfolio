@@ -49,8 +49,5 @@
         { "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }
       ]
     }
-  ],
-  "crons": [
-    { "path": "/api/grapevine?cron=1", "schedule": "0 8 * * *", "method": "GET" }
   ]
 }
