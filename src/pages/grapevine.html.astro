@@ -279,6 +279,13 @@ const body = `<section class="lpage-wrap">
       const tr = d.trend || null;
       const hist = d.history || [];
       const spark = sparkline(hist);
+      // Current watch readout so the block never looks empty on the first run.
+      let now = '';
+      const crisis = d.crisis || {};
+      if (typeof crisis.score === 'number') {
+        const col = crisis.score >= 60 ? '#ff6f6f' : (crisis.score >= 30 ? '#ffd479' : '#8affc1');
+        now = '<div class="ag-trendnow"><span style="color:' + col + '">' + (crisis.score) + '/100</span> · ' + esc(crisis.level || 'normal') + '</div>';
+      }
       let delta = '';
       if (tr && typeof tr.delta === 'number') {
         const up = tr.delta >= 0;
@@ -286,8 +293,10 @@ const body = `<section class="lpage-wrap">
           delta = '<div class="ag-trenddelta" style="color:' + (up ? '#ff6f6f' : '#8affc1') + '">' + (up ? '▲ ' : '▼ ') + 'crisis ' + (up ? '+' : '') + Math.abs(tr.delta) + ' pts vs last watch (' + tr.prevScore + ' → ' + (tr.prevScore + tr.delta) + ')</div>';
         }
       }
-      if (!spark && !delta) return '<div class="ag-hint">run again to build history — trend appears after 2 watches</div>';
-      return spark + delta;
+      const hint = (!spark && !delta)
+        ? '<div class="ag-hint">run again to build history — trend appears after 2 watches' + (d.historySeeded ? '' : ' (persists when KV is configured)') + '</div>'
+        : '<div class="ag-hint">' + (hist.length || 0) + ' watch' + ((hist.length || 0) === 1 ? '' : 'es') + ' recorded</div>';
+      return now + spark + delta + hint;
     }
 
     function renderBrief(d) {
@@ -308,6 +317,10 @@ const body = `<section class="lpage-wrap">
       const queue = (d.queue || []).slice(0, 4).map((q) =>
         '<li><span class="ag-pri" style="color:' + (q.priority === 'P0' ? '#ff6f6f' : (q.priority === 'P1' ? '#ffd479' : '#9aa0c0')) + '">' + esc(q.priority || 'P2') + '</span> <b style="color:var(--muted)">' + esc(q.platform || '') + '</b> — ' + esc((q.text || '').slice(0, 120)) + '</li>'
       ).join('');
+      // Meaningful empty states: a quiet conversation means NO escalations, not a broken block.
+      const queueBody = (d.queue || []).length
+        ? (queue || '<li>—</li>')
+        : '<li class="ag-ok">No negative mentions flagged — nothing needs a human right now.</li>';
       const platRows = platformRows(d.mentions || []);
       const trendB = '<div class="blk"><b>Momentum · last runs</b>' + trendHtml(d) + '</div>';
       brief.innerHTML =
@@ -324,7 +337,7 @@ const body = `<section class="lpage-wrap">
           '<div class="blk"><b>Top platforms</b><div class="ag-plats">' + platRows + '</div></div>' +
           '<div class="blk"><b>Mentions</b><ul class="ag-mentions">' + (mentions || '<li>—</li>') + '</ul></div>' +
           '<div class="blk"><b>Drafted replies</b><ul class="ag-drafts">' + (drafts || '<li>—</li>') + '</ul></div>' +
-          '<div class="blk"><b>Human escalation queue</b><ul class="ag-queue">' + (queue || '<li>—</li>') + '</ul></div>' +
+          '<div class="blk"><b>Human escalation queue</b><ul class="ag-queue">' + queueBody + '</ul></div>' +
           trendB +
         '</div>' +
         (d.briefing ? '<div class="ag-summary">' + esc(d.briefing) + '</div>' : '') +

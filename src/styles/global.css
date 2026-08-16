@@ -982,6 +982,9 @@ body.bs-open{overflow:hidden}
 .ag-platn{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
 .ag-spark{width:100%;max-width:160px;height:auto;display:block;margin:4px 0 2px}
 .ag-trenddelta{font-size:12px;font-weight:700;margin-top:6px}
+.ag-trendnow{font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
+.ag-trendnow span{font-variant-numeric:tabular-nums}
+.ag-ok{font-size:12.5px;color:var(--muted);background:color-mix(in srgb,#2ff3c0 8%,transparent);border:1px solid color-mix(in srgb,#2ff3c0 30%,var(--line));border-radius:10px;padding:8px 10px}
 .ag-draftli .ag-draftta{width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;line-height:1.45;padding:8px 10px;margin:6px 0 4px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt);resize:vertical;min-height:52px}
 .ag-draftli .ag-draftta:focus{outline:none;border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
 .ag-draftcopy{margin:0;font-size:12px!important;padding:5px 12px!important}

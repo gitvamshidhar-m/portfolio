@@ -228,6 +228,7 @@ module.exports = async function handler(req, res) {
     // Persist the per-brand history series (capped) + delta vs last watch.
     if (snapshot) {
       const bk = brandKey(brand);
+      obj.historySeeded = !!(KV_URL && KV_TOKEN);
       const hist = await trackSeries('hist', bk, snapshot.point, 24, 604800 * 4);
       const last = hist.length > 1 ? hist[hist.length - 2] : null;
       obj.history = hist;
