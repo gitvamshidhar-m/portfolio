@@ -737,7 +737,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
           '<button type="button" class="btn" id="agEditTimeline">✎ Timeline</button>' +
           '<button type="button" class="btn" id="agEditBudget">✎ Budget</button>' +
           '<button type="button" class="btn" id="agPdfBtn">⬇ PDF</button>' +
-          '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button></div></div>' +
+          '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button><button type="button" class="btn" id="agCsvBtn">⬇ CSV</button></div></div>' +
         cmpLegend +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
@@ -918,6 +918,31 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
             shareBtn.textContent = '✓ Link copied';
             setTimeout(function () { shareBtn.textContent = '🔗 Share'; }, 1800);
           }).catch(function () { shareBtn.textContent = 'Copy failed'; });
+        });
+      }
+      const csvBtn = document.getElementById('agCsvBtn');
+      if (csvBtn) {
+        csvBtn.addEventListener('click', function () {
+          const cp = d.campaignPlan || {};
+          const cells = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+          const R = [];
+          R.push(['section', 'content'].map(cells).join(','));
+          R.push(['goal', d.goal || ''].map(cells).join(','));
+          R.push(['channels', (cp.channels || []).join('; ')].map(cells).join(','));
+          R.push(['budget total', (cp.budget && cp.budget.total) || ''].map(cells).join(','));
+          R.push(['budget split', (cp.budget && cp.budget.split) || ''].map(cells).join(','));
+          R.push(['kpis', (cp.kpis || []).join('; ')].map(cells).join(','));
+          R.push(['timeline', (cp.timeline || []).join('\n')].map(cells).join(','));
+          R.push(['summary', d.summary || ''].map(cells).join(','));
+          const blob = new Blob([R.join('\n')], { type: 'text/csv;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'campaign-plan.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         });
       }
       plan.hidden = false;
