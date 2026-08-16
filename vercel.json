@@ -9,6 +9,16 @@
   ],
   "redirects": [
     {
+      "source": "/sentinel.html",
+      "destination": "/grapevine.html",
+      "permanent": true
+    },
+    {
+      "source": "/api/sentinel",
+      "destination": "/api/grapevine",
+      "permanent": true
+    },
+    {
       "source": "/(.*\\.html)/",
       "destination": "/$1",
       "permanent": true

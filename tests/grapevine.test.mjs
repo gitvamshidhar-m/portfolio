@@ -1,4 +1,4 @@
-// Hermetic tests for the Sentinel reputation pipeline (libs/sentinel.js).
+// Hermetic tests for the Grapevine reputation pipeline (libs/grapevine.js).
 // Stubs global.fetch so nothing hits the network: GROQ (SSE + json), KV REST, and SERP.
 // Run: node --test tests
 import { test, before, after } from 'node:test';
@@ -44,11 +44,11 @@ async function fakeFetch(url, opts) {
       return sseStream([
         { choices: [{ delta: { content: '{"brand":"the brand","orchestrator":"Monitor sweeps, Classify tags, Crisis scores, Respond drafts, Escalate queues.",' } }] },
         { choices: [{ delta: { content: '"agents":[' } }] },
-        { choices: [{ delta: { content: '{"id":"monitor","name":"Monitor Agent","call":"sentinel.scan","toolArgs":{"q":"the brand review"},"output":"mentions found","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
-        { choices: [{ delta: { content: '{"id":"classify","name":"Classify Agent","call":"sentinel.sentiment","toolArgs":{"mentions":[]},"output":"tags","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
-        { choices: [{ delta: { content: '{"id":"crisis","name":"Crisis Agent","call":"sentinel.crisis","toolArgs":{},"output":"score","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
-        { choices: [{ delta: { content: '{"id":"respond","name":"Respond Agent","call":"sentinel.respond","toolArgs":{"text":"x","sentiment":"negative"},"output":"replies","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
-        { choices: [{ delta: { content: '{"id":"escalate","name":"Escalate Agent","call":"sentinel.escalate","toolArgs":{},"output":"queue","thinking":"t","action":"a","live":"l","result":"r"}],' } }] },
+        { choices: [{ delta: { content: '{"id":"monitor","name":"Monitor Agent","call":"grapevine.scan","toolArgs":{"q":"the brand review"},"output":"mentions found","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
+        { choices: [{ delta: { content: '{"id":"classify","name":"Classify Agent","call":"grapevine.sentiment","toolArgs":{"mentions":[]},"output":"tags","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
+        { choices: [{ delta: { content: '{"id":"crisis","name":"Crisis Agent","call":"grapevine.crisis","toolArgs":{},"output":"score","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
+        { choices: [{ delta: { content: '{"id":"respond","name":"Respond Agent","call":"grapevine.respond","toolArgs":{"text":"x","sentiment":"negative"},"output":"replies","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
+        { choices: [{ delta: { content: '{"id":"escalate","name":"Escalate Agent","call":"grapevine.escalate","toolArgs":{},"output":"queue","thinking":"t","action":"a","live":"l","result":"r"}],' } }] },
         { choices: [{ delta: { content: '"briefing":"watching the brand, mixed sentiment","nextSteps":["approve replies"]}' } }] },
         { choices: [{ delta: {} }], usage: { prompt_tokens: 40, completion_tokens: 60 } },
         { choices: [{ delta: {} }] }
@@ -112,7 +112,7 @@ function mockRes() {
 }
 
 test('stream emits tool+reflect per agent and a briefing plan', async (t) => {
-  const handler = require('../libs/sentinel.js');
+  const handler = require('../libs/grapevine.js');
   const res = mockRes();
   await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand', stream: true } }, res);
   const evs = parseStreamEvents(res.lines);
@@ -129,7 +129,7 @@ test('stream emits tool+reflect per agent and a briefing plan', async (t) => {
 
 test('real tools execute and the briefing carries classified mentions + crisis + queue', async () => {
   kvStore = {};
-  const handler = require('../libs/sentinel.js');
+  const handler = require('../libs/grapevine.js');
   const res = mockRes();
   await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand', stream: true } }, res);
   const evs = parseStreamEvents(res.lines);
@@ -155,7 +155,7 @@ test('real tools execute and the briefing carries classified mentions + crisis +
 test('no key -> rule-based fallback with working tools, zero LLM calls', async () => {
   delete process.env.GROQ_API_KEY;
   kvStore = {};
-  const handler = require('../libs/sentinel.js');
+  const handler = require('../libs/grapevine.js');
   const res = mockRes();
   await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand', stream: true } }, res);
   const evs = parseStreamEvents(res.lines);
@@ -168,7 +168,7 @@ test('no key -> rule-based fallback with working tools, zero LLM calls', async (
 
 test('validation: missing brand is rejected', async () => {
   process.env.GROQ_API_KEY = 'test-key';
-  const handler = require('../libs/sentinel.js');
+  const handler = require('../libs/grapevine.js');
   const res = mockRes();
   await handler({ method: 'POST', url: '/', headers: {}, body: { stream: true } }, res);
   const line = parseStreamEvents(res.lines)[0] || JSON.parse(res.lines[0] || '{}');
@@ -179,12 +179,12 @@ test('stored briefing replays via GET ?run=', async () => {
   process.env.GROQ_API_KEY = 'test-key';
   process.env.KV_REST_API_URL = 'https://kv.example.com';
   process.env.KV_REST_API_TOKEN = 'test';
-  const handler = require('../libs/sentinel.js');
+  const handler = require('../libs/grapevine.js');
   const res = mockRes();
   await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand' } }, res);
   const j = JSON.parse(res.lines[0]);
   assert.ok(j.runId, 'runId should be returned');
-  const key = 'sentinel:run:' + j.runId;
+  const key = 'grapevine:run:' + j.runId;
   assert.ok(kvStore[key], 'briefing should persist to KV');
   const r2 = mockRes();
   await handler({ method: 'GET', url: '/?run=' + j.runId, headers: {} }, r2);

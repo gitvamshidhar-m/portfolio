@@ -961,7 +961,7 @@ body.bs-open{overflow:hidden}
 .ag-spend-track i{display:block;height:100%;border-radius:999px;transition:width .6s var(--ease)}
 .ag-spend b{min-width:44px;text-align:right;color:var(--accent2);font-variant-numeric:tabular-nums}
 
-/* ===== Sentinel briefing ===== */
+/* ===== Grapevine briefing ===== */
 .ag-brief{margin-top:22px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent2-soft) 60%,transparent),transparent);border:1px solid color-mix(in srgb,var(--accent2) 30%,var(--line));border-radius:var(--radius-lg);padding:clamp(18px,4vw,28px)}
 .ag-brief .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
 .ag-brief .blk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}

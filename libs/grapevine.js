@@ -1,12 +1,12 @@
-// Sentinel — an autonomous reputation & social-listening team.
-// Given a brand, Sentinel's agents monitor live SERP for mentions, classify
+// Grapevine — an autonomous reputation & social-listening team.
+// Given a brand, Grapevine's agents monitor live SERP for mentions, classify
 // sentiment + urgency, score the crisis level, draft on-brand replies, and build
 // a human escalation queue. Each agent's tool really executes (live search,
 // lexicon sentiment, arithmetic crisis score) and the page shows the real values.
 //
-// POST /api/sentinel  {brand, platform?, stream?} → NDJSON stream or JSON
+// POST /api/grapevine  {brand, platform?, stream?} → NDJSON stream or JSON
 //   events: orch | tool | reflect | serp | metrics | plan
-// GET  /api/sentinel?run=<id> → replay a stored briefing
+// GET  /api/grapevine?run=<id> → replay a stored briefing
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
@@ -25,7 +25,7 @@ async function isRateLimited(key) {
       const res = await fetch(String(KV_URL).replace(/\/$/, '') + '/pipeline', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + KV_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify([['INCR', 'rl:sentinel:' + key], ['EXPIRE', 'rl:sentinel:' + key, RL_WIN_SEC]])
+        body: JSON.stringify([['INCR', 'rl:grapevine:' + key], ['EXPIRE', 'rl:grapevine:' + key, RL_WIN_SEC]])
       });
       const j = await res.json();
       const first = Array.isArray(j) ? j[0] : null;
@@ -47,7 +47,7 @@ async function kvGet(key) {
     return (j && j.result != null) ? j.result : null;
   } catch (e) { return null; }
 }
-function runId(brand) { return crypto.createHash('sha1').update('sentinel|' + String(brand || '')).digest('hex').slice(0, 12); }
+function runId(brand) { return crypto.createHash('sha1').update('grapevine|' + String(brand || '')).digest('hex').slice(0, 12); }
 
 const PRICE = { inPerM: 0.59, outPerM: 0.79 };
 let telemetry = { calls: 0, prompt: 0, completion: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } };
@@ -62,7 +62,7 @@ function telAdd(report, usage, ms) {
   return report;
 }
 
-// The Sentinel team: monitor → classify → crisis → respond → escalate.
+// The Grapevine team: monitor → classify → crisis → respond → escalate.
 const AGENTS = ['monitor', 'classify', 'crisis', 'respond', 'escalate'];
 const PERSONAS = {
   monitor: { name: 'Monitor Agent', persona: 'The Eavesdropper', role: 'Scans live search + social for brand mentions' },
@@ -73,18 +73,18 @@ const PERSONAS = {
 };
 
 function sysPrompt(brand, platforms, serpText) {
-  return 'You are the ORCHESTRATOR of Sentinel, an autonomous reputation & social-listening team. Given a BRAND you must plan and "run" a team of agents that monitor mentions, classify sentiment, detect crises, draft replies, and decide what to escalate to a human. Later agents build on earlier agents\' outputs.\n'
+  return 'You are the ORCHESTRATOR of Grapevine, an autonomous reputation & social-listening team. Given a BRAND you must plan and "run" a team of agents that monitor mentions, classify sentiment, detect crises, draft replies, and decide what to escalate to a human. Later agents build on earlier agents\' outputs.\n'
     + 'LIVE SEARCH CONTEXT (real mentions for "' + brand + '"):\n' + (serpText || 'No live results — the Monitor Agent will still run a real scan.') + '\n\n'
     + 'Return ONLY valid minified JSON (no markdown) with exactly this shape:\n'
     + '{\n'
     + '  "brand":"<echo the brand>",\n'
     + '  "orchestrator":"<one line: how the team splits the watch>",\n'
     + '  "agents":[\n'
-    + '    {"id":"monitor","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what mentions it found, grounded in the LIVE SEARCH CONTEXT — name real platforms/domains>","live":"<4-8 words present continuous>","call":"sentinel.scan","toolArgs":{"q":"<the exact brand or query>"},"result":"<predicted one-line outcome>"},\n'
-    + '    {"id":"classify","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: sentiment split it expects>","live":"<4-8 words>","call":"sentinel.sentiment","toolArgs":{"mentions":[{"text":"<sample mention text>","platform":"<platform>"}]},"result":"<predicted tally>"},\n'
-    + '    {"id":"crisis","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: how risky the situation looks>","live":"<4-8 words>","call":"sentinel.crisis","toolArgs":{},"result":"<predicted score/level>"},\n'
-    + '    {"id":"respond","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: how it will answer the loudest mentions>","live":"<4-8 words>","call":"sentinel.respond","toolArgs":{"text":"<a sample mention>","sentiment":"negative"},"result":"<predicted reply>"},\n'
-    + '    {"id":"escalate","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what needs a human first>","live":"<4-8 words>","call":"sentinel.escalate","toolArgs":{},"result":"<predicted queue>"}\n'
+    + '    {"id":"monitor","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what mentions it found, grounded in the LIVE SEARCH CONTEXT — name real platforms/domains>","live":"<4-8 words present continuous>","call":"grapevine.scan","toolArgs":{"q":"<the exact brand or query>"},"result":"<predicted one-line outcome>"},\n'
+    + '    {"id":"classify","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: sentiment split it expects>","live":"<4-8 words>","call":"grapevine.sentiment","toolArgs":{"mentions":[{"text":"<sample mention text>","platform":"<platform>"}]},"result":"<predicted tally>"},\n'
+    + '    {"id":"crisis","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: how risky the situation looks>","live":"<4-8 words>","call":"grapevine.crisis","toolArgs":{},"result":"<predicted score/level>"},\n'
+    + '    {"id":"respond","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: how it will answer the loudest mentions>","live":"<4-8 words>","call":"grapevine.respond","toolArgs":{"text":"<a sample mention>","sentiment":"negative"},"result":"<predicted reply>"},\n'
+    + '    {"id":"escalate","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what needs a human first>","live":"<4-8 words>","call":"grapevine.escalate","toolArgs":{},"result":"<predicted queue>"}\n'
     + '  ],\n'
     + '  "briefing":"<2-3 sentence client-ready wrap-up: overall sentiment, top platform, crisis level, recommended next step>",\n'
     + '  "nextSteps":["<step 1>","<step 2>","<step 3>"]\n'
@@ -101,13 +101,13 @@ function fallback(brand, platforms) {
     brand: b,
     orchestrator: 'Monitor sweeps live search + social for "' + core + '", Classify tags every mention, Crisis scores the risk, Respond drafts replies, Escalate builds the human queue.',
     agents: [
-      ag('monitor', 'Sweeps live search and social for every mention of "' + core + '".', 'Queries SERP for brand + review/complaint variants across ' + plats + '.', 'Mentions surfaced across ' + plats + ' — handed to Classify.', 'Scanning live mentions…', 'sentinel.scan', { q: b }, 'live mentions across platforms'),
-      ag('classify', 'Tags each mention by sentiment, urgency and platform.', 'Runs the lexicon classifier over every scanned mention.', 'Sentiment split + urgent items tallied — handed to Crisis.', 'Tagging sentiment + urgency…', 'sentinel.sentiment', { mentions: [{ text: 'sample mention', platform: 'web' }] }, 'positive/negative/neutral split'),
-      ag('crisis', 'Watches for a negative spike before it compounds.', 'Scores negative share, volume and severity into a 0-100 risk.', 'Risk level computed from the tally — handed to Respond.', 'Scoring the crisis level…', 'sentinel.crisis', {}, 'risk score + level'),
-      ag('respond', 'Answers the loudest mentions in the brand voice.', 'Drafts a warm public reply for the top positive + negative mentions.', 'Drafted replies queued for the top mentions — handed to Escalate.', 'Drafting on-brand replies…', 'sentinel.respond', { text: 'example mention', sentiment: 'negative' }, 'drafted replies'),
-      ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — Sentinel stands by.', 'Building the human queue…', 'sentinel.escalate', {}, 'P0/P1/P2 escalation queue')
+      ag('monitor', 'Sweeps live search and social for every mention of "' + core + '".', 'Queries SERP for brand + review/complaint variants across ' + plats + '.', 'Mentions surfaced across ' + plats + ' — handed to Classify.', 'Scanning live mentions…', 'grapevine.scan', { q: b }, 'live mentions across platforms'),
+      ag('classify', 'Tags each mention by sentiment, urgency and platform.', 'Runs the lexicon classifier over every scanned mention.', 'Sentiment split + urgent items tallied — handed to Crisis.', 'Tagging sentiment + urgency…', 'grapevine.sentiment', { mentions: [{ text: 'sample mention', platform: 'web' }] }, 'positive/negative/neutral split'),
+      ag('crisis', 'Watches for a negative spike before it compounds.', 'Scores negative share, volume and severity into a 0-100 risk.', 'Risk level computed from the tally — handed to Respond.', 'Scoring the crisis level…', 'grapevine.crisis', {}, 'risk score + level'),
+      ag('respond', 'Answers the loudest mentions in the brand voice.', 'Drafts a warm public reply for the top positive + negative mentions.', 'Drafted replies queued for the top mentions — handed to Escalate.', 'Drafting on-brand replies…', 'grapevine.respond', { text: 'example mention', sentiment: 'negative' }, 'drafted replies'),
+      ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — Grapevine stands by.', 'Building the human queue…', 'grapevine.escalate', {}, 'P0/P1/P2 escalation queue')
     ],
-    briefing: 'Sentinel is now watching "' + core + '". It scanned mentions across ' + plats + ', classified sentiment, scored the crisis level, drafted replies and built a human escalation queue — so a brand-team can react in minutes, not days.',
+    briefing: 'Grapevine is now watching "' + core + '". It scanned mentions across ' + plats + ', classified sentiment, scored the crisis level, drafted replies and built a human escalation queue — so a brand-team can react in minutes, not days.',
     nextSteps: ['Approve the drafted replies for the top mentions', 'Assign the P0/P1 escalations to a human owner', 'Set daily SERP watch on "' + core + '"']
   };
 }
@@ -150,7 +150,7 @@ function safeBriefing(obj) {
 // Lightweight reflection: one LLM pass grounding each agent's output in its real tool result.
 async function reflectAgent(agent, exec, brand, key) {
   if (!key || !exec || !exec.ok) return;
-  const sys = 'You are ' + (agent.name || 'an agent') + ' in Sentinel, an autonomous reputation team. Your tool just returned REAL output. Rewrite your handoff "output" (1-2 sentences) grounded strictly in that real return — name the actual numbers/platforms/sentiment. No hype, no emojis. Return ONLY JSON: {"output":"..."}.';
+  const sys = 'You are ' + (agent.name || 'an agent') + ' in Grapevine, an autonomous reputation team. Your tool just returned REAL output. Rewrite your handoff "output" (1-2 sentences) grounded strictly in that real return — name the actual numbers/platforms/sentiment. No hype, no emojis. Return ONLY JSON: {"output":"..."}.';
   const user = 'BRAND: ' + String(brand || '').slice(0, 300) + '\nTOOL: ' + exec.tool + '\nREAL RESULT:\n' + fmtResult(exec);
   try {
     const c = new AbortController(); const t = setTimeout(function () { c.abort(); }, 8000);
@@ -170,9 +170,9 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const url2 = new URL(req.url || '/', 'http://localhost');
 
-  // Replay a stored briefing: GET /api/sentinel?run=<id>
+  // Replay a stored briefing: GET /api/grapevine?run=<id>
   if (req.method === 'GET' && url2.searchParams.get('run')) {
-    const v = await kvGet('sentinel:run:' + String(url2.searchParams.get('run')).slice(0, 64));
+    const v = await kvGet('grapevine:run:' + String(url2.searchParams.get('run')).slice(0, 64));
     if (v) {
       try {
         const c = JSON.parse(v);
@@ -181,7 +181,7 @@ module.exports = async function handler(req, res) {
     }
     return res.status(404).json({ error: 'briefing not found' });
   }
-  if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/sentinel with {brand, platform?, stream?} — real mention scan + sentiment + crisis tools execute.' });
+  if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/grapevine with {brand, platform?, stream?} — real mention scan + sentiment + crisis tools execute.' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   let b = {};
@@ -189,7 +189,7 @@ module.exports = async function handler(req, res) {
   const brand = String(b.brand || '').slice(0, 120).trim();
   const platforms = (Array.isArray(b.platform) && b.platform.length) ? b.platform.map(String).slice(0, 6) : [];
   if (!brand) return res.status(400).json({ error: 'brand is required' });
-  if (await isRateLimited(ipOf(req) + ':sentinel')) return res.status(429).json({ error: 'rate limited' });
+  if (await isRateLimited(ipOf(req) + ':grapevine')) return res.status(429).json({ error: 'rate limited' });
 
   const stream = !!(b.stream);
   if (stream) res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
@@ -198,7 +198,7 @@ module.exports = async function handler(req, res) {
     obj.replayed = false;
     obj.runId = runId(brand);
     send({ event: 'plan', data: obj });
-    try { kv([['SET', 'sentinel:run:' + obj.runId, JSON.stringify({ at: Date.now(), briefing: obj })], ['EXPIRE', 'sentinel:run:' + obj.runId, 604800]]); } catch (e) {}
+    try { kv([['SET', 'grapevine:run:' + obj.runId, JSON.stringify({ at: Date.now(), briefing: obj })], ['EXPIRE', 'grapevine:run:' + obj.runId, 604800]]); } catch (e) {}
     if (stream) res.end();
     else res.json(obj);
   };
@@ -221,7 +221,7 @@ module.exports = async function handler(req, res) {
         method: 'POST',
         signal: controller.signal,
         headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1600, stream: true, stream_options: { include_usage: true }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysPrompt(brand, platforms, serpBlock && serpBlock.text) }, { role: 'user', content: 'BRAND: ' + brand + '\nRun Sentinel and return the JSON briefing now.' }] })
+        body: JSON.stringify({ model: MODEL, temperature: 0.55, max_tokens: 1600, stream: true, stream_options: { include_usage: true }, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: sysPrompt(brand, platforms, serpBlock && serpBlock.text) }, { role: 'user', content: 'BRAND: ' + brand + '\nRun Grapevine and return the JSON briefing now.' }] })
       });
       const reader = r.body.getReader();
       const dec = new TextDecoder();
@@ -264,7 +264,7 @@ module.exports = async function handler(req, res) {
     const tool = a.call;
     const args = a.toolArgs || {};
     let exec;
-    if (tool === 'sentinel.scan') {
+    if (tool === 'grapevine.scan') {
       // Feed the real SERP snapshot (already fetched) straight into the scan tool.
       exec = { tool, args: { q: args.q || scanQ }, ok: !!serpLive, result: { mentions: (serpLive || []).map(function (r) { return { text: ((r.title || '') + '. ' + (r.snippet || '')).slice(0, 220), platform: 'web', domain: r.domain || '', link: r.link || '' }; }) }, ms: 0 };
       if (!exec.ok) exec.error = 'no mentions found';
@@ -333,7 +333,7 @@ module.exports = async function handler(req, res) {
     send({ event: 'tool', id: 'respond', tool: r.exec.tool, exec: { ok: r.exec.ok, ms: r.exec.ms, error: r.exec.error || null } });
     const drafts = [];
     for (const mt of targets) {
-      const dr = await runTool('sentinel.respond', { text: mt.text, sentiment: mt.sentiment || 'neutral' });
+      const dr = await runTool('grapevine.respond', { text: mt.text, sentiment: mt.sentiment || 'neutral' });
       toolsTel.calls++; toolsTel.ms += dr.ms;
       drafts.push({ text: String(mt.text || '').slice(0, 180), platform: mt.platform || 'web', sentiment: mt.sentiment || 'neutral', reply: (dr.ok && dr.result && dr.result.reply) || '' });
     }

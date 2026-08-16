@@ -101,7 +101,7 @@ function ruleDraft(brief) {
   return { ok: true, text: hooks[(clean.length + Date.now()) % hooks.length] };
 }
 
-// --- Sentinel real tools: reputation & social monitoring --------------------
+// --- Grapevine real tools: reputation & social monitoring --------------------
 
 const POS_LEX = ['love','loved','amazing','great','best','excellent','awesome','happy','good','recommend','worth','fast','reliable','smooth','helpful','impressive','top','thank','solid','brilliant','seamless'];
 const NEG_LEX = ['worst','terrible','hate','hated','awful','bad','scam','fraud','refund','broken','crash','bug','delay','late','slow','unresponsive','rude','waste','fake','dishonest','broke','fail','failed','disappoint','complaint'];
@@ -133,7 +133,7 @@ function platformOf(domain) {
 }
 
 // Scan live SERP for brand mentions across platforms.
-async function sentinelScan(args) {
+async function grapevineScan(args) {
   const q = String(args.q || args.brand || 'brand').slice(0, 200);
   const res = await serp(q, { num: 8 });
   if (!Array.isArray(res) || !res.length) return { ok: false, error: 'no mentions found' };
@@ -147,7 +147,7 @@ async function sentinelScan(args) {
 }
 
 // Classify a batch of mentions by sentiment (lexicon) + urgency + topic guess.
-function sentinelSentiment(args) {
+function grapevineSentiment(args) {
   const mentions = Array.isArray(args.mentions) ? args.mentions : [];
   const out = mentions.map(function (m) {
     const s = lexScore(m.text || '');
@@ -161,7 +161,7 @@ function sentinelSentiment(args) {
 }
 
 // Crisis detection: score 0-100 from negative share, volume and severity words.
-function sentinelCrisis(args) {
+function grapevineCrisis(args) {
   const mentions = Array.isArray(args.mentions) ? args.mentions : [];
   const tally = args.tally || {};
   const total = Math.max(mentions.length || 1, 1);
@@ -178,7 +178,7 @@ function sentinelCrisis(args) {
 }
 
 // Draft an on-brand public response for one mention (LLM when key present).
-async function sentinelRespond(args) {
+async function grapevineRespond(args) {
   const mention = String(args.text || '').slice(0, 220);
   const sentiment = String(args.sentiment || 'neutral');
   const key = (process.env.GROQ_API_KEY || '').trim();
@@ -202,7 +202,7 @@ async function sentinelRespond(args) {
 }
 
 // Escalation matrix: decide which mentions a human must see first.
-function sentinelEscalate(args) {
+function grapevineEscalate(args) {
   const mentions = Array.isArray(args.mentions) ? args.mentions : [];
   const crisis = args.crisis || {};
   const queue = mentions
@@ -223,11 +223,11 @@ const REGISTRY = {
   'calc.cpl': { run: calcCpl, desc: 'CPL / CTR from spend, leads, clicks' },
   'market.sizer': { run: marketSizer, desc: 'Market size funnel estimate' },
   'llm.draft': { run: llmDraft, desc: 'Draft hook / ad copy' },
-  'sentinel.scan': { run: sentinelScan, desc: 'Scan live SERP for brand mentions' },
-  'sentinel.sentiment': { run: sentinelSentiment, desc: 'Classify mention sentiment / urgency' },
-  'sentinel.crisis': { run: sentinelCrisis, desc: 'Crisis score 0-100 from mentions' },
-  'sentinel.respond': { run: sentinelRespond, desc: 'Draft an on-brand reply' },
-  'sentinel.escalate': { run: sentinelEscalate, desc: 'Escalation queue for humans' }
+  'grapevine.scan': { run: grapevineScan, desc: 'Scan live SERP for brand mentions' },
+  'grapevine.sentiment': { run: grapevineSentiment, desc: 'Classify mention sentiment / urgency' },
+  'grapevine.crisis': { run: grapevineCrisis, desc: 'Crisis score 0-100 from mentions' },
+  'grapevine.respond': { run: grapevineRespond, desc: 'Draft an on-brand reply' },
+  'grapevine.escalate': { run: grapevineEscalate, desc: 'Escalation queue for humans' }
 };
 
 const TOOL_IDS = Object.keys(REGISTRY);
