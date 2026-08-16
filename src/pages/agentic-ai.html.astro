@@ -732,12 +732,12 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
         : '';
       plan.innerHTML =
         '<div class="ag-plan-head"><h3>📋 Campaign plan for: ' + esc(d.goal || '') + '</h3><div class="ag-actions">' + cmpBtn +
-          '<button type="button" class="btn" id="agEditChannels">✎ Channels</button>' +
-          '<button type="button" class="btn" id="agEditKpis">✎ KPIs</button>' +
-          '<button type="button" class="btn" id="agEditTimeline">✎ Timeline</button>' +
-          '<button type="button" class="btn" id="agEditBudget">✎ Budget</button>' +
-          '<button type="button" class="btn" id="agPdfBtn">⬇ PDF</button>' +
-          '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button><button type="button" class="btn" id="agCsvBtn">⬇ CSV</button></div></div>' +
+          '<button type="button" class="btn" id="agEditChannels">✏️ Channels</button>' +
+          '<button type="button" class="btn" id="agEditKpis">✏️ KPIs</button>' +
+          '<button type="button" class="btn" id="agEditTimeline">✏️ Timeline</button>' +
+          '<button type="button" class="btn" id="agEditBudget">✏️ Budget</button>' +
+          '<button type="button" class="btn" id="agPdfBtn">⬇️ PDF</button>' +
+          '<button type="button" class="btn" id="agTtsBtn">🔊 Hear plan</button><button type="button" class="btn" id="agCopyBtn">📋 Copy plan</button><button type="button" class="btn" id="agShareBtn">🔗 Share</button><button type="button" class="btn" id="agCsvBtn">⬇️ CSV</button></div></div>' +
         cmpLegend +
         '<div class="grid">' +
           '<div class="blk"><b>Channels</b><div class="ag-chips">' + (chips || '<span>—</span>') + '</div></div>' +
@@ -784,7 +784,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
           budget: 'Total, plus an optional split. e.g. ₹300000 — 60/40'
         };
         modalField = field;
-        modalTitle.textContent = '✎ Edit ' + labels[field];
+        modalTitle.textContent = '✏️ Edit ' + labels[field];
         modalHint.textContent = hints[field];
         modalArea.value = fieldVal(field);
         modal.classList.add('open');
@@ -820,7 +820,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
               try { ev = JSON.parse(line); } catch (e) { continue; }
               if (ev.event === 'diff') {
                 diff = ev.fields || [];
-                if (ev.telemetry) logLine('m', '✎ edit · ' + telLine(ev.telemetry));
+                if (ev.telemetry) logLine('m', '✏️ edit · ' + telLine(ev.telemetry));
               } else if (ev.event === 'plan' && ev.data) {
                 newData = ev.data;
               } else if (ev.event === 'error') {
@@ -831,11 +831,11 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
           if (!newData) throw new Error('no plan in edit response');
           data = newData;
           renderPlan(data);
-          logLine('t', '✎ ' + field + ' revised — plan regenerated' + (diff.length ? ' · changed: ' + diff.join(', ') : ''));
+          logLine('t', '✏️ ' + field + ' revised — plan regenerated' + (diff.length ? ' · changed: ' + diff.join(', ') : ''));
         } catch (e) {
           logLine('a', 'section edit failed — ' + String((e && e.message) || '') + '. Keep keys short & simple, or run again.');
         }
-        if (b) { b.disabled = false; b.textContent = '✎ ' + Object.keys(editable).find((k) => editable[k] === field).charAt(0).toUpperCase() + field; }
+        if (b) { b.disabled = false; b.textContent = '✏️ ' + Object.keys(editable).find((k) => editable[k] === field).charAt(0).toUpperCase() + field; }
       });
       ['agEditChannels', 'agEditKpis', 'agEditTimeline', 'agEditBudget'].forEach(function (id) {
         const b = document.getElementById(id);
@@ -867,7 +867,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
           } catch (e) {
             logLine('a', 'pdf export failed — ' + String((e && e.message) || ''));
           }
-          pdfBtn.disabled = false; pdfBtn.textContent = '⬇ PDF';
+          pdfBtn.disabled = false; pdfBtn.textContent = '⬇️ PDF';
         });
       }
       const ttsBtn = document.getElementById('agTtsBtn');
@@ -904,7 +904,7 @@ const runBtn = $('runBtn'), goal = $('goalInput'), niche = $('nicheInput'), budg
       if (copyBtn) {
         copyBtn.addEventListener('click', function () {          copyText(planToText(d)).then(function () {
             copyBtn.textContent = '✓ Copied';
-            setTimeout(function () { copyBtn.textContent = '⧉ Copy plan'; }, 1800);
+            setTimeout(function () { copyBtn.textContent = '📋 Copy plan'; }, 1800);
           }).catch(function () { copyBtn.textContent = 'Copy failed'; });
         });
       }
