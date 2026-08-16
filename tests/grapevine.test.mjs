@@ -54,6 +54,16 @@ async function fakeFetch(url, opts) {
         { choices: [{ delta: {} }] }
       ]);
     }
+    // Route the two new AI passes (topic tagging + brand-safety critic) to realistic mocks.
+    const sysMsg = (body && body.messages && body.messages[0] && body.messages[0].content) || '';
+    if (sysMsg.indexOf('tag brand-mention topics') >= 0) {
+      return json({ choices: [{ message: { content: JSON.stringify({ topics: ['refund', 'shipping', 'praise'] }) } }], usage: { prompt_tokens: 12, completion_tokens: 8 } });
+    }
+    if (sysMsg.indexOf('brand-safety reviewer') >= 0) {
+      const m = (body.messages && body.messages[1] && body.messages[1].content) || '';
+      const ready = m.indexOf('averagely') >= 0 ? 'flagged' : 'post';
+      return json({ choices: [{ message: { content: JSON.stringify({ ready: ready, risk: ready === 'flagged' ? 'high' : 'low', reason: ready === 'flagged' ? 'names a competitor negatively' : '' }) } }], usage: { prompt_tokens: 10, completion_tokens: 14 } });
+    }
     return json({
       choices: [{ message: { content: REFLECT_JSON } }],
       usage: { prompt_tokens: 30, completion_tokens: 25 }
@@ -166,6 +176,25 @@ test('no key -> rule-based fallback with working tools, zero LLM calls', async (
   assert.ok(Array.isArray(plan.data.mentions) && plan.data.mentions.length >= 1, 'monitor still scans real SERP without a key');
 });
 
+test('AI passes: topics are tagged and each draft is critic-checked', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand', stream: true } }, res);
+  const plan = parseStreamEvents(res.lines).find((e) => e.event === 'plan').data;
+  assert.ok(plan.topics && Array.isArray(plan.topics.top) && plan.topics.top.length >= 1, 'topic tagging should attach a top-topics list');
+  const first = plan.topics.top[0];
+  assert.ok(typeof first.topic === 'string' && typeof first.n === 'number', 'each topic carries a label + count');
+  assert.ok(Array.isArray(plan.drafts) && plan.drafts.length >= 1, 'drafts exist to review');
+  plan.drafts.forEach((dd) => {
+    assert.ok(dd.critic && dd.critic.ready, 'every draft should carry a critic verdict');
+    assert.ok(['post', 'review', 'flag'].indexOf(dd.critic.ready) >= 0, 'verdict is a known class');
+  });
+});
+
 test('validation: missing brand is rejected', async () => {
   process.env.GROQ_API_KEY = 'test-key';
   const handler = require('../libs/grapevine.js');
@@ -238,4 +267,82 @@ test('GET ?recent=1 lists past runs and GET ?hist=1 returns the series', async (
   await handler({ method: 'GET', url: '/?brand=the%20brand&hist=1', headers: {} }, r3);
   const hist = JSON.parse(r3.lines[0]);
   assert.ok(Array.isArray(hist.history) && hist.history.length >= 1, 'hist endpoint returns points');
+});
+
+test('competitor vs mode adds a share-of-voice block', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand', vs: 'rival brand' } }, res);
+  const d = JSON.parse(res.lines[0]);
+  assert.ok(d.vs, 'vs block should be present');
+  assert.equal(d.vs.competitor, 'rival brand', 'competitor name echoed');
+  assert.ok(typeof d.vs.sov === 'number' && d.vs.sov >= 0 && d.vs.sov <= 100, 'share of voice is a 0-100 number');
+  assert.ok(d.vs.brand && d.vs.competitor && typeof d.vs.brand.mentions === 'number', 'both mention counts present');
+});
+
+test('per-platform sweep populates platform metadata from site-scoped SERP', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand', platform: ['reddit'], stream: true } }, res);
+  const plan = parseStreamEvents(res.lines).find((e) => e.event === 'plan').data;
+  assert.ok(Array.isArray(plan.serpQueries) && plan.serpQueries.length >= 2, 'sweep runs a general query + a site-scoped query');
+  assert.ok(plan.serpQueries.some((q) => String(q).indexOf('site:reddit.com') >= 0), 'reddit platform should be site-scoped');
+  assert.ok(plan.serpUsed, 'live SERP should have been used in the sweep');
+});
+
+test('schedule a daily watch and run the cron runner', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/?sub=schedule', headers: {}, body: { brand: 'the brand', hours: 24 } }, res);
+  const sj = JSON.parse(res.lines[0]);
+  assert.ok(sj.ok && sj.scheduled, 'schedule endpoint ok');
+
+  const list = mockRes();
+  await handler({ method: 'GET', url: '/?watches=1', headers: {} }, list);
+  const wl = JSON.parse(list.lines[0]);
+  assert.ok(wl.watches.some((w) => w.brand === 'the brand'), 'watches list includes the brand');
+
+  const cron = mockRes();
+  await handler({ method: 'GET', url: '/?cron=1', headers: { 'x-vercel-cron': '1' } }, cron);
+  const r = JSON.parse(cron.lines[0]);
+  assert.ok(r.ok === true, 'cron runner ok');
+  assert.ok(Array.isArray(r.results), 'cron returns result list');
+  assert.ok(r.results.length >= 1, 'cron runs the due watch');
+  assert.ok(r.results[0].brand === 'the brand', 'cron ran the scheduled brand');
+});
+
+test('cron is unauthorized without a secret/header', async () => {
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'GET', url: '/?cron=1', headers: {} }, res);
+  assert.equal(res._c, 401, 'cron should 401 without auth');
+});
+
+test('POST ?sub=approve persists a human verdict to KV', async () => {
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/?sub=approve', headers: {}, body: { brand: 'the brand', runId: 'run123', index: 0, reply: 'great, we will fix it', verdict: 'approved' } }, res);
+  const r = JSON.parse(res.lines[0]);
+  assert.ok(r.ok && r.approval, 'approve endpoint returns the stored verdict');
+  assert.equal(r.approval.verdict, 'approved', 'verdict echoed');
+
+  const list = mockRes();
+  await handler({ method: 'GET', url: '/?brand=the%20brand&approvals=1', headers: {} }, list);
+  const ap = JSON.parse(list.lines[0]);
+  assert.ok(ap.approvals.length >= 1 && ap.approvals[0].runId === 'run123', 'approval persisted and retrievable');
 });

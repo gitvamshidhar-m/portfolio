@@ -65,32 +65,37 @@ const body = `<section class="lpage-wrap">
     <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · Grapevine + live SERP</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Put Grapevine on watch</h2>
     <p style="color:var(--muted);max-width:680px">Type a brand. The agents will scan live search, classify the mentions, score the risk, draft replies and build your escalation queue. Runs on Groq — no account, nothing stored beyond an anonymous counter.</p></div>
     <div class="ag-console">
-      <div class="ag-input">
-        <label for="brandInput">Your brand</label>
-        <input id="brandInput" type="text" placeholder="e.g. an Indian D2C skincare brand" />
-        <div class="ag-row">
-          <select id="platformSel" aria-label="Focus platform" title="Focus platform">
-            <option value="">All platforms</option>
-            <option value="reddit">Reddit</option>
-            <option value="twitter">X / Twitter</option>
-            <option value="facebook">Facebook</option>
-            <option value="instagram">Instagram</option>
-            <option value="youtube">YouTube</option>
-            <option value="trustpilot">Trustpilot</option>
-            <option value="glassdoor">Glassdoor</option>
-          </select>
-        </div>
-        <div class="ag-runrow">
-          <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Grapevine</button>
-          <span id="agMode" class="ag-mode" hidden></span>
-          <span id="agSerp" class="ag-mode serp" hidden></span>
-          <span id="histWrap" class="ag-histwrap" hidden>
-            <label for="histSel">↻ Past watches</label>
-            <select id="histSel" aria-label="Replay a past watch"><option value="">—</option></select>
-          </span>
-          <span class="ag-hint">Try: “an Indian D2C skincare brand” or “a SaaS project management tool”.</span>
-        </div>
-      </div>
+        <div class="ag-input">
+         <label for="brandInput">Your brand</label>
+         <input id="brandInput" type="text" placeholder="e.g. an Indian D2C skincare brand" />
+         <div class="ag-row">
+           <label for="vsInput" style="font-size:12px;color:var(--muted)">vs (competitor)</label>
+           <input id="vsInput" type="text" placeholder="optional: a rival brand to compare share of voice" />
+         </div>
+         <div class="ag-row">
+           <select id="platformSel" multiple aria-label="Focus platform" title="Focus platform (Ctrl/Cmd to pick several; blank = site sweep)" size="2" style="width:100%;max-width:260px">
+             <option value="" disabled>— site sweep —</option>
+             <option value="reddit">Reddit</option>
+             <option value="twitter">X / Twitter</option>
+             <option value="facebook">Facebook</option>
+             <option value="instagram">Instagram</option>
+             <option value="youtube">YouTube</option>
+             <option value="trustpilot">Trustpilot</option>
+             <option value="glassdoor">Glassdoor</option>
+           </select>
+         </div>
+         <div class="ag-runrow">
+           <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Grapevine</button>
+           <label class="ag-schedule" style="font-size:12px;color:var(--muted);align-items:center"><input type="checkbox" id="scheduleChk" style="margin-right:6px">Set daily watch</label>
+           <span id="agMode" class="ag-mode" hidden></span>
+           <span id="agSerp" class="ag-mode serp" hidden></span>
+           <span id="histWrap" class="ag-histwrap" hidden>
+             <label for="histSel">↻ Past watches</label>
+             <select id="histSel" aria-label="Replay a past watch"><option value="">—</option></select>
+           </span>
+           <span class="ag-hint">Try: “an Indian D2C skincare brand” or “a SaaS project management tool”.</span>
+         </div>
+       </div>
       <div class="ag-stage" id="agStage" hidden>
         <div class="ag-orch" id="agOrch"></div>
         <div class="ag-agents" id="agAgents"></div>
@@ -142,6 +147,7 @@ const body = `<section class="lpage-wrap">
       escalate: { icon: '🛎', color: '#ffd479', persona: 'The Captain' }
     };
     const STEP = 560, THINK = 560;
+    const ALERT_SCORE = 60;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -157,7 +163,7 @@ const body = `<section class="lpage-wrap">
       }
     }
 
-    const runBtn = $('runBtn'), brandEl = $('brandInput'), platformSel = $('platformSel');
+    const runBtn = $('runBtn'), brandEl = $('brandInput'), vsEl = $('vsInput'), platformSel = $('platformSel'), scheduleChk = $('scheduleChk');
     const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), brief = $('agBrief'), shareRow = $('agShareRow');
     const modeEl = $('agMode'), serpEl = $('agSerp'), histWrap = $('histWrap'), histSel = $('histSel');
     let tel = null, data = null, lastBrand = '';
@@ -229,8 +235,9 @@ const body = `<section class="lpage-wrap">
         nextSteps: ['Approve the drafted replies for the top mentions', 'Assign the P0/P1 escalations to a human owner', 'Set daily SERP watch on "' + core + '"'],
         mentions: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', sentiment: 'negative', urgency: 'high' }],
         crisis: { score: 45, level: 'elevated', negative: 1, total: 3 },
+        topics: { top: [{ topic: 'refund', n: 1 }] },
         queue: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', priority: 'P1' }],
-        drafts: [{ text: 'sample mention', platform: 'Reddit', sentiment: 'negative', reply: 'We hear you — DM us your details and we\'ll make it right today.' }],
+        drafts: [{ text: 'sample mention', platform: 'Reddit', sentiment: 'negative', reply: 'We hear you — DM us your details and we\'ll make it right today.', critic: { ready: 'post', risk: 'low', reason: '' } }],
         telemetry: { calls: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } }
       };
     }
@@ -309,9 +316,28 @@ const body = `<section class="lpage-wrap">
       const mentions = (d.mentions || []).slice(0, 8).map((m) =>
         '<li>' + (m.platform ? '<b style="color:var(--muted)">' + esc(m.platform) + '</b> · ' : '') + sentiBadge(m.sentiment || 'neutral') + (m.urgency === 'high' ? ' <span class="ag-senti" style="color:#ff6f6f;border-color:#ff6f6f55">urgent</span>' : '') + '<p class="ag-brieftxt">' + esc(m.text || '') + '</p></li>'
       ).join('');
+      // Topic/intent tags (LLM-classified) grouped by count.
+      const topicsBlock = d.topics && (d.topics.top || []).length
+        ? '<div class="blk"><b>Topics</b><div class="ag-topics">' + (d.topics.top || []).map((t) => '<span class="ag-topic">' + esc(t.topic) + ' ×' + t.n + '</span>').join('') + '</div></div>'
+        : '';
+      // Critic verdict badge per draft reply (ready-to-post / review / flagged).
+      const critTag = (dd) => {
+        const cr = dd.critic || null;
+        if (!cr) return '';
+        if (cr.ready === 'flagged') return ' <span class="ag-crit flag" title="' + esc(cr.reason || '') + '">⚠ flagged</span>';
+        if (cr.ready === 'review') return ' <span class="ag-crit review" title="' + esc(cr.reason || '') + '">review</span>';
+        return ' <span class="ag-crit post">ready</span>';
+      };
+      const approveBtn = (i, dd) => {
+        const cr = dd.critic || {};
+        const canApprove = cr.ready === 'post' || cr.ready === 'review';
+        if (!d.runId) return '';
+        const base = '<button type="button" class="btn ag-approve" data-reply="' + i + '" data-brand="' + esc(d.brand || '') + '" data-run="' + esc(d.runId || '') + '" title="send human verdict to KV">';
+        return base + '✓ Approve</button>' + (canApprove ? '' : '<span class="ag-crit flag" style="margin-left:6px">hold — human review first</span>');
+      };
       const drafts = (d.drafts || []).slice(0, 4).map((dd, i) =>
-        '<li class="ag-draftli"><div class="ag-draftrow"><span class="ag-draft-senti">' + sentiBadge(dd.sentiment || 'neutral') + '</span><span class="ag-hint">' + esc(dd.platform || '') + '</span></div>' +
-        '<textarea class="ag-draftta" rows="2" data-reply="' + i + '" placeholder="edit this draft reply…">' + esc(dd.reply || '') + '</textarea>' +
+        '<li class="ag-draftli"><div class="ag-draftrow"><span class="ag-draft-senti">' + sentiBadge(dd.sentiment || 'neutral') + '</span><span class="ag-hint">' + esc(dd.platform || '') + '</span>' + critTag(dd) + approveBtn(i, dd) + '</div>' +
+        '<textarea class="ag-draftta' + (dd.critic && dd.critic.ready !== 'post' ? ' ag-draftta-warn' : '') + '" rows="2" data-reply="' + i + '" placeholder="edit this draft reply…">' + esc(dd.reply || '') + '</textarea>' +
         '<button type="button" class="btn ag-draftcopy" data-reply="' + i + '">⧉ Copy reply</button></li>'
       ).join('');
       const queue = (d.queue || []).slice(0, 4).map((q) =>
@@ -323,9 +349,23 @@ const body = `<section class="lpage-wrap">
         : '<li class="ag-ok">No negative mentions flagged — nothing needs a human right now.</li>';
       const platRows = platformRows(d.mentions || []);
       const trendB = '<div class="blk"><b>Momentum · last runs</b>' + trendHtml(d) + '</div>';
+      // Competitor vs block: share of voice bar + negative split.
+      const vsB = (d.vs && d.vs.competitor)
+        ? '<div class="blk"><b>Share of voice vs ' + esc(d.vs.competitor) + '</b>' +
+          '<div class="ag-vsbar"><i style="width:' + d.vs.sov + '%"></i></div>' +
+          '<div class="ag-hint" style="margin-top:6px">' + d.vs.brand.mentions + ' mentions ' + (d.brand || '') + ' · ' + d.vs.rival.mentions + ' ' + esc(d.vs.competitor) + ' · ' + d.vs.brand.negative + ' vs ' + d.vs.rival.negative + ' negatives</div></div>'
+        : '';
+      // Storm drift banner + "what changed" delta line from the AI layer.
+      let stormBanner = '';
+      if (d.storm && d.storm.forming) {
+        stormBanner = '<div class="ag-storm"><b>🚨 Storm forming</b> — crisis jumped ' + (d.storm.jump != null ? '+' + d.storm.jump : '') + ' pts (' + (d.storm.from != null ? d.storm.from : '?') + ' → ' + (d.storm.to != null ? d.storm.to : '?') + ')' + (d.storm.active ? ' · at critical level' : '') + '. Prioritise the P0 queue now.</div>';
+      } else if (d.deltaText) {
+        stormBanner = '<div class="ag-delta">📈 ' + esc(d.deltaText) + '</div>';
+      }
       brief.innerHTML =
         '<div class="ag-plan-head"><h3>🛰 Grapevine briefing for: ' + esc(d.brand || '') + '</h3>' +
         '<div class="ag-actions"><button type="button" class="btn" id="agPdfBtn">⬇ PDF</button><button type="button" class="btn" id="agCsvBtn">⬇ CSV</button><button type="button" class="btn" id="agTtsBtn">🔊 Hear briefing</button></div></div>' +
+        stormBanner +
         '<div class="grid">' +
           '<div class="blk"><b>Sentiment</b>' +
             '<div style="font-size:12px;margin-top:4px"><span style="color:#8affc1">▲ ' + (tally.positive || 0) + ' positive</span></div>' + bar(tally.positive || 0, '#2ff3c0') +
@@ -337,8 +377,10 @@ const body = `<section class="lpage-wrap">
           '<div class="blk"><b>Top platforms</b><div class="ag-plats">' + platRows + '</div></div>' +
           '<div class="blk"><b>Mentions</b><ul class="ag-mentions">' + (mentions || '<li>—</li>') + '</ul></div>' +
           '<div class="blk"><b>Drafted replies</b><ul class="ag-drafts">' + (drafts || '<li>—</li>') + '</ul></div>' +
+          topicsBlock +
           '<div class="blk"><b>Human escalation queue</b><ul class="ag-queue">' + queueBody + '</ul></div>' +
           trendB +
+          vsB +
         '</div>' +
         (d.briefing ? '<div class="ag-summary">' + esc(d.briefing) + '</div>' : '') +
         ((d.nextSteps || []).length ? '<div class="ag-summary"><b>Next steps:</b> ' + (d.nextSteps || []).map(function (s) { return '<span class="ag-hint">' + esc(s) + '</span>'; }).join(' &nbsp;→&nbsp; ') + '</div>' : '') +
@@ -350,6 +392,19 @@ const body = `<section class="lpage-wrap">
         btn.addEventListener('click', function () {
           const ta = document.querySelector('.ag-draftta[data-reply="' + btn.getAttribute('data-reply') + '"]');
           copyText((ta && ta.value) ? ta.value : '').then(function () { btn.textContent = '✓ Copied'; setTimeout(function () { btn.textContent = '⧉ Copy reply'; }, 1600); }).catch(function () { btn.textContent = 'Copy failed'; });
+        });
+      });
+      Array.prototype.slice.call(document.querySelectorAll('.ag-approve')).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const ta = document.querySelector('.ag-draftta[data-reply="' + btn.getAttribute('data-reply') + '"]');
+          const reply = (ta && ta.value) ? ta.value : '';
+          const brand = btn.getAttribute('data-brand');
+          const run = btn.getAttribute('data-run');
+          const idx = btn.getAttribute('data-reply');
+          fetch('/api/grapevine?sub=approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand: brand, runId: run, index: idx, reply: reply, verdict: 'approved' }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { btn.textContent = j && j.ok ? '✓ Approved' : 'approval failed'; })
+            .catch(function () { btn.textContent = 'approval failed'; });
         });
       });
       const copyBtn = $('agCopyBtn');
@@ -431,9 +486,12 @@ const body = `<section class="lpage-wrap">
         if (a.call) L.push('   tool:     ' + a.call + (a.result ? (' → ' + a.result) : ''));
       });
       L.push('');
+      if (d.storm && d.storm.forming) L.push('STORM: crisis jumped ' + (d.storm.jump != null ? '+' + d.storm.jump : '') + ' pts — treat as forming crisis.');
+      if (d.deltaText) L.push('DELTA: ' + d.deltaText);
+      if (d.topics && d.topics.top) L.push('TOPICS: ' + (d.topics.top || []).map((t) => t.topic + ' ×' + t.n).join(', '));
       if (d.crisis) L.push('CRISIS: ' + (d.crisis.score != null ? d.crisis.score + '/100 ' : '') + (d.crisis.level || ''));
       (d.mentions || []).forEach(function (m) { L.push('MENTION [' + (m.platform || 'web') + '] (' + (m.sentiment || '') + '): ' + (m.text || '')); });
-      (d.drafts || []).forEach(function (dd) { L.push('REPLY [' + (dd.sentiment || '') + ']: ' + (dd.reply || '')); });
+      (d.drafts || []).forEach(function (dd) { L.push('REPLY [' + (dd.sentiment || '') + ']' + (dd.critic ? ' {' + dd.critic.ready + (dd.critic.reason ? ': ' + dd.critic.reason : '') + '}' : '') + ': ' + (dd.reply || '')); });
       (d.queue || []).forEach(function (q) { L.push('ESCALATE (' + (q.priority || '') + '): ' + (q.text || '')); });
       L.push('');
       if (d.briefing) L.push('BRIEFING: ' + d.briefing);
@@ -448,16 +506,19 @@ const body = `<section class="lpage-wrap">
       row('runId', d.runId || '');
       row('mode', d.mode || '');
       row('serp', (d.serpCount || 0) + ' live mentions');
+      if (d.storm && d.storm.forming) row('storm', 'forming (+' + d.storm.jump + ' pts)');
+      if (d.deltaText) row('delta', d.deltaText);
+      if (d.topics && d.topics.top) row('topics', (d.topics.top || []).map((t) => t.topic + '=x' + t.n).join(' '));
       if (d.crisis) row('crisis_score', d.crisis.score != null ? d.crisis.score : '', 'crisis_level', d.crisis.level || '');
       if (d.tally) row('sentiment', 'positive=' + (d.tally.positive || 0), 'negative=' + (d.tally.negative || 0), 'neutral=' + (d.tally.neutral || 0));
       csv.push('');
       row('MENTIONS');
-      row('platform', 'sentiment', 'urgency', 'text');
-      (d.mentions || []).forEach((m) => row(m.platform || 'web', m.sentiment || '', m.urgency || '', m.text || ''));
+      row('platform', 'sentiment', 'urgency', 'topic', 'text');
+      (d.mentions || []).forEach((m) => row(m.platform || 'web', m.sentiment || '', m.urgency || '', m.topic || '', m.text || ''));
       csv.push('');
       row('DRAFT REPLIES');
-      row('sentiment', 'platform', 'reply');
-      (d.drafts || []).forEach((dd) => row(dd.sentiment || '', dd.platform || '', dd.reply || ''));
+      row('sentiment', 'platform', 'critic', 'reply');
+      (d.drafts || []).forEach((dd) => row(dd.sentiment || '', dd.platform || '', (dd.critic ? dd.critic.ready : '') || '', dd.reply || ''));
       csv.push('');
       row('ESCALATION QUEUE');
       row('priority', 'platform', 'text');
@@ -503,6 +564,7 @@ const body = `<section class="lpage-wrap">
         logLine('a', 'replayed stored watch ' + runId);
         orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(j.orchestrator || 'Watching ' + (j.brand || 'the brand') + '…') + '</span>';
         renderBrief(j);
+        populateHist(j.brand);
       } catch (e2) {
         logLine('a', 'replay failed — stored watch may have expired');
       } finally {
@@ -547,11 +609,14 @@ const body = `<section class="lpage-wrap">
       stage.hidden = false;
       reset();
       data = null;
+      const platforms = platformSel && platformSel.selectedOptions ? Array.prototype.slice.call(platformSel.selectedOptions).filter(function (o) { return o.value; }).map(function (o) { return o.value; }) : (platformSel && platformSel.value ? [platformSel.value] : []);
+      const vs = vsEl ? String(vsEl.value || '').trim().slice(0, 120) : '';
+      const scheduleOn = scheduleChk ? !!scheduleChk.checked : false;
       try {
         const res = await fetch('/api/grapevine', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ brand: b, platform: platformSel.value ? [platformSel.value] : [], stream: true })
+          body: JSON.stringify({ brand: b, vs: vs || undefined, platform: platforms, stream: true })
         });
         if (!res.ok) throw new Error('bad');
         const reader = res.body.getReader();
@@ -654,6 +719,13 @@ const body = `<section class="lpage-wrap">
       }
 
       renderBrief(data);
+      if (scheduleOn && vsEl) {
+        try {
+          const sr = await fetch('/api/grapevine?sub=schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brand: b, hours: 24 }) });
+          const sj = await sr.json();
+          logLine('a', sj && sj.scheduled ? ('daily watch scheduled for "' + b + '" — alert threshold: ' + ALERT_SCORE + ' or flagged draft') : 'schedule toggle skipped');
+        } catch (e) { logLine('a', 'daily watch schedule failed'); }
+      }
       runBtn.disabled = false;
       runBtn.textContent = '▶ Run again';
     }
