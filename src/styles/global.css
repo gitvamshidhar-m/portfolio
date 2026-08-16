@@ -960,6 +960,20 @@ body.bs-open{overflow:hidden}
 .ag-spend-track i{display:block;height:100%;border-radius:999px;transition:width .6s var(--ease)}
 .ag-spend b{min-width:44px;text-align:right;color:var(--accent2);font-variant-numeric:tabular-nums}
 
+/* ===== Sentinel briefing ===== */
+.ag-brief{margin-top:22px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent2-soft) 60%,transparent),transparent);border:1px solid color-mix(in srgb,var(--accent2) 30%,var(--line));border-radius:var(--radius-lg);padding:clamp(18px,4vw,28px)}
+.ag-brief .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.ag-brief .blk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.ag-brief .blk>b{display:block;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.ag-brief ul{margin:0;padding-left:0;list-style:none}
+.ag-brief li{font-size:13px;margin:8px 0;line-height:1.5}
+.ag-gauge{display:flex;align-items:center;gap:12px;font-size:46px;font-weight:800;letter-spacing:-1px;color:var(--aglv,#8affc1);line-height:1;margin:6px 0 2px}
+.ag-gauge i{font-style:normal;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:5px 10px;border-radius:999px;color:#0b0b16}
+.ag-senti{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid;vertical-align:middle}
+.ag-pri{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;background:var(--bg2);border:1px solid currentColor;vertical-align:middle}
+.ag-brieftxt{margin:5px 0 0;color:var(--txt);font-size:12.5px;line-height:1.5}
+.ag-share-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+
 /* ===== Hive proof band ===== */
 .ag-proof{margin-top:8px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent-soft) 70%,transparent),transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:var(--radius-lg);padding:clamp(18px,4vw,28px)}
 

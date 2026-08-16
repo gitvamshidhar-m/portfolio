@@ -101,6 +101,119 @@ function ruleDraft(brief) {
   return { ok: true, text: hooks[(clean.length + Date.now()) % hooks.length] };
 }
 
+// --- Sentinel real tools: reputation & social monitoring --------------------
+
+const POS_LEX = ['love','loved','amazing','great','best','excellent','awesome','happy','good','recommend','worth','fast','reliable','smooth','helpful','impressive','top','thank','solid','brilliant','seamless'];
+const NEG_LEX = ['worst','terrible','hate','hated','awful','bad','scam','fraud','refund','broken','crash','bug','delay','late','slow','unresponsive','rude','waste','fake','dishonest','broke','fail','failed','disappoint','complaint'];
+
+function lexScore(text) {
+  const t = String(text || '').toLowerCase();
+  let pos = 0, neg = 0;
+  POS_LEX.forEach(function (w) { if (t.indexOf(w) >= 0) pos++; });
+  NEG_LEX.forEach(function (w) { if (t.indexOf(w) >= 0) neg++; });
+  return { pos: pos, neg: neg };
+}
+
+// Map a web result's domain to a public platform so the briefing groups mentions.
+function platformOf(domain) {
+  const d = String(domain || '').toLowerCase();
+  if (!d) return 'web';
+  if (d.indexOf('twitter') >= 0 || d.indexOf('x.com') >= 0) return 'X / Twitter';
+  if (d.indexOf('facebook') >= 0) return 'Facebook';
+  if (d.indexOf('instagram') >= 0) return 'Instagram';
+  if (d.indexOf('youtube') >= 0) return 'YouTube';
+  if (d.indexOf('linkedin') >= 0) return 'LinkedIn';
+  if (d.indexOf('reddit') >= 0) return 'Reddit';
+  if (d.indexOf('trustpilot') >= 0) return 'Trustpilot';
+  if (d.indexOf('glassdoor') >= 0) return 'Glassdoor';
+  if (d.indexOf('play.google') >= 0 || d.indexOf('apps.apple') >= 0) return 'App store';
+  if (d.indexOf('quora') >= 0) return 'Quora';
+  if (d.indexOf('producthunt') >= 0) return 'Product Hunt';
+  return 'Web';
+}
+
+// Scan live SERP for brand mentions across platforms.
+async function sentinelScan(args) {
+  const q = String(args.q || args.brand || 'brand').slice(0, 200);
+  const res = await serp(q, { num: 8 });
+  if (!Array.isArray(res) || !res.length) return { ok: false, error: 'no mentions found' };
+  return {
+    ok: true,
+    mentions: res.map(function (r) {
+      const txt = ((r.title || '') + '. ' + (r.snippet || '')).slice(0, 220);
+      return { text: txt, platform: platformOf(r.domain), domain: r.domain || '', link: r.link || '' };
+    })
+  };
+}
+
+// Classify a batch of mentions by sentiment (lexicon) + urgency + topic guess.
+function sentinelSentiment(args) {
+  const mentions = Array.isArray(args.mentions) ? args.mentions : [];
+  const out = mentions.map(function (m) {
+    const s = lexScore(m.text || '');
+    const sentiment = s.pos > s.neg ? 'positive' : (s.neg > s.pos ? 'negative' : 'neutral');
+    const urgency = s.neg >= 2 ? 'high' : (s.neg === 1 ? 'medium' : 'low');
+    return { text: String(m.text || '').slice(0, 220), platform: m.platform || 'web', domain: m.domain || '', link: m.link || '', sentiment: sentiment, pos: s.pos, neg: s.neg, urgency: urgency };
+  });
+  const tally = { positive: 0, negative: 0, neutral: 0 };
+  out.forEach(function (m) { tally[m.sentiment]++; });
+  return { ok: true, classified: out, tally: tally, total: out.length };
+}
+
+// Crisis detection: score 0-100 from negative share, volume and severity words.
+function sentinelCrisis(args) {
+  const mentions = Array.isArray(args.mentions) ? args.mentions : [];
+  const tally = args.tally || {};
+  const total = Math.max(mentions.length || 1, 1);
+  const neg = tally.negative || 0;
+  const vol = Math.min(mentions.length, 8) / 8; // 0..1 conversation volume
+  const negShare = neg / total;
+  const severity = Math.min(mentions.filter(function (m) { return m.urgency === 'high'; }).length, 4) / 4;
+  const score = Math.round(Math.min(100, negShare * 70 + vol * 15 + severity * 15));
+  let level = 'normal';
+  if (score >= 70) level = 'critical';
+  else if (score >= 45) level = 'elevated';
+  else if (score >= 20) level = 'watch';
+  return { ok: true, score: score, level: level, negative: neg, total: total, vol: Math.round(vol * 100) + '%' };
+}
+
+// Draft an on-brand public response for one mention (LLM when key present).
+async function sentinelRespond(args) {
+  const mention = String(args.text || '').slice(0, 220);
+  const sentiment = String(args.sentiment || 'neutral');
+  const key = (process.env.GROQ_API_KEY || '').trim();
+  const template = function (m) {
+    const t = String(m || '').slice(0, 140);
+    if (sentiment === 'negative') return 'We hear you — really sorry about "' + t + '". DM us your order/account details and we\'ll make it right today.';
+    if (sentiment === 'positive') return 'Thank you so much! "' + t + '" means the world — glad it\'s working for you.';
+    return 'Thanks for the mention — we\'d love to hear more.';
+  };
+  if (!key || !mention) return { ok: true, reply: template(mention) };
+  try {
+    const r = await fetch(GROQ, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, temperature: 0.5, max_tokens: 70, messages: [{ role: 'system', content: 'You write warm, human, on-brand social replies for a company. Match the tone to the sentiment (' + sentiment + '). No emojis, no hype, under 30 words, no markdown. Output ONLY the reply.' }, { role: 'user', content: mention }] })
+    });
+    const j = await r.json();
+    const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content || '').trim();
+    return txt ? { ok: true, reply: txt, usage: j.usage || null } : { ok: true, reply: template(mention) };
+  } catch (e) { return { ok: true, reply: template(mention) }; }
+}
+
+// Escalation matrix: decide which mentions a human must see first.
+function sentinelEscalate(args) {
+  const mentions = Array.isArray(args.mentions) ? args.mentions : [];
+  const crisis = args.crisis || {};
+  const queue = mentions
+    .filter(function (m) { return m.sentiment === 'negative'; })
+    .sort(function (a, b) { return b.neg - a.neg; })
+    .map(function (m, i) {
+      return { text: String(m.text || '').slice(0, 180), platform: m.platform || 'web', urgency: m.urgency || 'low', priority: (i === 0 && (m.urgency === 'high')) ? 'P0' : (m.urgency === 'high' ? 'P1' : 'P2') };
+    });
+  return { ok: true, escalated: queue.length, queue: queue.slice(0, 5), crisisLevel: crisis.level || 'normal' };
+}
+
 // --- registry --------------------------------------------------------------
 
 const REGISTRY = {
@@ -109,7 +222,12 @@ const REGISTRY = {
   'calc.roi': { run: calcRoas, desc: 'ROAS from revenue & spend' },
   'calc.cpl': { run: calcCpl, desc: 'CPL / CTR from spend, leads, clicks' },
   'market.sizer': { run: marketSizer, desc: 'Market size funnel estimate' },
-  'llm.draft': { run: llmDraft, desc: 'Draft hook / ad copy' }
+  'llm.draft': { run: llmDraft, desc: 'Draft hook / ad copy' },
+  'sentinel.scan': { run: sentinelScan, desc: 'Scan live SERP for brand mentions' },
+  'sentinel.sentiment': { run: sentinelSentiment, desc: 'Classify mention sentiment / urgency' },
+  'sentinel.crisis': { run: sentinelCrisis, desc: 'Crisis score 0-100 from mentions' },
+  'sentinel.respond': { run: sentinelRespond, desc: 'Draft an on-brand reply' },
+  'sentinel.escalate': { run: sentinelEscalate, desc: 'Escalation queue for humans' }
 };
 
 const TOOL_IDS = Object.keys(REGISTRY);

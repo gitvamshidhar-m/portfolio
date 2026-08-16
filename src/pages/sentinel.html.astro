@@ -1,0 +1,506 @@
+---
+import Base from '../layouts/Base.astro';
+import LeadForm from '../components/LeadForm.astro';
+
+const op = {
+  title: "Sentinel — Autonomous Reputation & Social Listening | Vamshidhar Reddy",
+  description: "Sentinel is an autonomous reputation team: it scans live search and social for brand mentions, classifies sentiment, scores crisis risk, drafts on-brand replies, and builds a human escalation queue.",
+  canonical: "https://vamshidharm.vercel.app/sentinel.html",
+  ogImage: "",
+  variant: 'sub',
+  active: '/sentinel.html',
+};
+const faqLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "What is Sentinel?", acceptedAnswer: { "@type": "Answer", text: "Sentinel is an autonomous reputation & social-listening team. Give it a brand and five agents get to work: the Monitor scans live search and social for mentions, the Classify agent tags sentiment and urgency, the Crisis agent scores the risk, the Respond agent drafts on-brand replies, and the Escalate agent builds a queue of what a human must see first." } },
+    { "@type": "Question", name: "Is the demo real?", acceptedAnswer: { "@type": "Answer", text: "Yes. The Monitor agent runs a real live web search for the brand, the Classify agent runs a real lexicon-based sentiment classifier over the actual mentions it found, the Crisis agent computes a real 0-100 risk score, replies are drafted by a real LLM (Groq) and the escalation queue is ranked from the actual classified mentions. No keys set? It still runs the same real tools and falls back to a rule-based plan for the thinking." } },
+    { "@type": "Question", name: "How is Sentinel different from a social listening tool?", acceptedAnswer: { "@type": "Answer", text: "Listening tools show dashboards and charts. Sentinel is agentic — it doesn't just surface mentions, it reasons about them: it classifies each one, decides whether a spike is turning into a crisis, drafts a reply in your brand voice, and tells your team exactly which items need a human right now. You approve the big calls; the agents handle the watching." } },
+    { "@type": "Question", name: "Where does a human still need to step in?", acceptedAnswer: { "@type": "Answer", text: "On judgement calls that have real downside: approving any public reply that could read as tone-deaf, brand-safety on sensitive mentions, legal/compliance edges, and anything in the P0 escalation queue. Sentinel handles the ~95% of monitoring and triage; the human owns the high-stakes replies." } }
+  ]
+});
+const body = `<section class="lpage-wrap">
+  <div class="wrap">
+    <div class="ag-hero">
+      <div class="ag-hero-copy">
+        <span class="tag">Sentinel · Reputation AI</span>
+        <h1>Sentinel — the reputation team that never sleeps</h1>
+        <p style="color:var(--muted)">Social listening tells you what happened. <b style="color:var(--accent2)">Sentinel decides what to do about it.</b> Five autonomous agents scan the web for your brand, classify every mention, detect a storm before it compounds, draft the replies, and tell your team exactly what needs a human — in minutes, not days.</p>
+        <div class="cta-row" style="justify-content:flex-start">
+          <a class="btn primary btn-lg" href="#demo">▶ Run Sentinel</a>
+          <a class="btn link-secondary" href="/agentic-ai.html">See Hive, the campaign agent →</a>
+        </div>
+      </div>
+      <div class="ag-orbit" aria-hidden="true">
+        <svg class="ag-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line data-agent="monitor" x1="50" y1="50" x2="24" y2="14"></line>
+          <line data-agent="classify" x1="50" y1="50" x2="74" y2="11"></line>
+          <line data-agent="crisis" x1="50" y1="50" x2="9" y2="46"></line>
+          <line data-agent="respond" x1="50" y1="50" x2="90" y2="44"></line>
+          <line data-agent="escalate" x1="50" y1="50" x2="50" y2="84"></line>
+        </svg>
+        <div class="ag-core"><span>BRAND</span><i></i></div>
+        <span class="ag-sat" data-agent="monitor" style="top:14%;left:24%;--agc:#49b6ff">📡</span>
+        <span class="ag-sat" data-agent="classify" style="top:11%;left:74%;--agc:#8b7bff">🧠</span>
+        <span class="ag-sat" data-agent="crisis" style="top:46%;left:9%;--agc:#ff6f6f">🚨</span>
+        <span class="ag-sat" data-agent="respond" style="top:44%;left:90%;--agc:#ff9e5c">💬</span>
+        <span class="ag-sat" data-agent="escalate" style="top:84%;left:50%;--agc:#ffd479">🛎</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:40px">
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">The team</span><h2 style="font-size:clamp(20px,3vw,26px)">Five agents. One brand. Zero blind spots.</h2></div>
+    <div class="ab-grid">
+      <div class="ab-variant"><b>📡 Monitor Agent</b><span class="ag-persona">The Eavesdropper</span><p>Scans live search and social for every mention of your brand, everywhere it's discussed.</p></div>
+      <div class="ab-variant"><b>🧠 Classify Agent</b><span class="ag-persona">The Judge</span><p>Tags each mention by sentiment, urgency and platform — so you see the signal, not the noise.</p></div>
+      <div class="ab-variant"><b>🚨 Crisis Agent</b><span class="ag-persona">The Firefighter</span><p>Scores negative share, volume and severity into a 0-100 risk — and catches a storm early.</p></div>
+      <div class="ab-variant"><b>💬 Respond Agent</b><span class="ag-persona">The Voice</span><p>Drafts warm, on-brand replies to the loudest mentions, positive and negative.</p></div>
+      <div class="ab-variant"><b>🛎 Escalate Agent</b><span class="ag-persona">The Captain</span><p>Ranks what only a human should touch into a P0/P1/P2 queue.</p></div>
+    </div>
+  </div>
+
+  <div class="wrap" id="demo" style="margin-top:44px;scroll-margin-top:90px">
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · Sentinel + live SERP</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Put Sentinel on watch</h2>
+    <p style="color:var(--muted);max-width:680px">Type a brand. The agents will scan live search, classify the mentions, score the risk, draft replies and build your escalation queue. Runs on Groq — no account, nothing stored beyond an anonymous counter.</p></div>
+    <div class="ag-console">
+      <div class="ag-input">
+        <label for="brandInput">Your brand</label>
+        <input id="brandInput" type="text" placeholder="e.g. an Indian D2C skincare brand" />
+        <div class="ag-row">
+          <select id="platformSel" aria-label="Focus platform" title="Focus platform">
+            <option value="">All platforms</option>
+            <option value="reddit">Reddit</option>
+            <option value="twitter">X / Twitter</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="youtube">YouTube</option>
+            <option value="trustpilot">Trustpilot</option>
+            <option value="glassdoor">Glassdoor</option>
+          </select>
+        </div>
+        <div class="ag-runrow">
+          <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Sentinel</button>
+          <span id="agMode" class="ag-mode" hidden></span>
+          <span id="agSerp" class="ag-mode serp" hidden></span>
+          <span class="ag-hint">Try: “an Indian D2C skincare brand” or “a SaaS project management tool”.</span>
+        </div>
+      </div>
+      <div class="ag-stage" id="agStage" hidden>
+        <div class="ag-orch" id="agOrch"></div>
+        <div class="ag-agents" id="agAgents"></div>
+        <div class="ag-log" id="agLog"></div>
+      </div>
+      <div class="ag-brief" id="agBrief" hidden></div>
+      <div class="ag-share-row" id="agShareRow" hidden>
+        <button type="button" class="btn" id="agCopyBtn">⧉ Copy briefing</button>
+        <button type="button" class="btn" id="agShareBtn">🔗 Share</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:44px">
+    <div class="ag-proof">
+      <div class="ag-proof-copy">
+        <span class="tag">Why Sentinel exists</span>
+        <h2 style="font-size:clamp(20px,3vw,26px)">Reputation is decided before you see it</h2>
+        <p style="color:var(--muted);max-width:640px">By the time a brand team opens the dashboard, the thread has already gone viral. Sentinel watches in real time, classifies instantly, and hands your team a drafted reply and a ranked queue — so the response time is minutes, not a crisis post-mortem.</p>
+        <div class="cta-row" style="justify-content:flex-start">
+          <a class="btn primary" href="/hire.html">Want this on your brand? Let's talk →</a>
+          <a class="btn link-secondary" href="/agentic-ai.html">Meet Hive, the campaign agent</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:40px">
+    <span class="tag">Common questions</span>
+    <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Monitor scans live search + social for brand mentions; Classify tags sentiment/urgency/platform; Crisis scores the risk 0-100 and flags a storm early; Respond drafts on-brand replies; Escalate ranks what a human must see into a P0/P1/P2 queue.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Can Sentinel reply on my real accounts?</summary><p style="color:var(--muted);margin-top:8px">Yes — that's the build. Behind the guardrails it connects to your social inboxes and review platforms, drafts replies, and a human approves before anything posts. This page is the safe, read-only showcase of the orchestration.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Where does agentic AI still need a human?</summary><p style="color:var(--muted);margin-top:8px">On brand-safety and tone: no agent posts a reply that could read as tone-deaf. Legal/compliance edges and any P0 escalation are human-owned. Sentinel handles the watching and triage; a person owns the high-stakes replies.</p></details>
+    </div>
+  </div>
+</section>`;
+---
+
+<Base {...op}>
+  <Fragment set:html={body} />
+  <script type="application/ld+json" is:inline set:html={faqLd} />
+  <LeadForm service="ai" serviceLabel="Reputation AI" promise="Want Sentinel watching your brand? I'll scope a guardrailed reputation team for your socials and review platforms — monitor to escalate — and show you the first live briefing." />
+  <script>
+    const AGENT_META = {
+      monitor: { icon: '📡', color: '#49b6ff', persona: 'The Eavesdropper' },
+      classify: { icon: '🧠', color: '#8b7bff', persona: 'The Judge' },
+      crisis: { icon: '🚨', color: '#ff6f6f', persona: 'The Firefighter' },
+      respond: { icon: '💬', color: '#ff9e5c', persona: 'The Voice' },
+      escalate: { icon: '🛎', color: '#ffd479', persona: 'The Captain' }
+    };
+    const STEP = 560, THINK = 560;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const $ = (id) => document.getElementById(id);
+
+    async function type(el, text) {
+      if (!el) return;
+      if (reduce) { el.textContent = text; return; }
+      el.textContent = '';
+      for (let i = 0; i < text.length; i++) {
+        el.textContent += text[i];
+        await sleep(12);
+      }
+    }
+
+    const runBtn = $('runBtn'), brandEl = $('brandInput'), platformSel = $('platformSel');
+    const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), brief = $('agBrief'), shareRow = $('agShareRow');
+    const modeEl = $('agMode'), serpEl = $('agSerp');
+    let tel = null, data = null;
+
+    function telLine(t) {
+      if (!t) return 'no LLM calls metered';
+      const tok = ((t.prompt || 0) + (t.completion || 0));
+      const toolN = (t.tools && t.tools.calls) || 0;
+      const toolMs = (t.tools && t.tools.ms) || 0;
+      return (t.prompt ? (t.calls + ' LLM calls · ' + tok.toLocaleString('en-IN') + ' tokens') : ('0 LLM calls')) + ' · ' + t.ms + 'ms LLM · ' + toolN + ' tools ' + toolMs + 'ms · ≈$' + ((t.cost || 0).toFixed(4)) + ' (est)';
+    }
+
+    function logLine(cls, html) {
+      const d = document.createElement('div');
+      d.className = 'ln';
+      const t = new Date().toLocaleTimeString('en-IN', { hour12: false });
+      d.innerHTML = '<span class="t">' + t + '</span> ' + (cls ? '<span class="' + cls + '">' + html + '</span>' : html);
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function makeCard(a) {
+      const card = document.createElement('div');
+      card.className = 'ag-card';
+      const id = (a.id || '').toLowerCase();
+      card.setAttribute('data-agent', id);
+      const meta = AGENT_META[id] || {};
+      const icon = meta.icon || '🛰';
+      if (meta.color) card.style.setProperty('--agc', meta.color);
+      card.innerHTML =
+        '<div class="ag-card-head">' +
+          '<span class="ag-ico">' + icon + '</span>' +
+          '<div><div class="ag-name">' + esc(a.name || 'Agent') + '</div><div class="ag-role">' + esc(a.role || '') + '</div>' + (meta.persona ? '<span class="ag-persona">' + esc(meta.persona) + '</span>' : '') + '</div>' +
+          '<span class="ag-status">queued</span>' +
+        '</div>' +
+        '<div class="ag-live"></div>' +
+        '<div class="ag-tools">' + (Array.isArray(a.tools) ? a.tools.map((t) => '<span>' + esc(t) + '</span>').join('') : '') + '</div>' +
+        '<div class="ag-field think"><span class="k">Thinking</span><p></p></div>' +
+        '<div class="ag-field act"><span class="k">Action</span><p></p></div>' +
+        '<div class="ag-field out"><span class="k">Output</span><p></p></div>' +
+        '<div class="ag-call"></div>' +
+        '<div class="ag-handoff"></div>';
+      const status = card.querySelector('.ag-status');
+      const thinkP = card.querySelector('.ag-field.think p');
+      const actP = card.querySelector('.ag-field.act p');
+      const outP = card.querySelector('.ag-field.out p');
+      const liveEl = card.querySelector('.ag-live');
+      const callEl = card.querySelector('.ag-call');
+      const handoffEl = card.querySelector('.ag-handoff');
+      return { card, status, thinkP, actP, outP, liveEl, callEl, handoffEl };
+    }
+
+    // Compact offline fallback so the page still demos if the API is unreachable.
+    function clientFallback(brand) {
+      const b = String(brand || 'the brand').trim();
+      const core = b.charAt(0).toUpperCase() + b.slice(1);
+      const ag = (id, thinking, action, output, live, call, result) => ({ id, name: AGENT_META[id].name, persona: AGENT_META[id].persona, role: '', tools: [call], thinking, action, output, live, call, result, status: 'done' });
+      return {
+        mode: 'offline', brand: b,
+        orchestrator: 'Monitor sweeps live search + social for "' + core + '", Classify tags every mention, Crisis scores the risk, Respond drafts replies, Escalate builds the human queue.',
+        agents: [
+          ag('monitor', 'Sweeps live search and social for every mention of "' + core + '".', 'Queries SERP for brand + review/complaint variants.', 'Mentions surfaced across the web — handed to Classify.', 'Scanning live mentions…', 'sentinel.scan', 'live mentions across platforms'),
+          ag('classify', 'Tags each mention by sentiment, urgency and platform.', 'Runs the lexicon classifier over every scanned mention.', 'Sentiment split + urgent items tallied — handed to Crisis.', 'Tagging sentiment + urgency…', 'sentinel.sentiment', 'positive/negative/neutral split'),
+          ag('crisis', 'Watches for a negative spike before it compounds.', 'Scores negative share, volume and severity into a 0-100 risk.', 'Risk level computed from the tally — handed to Respond.', 'Scoring the crisis level…', 'sentinel.crisis', 'risk score + level'),
+          ag('respond', 'Answers the loudest mentions in the brand voice.', 'Drafts a warm public reply for the top positive + negative mentions.', 'Drafted replies queued — handed to Escalate.', 'Drafting on-brand replies…', 'sentinel.respond', 'drafted replies'),
+          ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — Sentinel stands by.', 'Building the human queue…', 'sentinel.escalate', 'P0/P1/P2 escalation queue')
+        ],
+        briefing: 'Sentinel is now watching "' + core + '". It scanned mentions, classified sentiment, scored the crisis level, drafted replies and built a human escalation queue — so a brand-team can react in minutes, not days.',
+        nextSteps: ['Approve the drafted replies for the top mentions', 'Assign the P0/P1 escalations to a human owner', 'Set daily SERP watch on "' + core + '"'],
+        mentions: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', sentiment: 'negative', urgency: 'high' }],
+        crisis: { score: 45, level: 'elevated', negative: 1, total: 3 },
+        queue: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', priority: 'P1' }],
+        drafts: [{ text: 'sample mention', platform: 'Reddit', sentiment: 'negative', reply: 'We hear you — DM us your details and we\'ll make it right today.' }],
+        telemetry: { calls: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } }
+      };
+    }
+
+    function sentiBadge(s) {
+      const c = s === 'negative' ? '#ff6f6f' : (s === 'positive' ? '#8affc1' : '#9aa0c0');
+      return '<span class="ag-senti" style="color:' + c + ';border-color:' + c + '55">' + esc(s) + '</span>';
+    }
+
+    function renderBrief(d) {
+      const tally = d.tally || {};
+      const total = tally.positive + tally.negative + tally.neutral || (d.mentions || []).length || 1;
+      const crisis = d.crisis || {};
+      const level = crisis.level || 'normal';
+      const lvlColor = level === 'critical' ? '#ff6f6f' : (level === 'elevated' ? '#ffd479' : (level === 'watch' ? '#ff9e5c' : '#8affc1'));
+      const bar = (n, c) => '<div style="height:10px;border-radius:6px;background:var(--bg2);overflow:hidden;margin-top:6px"><div style="height:100%;width:' + Math.min(100, Math.round((n / Math.max(total, 1)) * 100)) + '%;background:' + c + '"></div></div>';
+      const mentions = (d.mentions || []).slice(0, 8).map((m) =>
+        '<li>' + (m.platform ? '<b style="color:var(--muted)">' + esc(m.platform) + '</b> · ' : '') + sentiBadge(m.sentiment || 'neutral') + (m.urgency === 'high' ? ' <span class="ag-senti" style="color:#ff6f6f;border-color:#ff6f6f55">urgent</span>' : '') + '<p class="ag-brieftxt">' + esc(m.text || '') + '</p></li>'
+      ).join('');
+      const drafts = (d.drafts || []).slice(0, 4).map((dd) =>
+        '<li><span class="ag-draft-senti">' + sentiBadge(dd.sentiment || 'neutral') + '</span><p class="ag-brieftxt">' + esc(dd.reply || '') + '</p></li>'
+      ).join('');
+      const queue = (d.queue || []).slice(0, 4).map((q) =>
+        '<li><span class="ag-pri" style="color:' + (q.priority === 'P0' ? '#ff6f6f' : (q.priority === 'P1' ? '#ffd479' : '#9aa0c0')) + '">' + esc(q.priority || 'P2') + '</span> <b style="color:var(--muted)">' + esc(q.platform || '') + '</b> — ' + esc((q.text || '').slice(0, 120)) + '</li>'
+      ).join('');
+      brief.innerHTML =
+        '<div class="ag-plan-head"><h3>🛰 Sentinel briefing for: ' + esc(d.brand || '') + '</h3>' +
+        '<div class="ag-actions"><button type="button" class="btn" id="agPdfBtn">⬇ PDF</button><button type="button" class="btn" id="agTtsBtn">🔊 Hear briefing</button></div></div>' +
+        '<div class="grid">' +
+          '<div class="blk"><b>Sentiment</b>' +
+            '<div style="font-size:12px;margin-top:4px"><span style="color:#8affc1">▲ ' + (tally.positive || 0) + ' positive</span></div>' + bar(tally.positive || 0, '#2ff3c0') +
+            '<div style="font-size:12px;margin-top:6px"><span style="color:#ff6f6f">▼ ' + (tally.negative || 0) + ' negative</span></div>' + bar(tally.negative || 0, '#ff6f6f') +
+            '<div style="font-size:12px;margin-top:6px"><span style="color:#9aa0c0">— ' + (tally.neutral || 0) + ' neutral</span></div>' + bar(tally.neutral || 0, '#9aa0c0') +
+            '<div class="ag-hint" style="margin-top:8px">' + (d.serpCount || 0) + ' live mentions scanned</div></div>' +
+          '<div class="blk"><b>Crisis score</b><div class="ag-gauge" style="--aglv:' + lvlColor + '">' + (crisis.score != null ? crisis.score : '—') + '<i style="background:' + lvlColor + '">' + esc(level) + '</i></div>' +
+            (crisis.negative != null ? '<div class="ag-hint" style="margin-top:8px">' + crisis.negative + '/' + crisis.total + ' mentions negative · volume ' + esc(crisis.vol || '') + '</div>' : '') + '</div>' +
+          '<div class="blk"><b>Mentions</b><ul class="ag-mentions">' + (mentions || '<li>—</li>') + '</ul></div>' +
+          '<div class="blk"><b>Drafted replies</b><ul class="ag-drafts">' + (drafts || '<li>—</li>') + '</ul></div>' +
+          '<div class="blk" style="grid-column:span 2"><b>Human escalation queue</b><ul class="ag-queue">' + (queue || '<li>—</li>') + '</ul></div>' +
+        '</div>' +
+        (d.briefing ? '<div class="ag-summary">' + esc(d.briefing) + '</div>' : '') +
+        ((d.nextSteps || []).length ? '<div class="ag-summary"><b>Next steps:</b> ' + (d.nextSteps || []).map(function (s) { return '<span class="ag-hint">' + esc(s) + '</span>'; }).join(' &nbsp;→&nbsp; ') + '</div>' : '') +
+        (d.telemetry ? '<div class="ag-tel"><b>Run telemetry:</b> ' + esc(telLine(d.telemetry)) + '</div>' : '');
+      brief.hidden = false;
+      shareRow.hidden = false;
+      const copyBtn = $('agCopyBtn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+          copyText(briefToText(d)).then(function () { copyBtn.textContent = '✓ Copied'; setTimeout(function () { copyBtn.textContent = '⧉ Copy briefing'; }, 1800); }).catch(function () { copyBtn.textContent = 'Copy failed'; });
+        });
+      }
+      const shareBtn = $('agShareBtn');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', function () {
+          const h = '#{"brand":"' + encodeURIComponent(d.brand || '') + '"}';
+          copyText(location.origin + location.pathname + h).then(function () { shareBtn.textContent = '✓ Link copied'; setTimeout(function () { shareBtn.textContent = '🔗 Share'; }, 1800); }).catch(function () { shareBtn.textContent = 'Copy failed'; });
+        });
+      }
+      const pdfBtn = $('agPdfBtn');
+      if (pdfBtn && d.runId) {
+        pdfBtn.addEventListener('click', function () {
+          pdfBtn.textContent = '⏳ Building…';
+          fetch('/api/agentic/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId: d.runId }) })
+            .then(function (r) {
+              if (!r.ok) throw new Error('bad');
+              return r.blob();
+            }).then(function (blob) {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'sentinel-briefing.pdf';
+              document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+              pdfBtn.textContent = '⬇ PDF';
+            }).catch(function () { pdfBtn.textContent = 'PDF failed'; });
+        });
+      }
+      const ttsBtn = $('agTtsBtn');
+      if (ttsBtn) {
+        ttsBtn.addEventListener('click', async function () {
+          const text = 'Sentinel briefing for ' + (d.brand || '') + '. ' + (d.briefing || '');
+          ttsBtn.disabled = true;
+          ttsBtn.textContent = '⏳ Preparing…';
+          try {
+            const r = await fetch('/api/agentic/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text.slice(0, 1200), lang: 'en' }) });
+            if (!r.ok) throw new Error('bad');
+            const blob = await r.blob();
+            const url = URL.createObjectURL(blob);
+            const au = new Audio(url);
+            const reset = function () { URL.revokeObjectURL(url); ttsBtn.disabled = false; ttsBtn.textContent = '🔊 Hear briefing'; };
+            au.onended = reset;
+            au.onerror = reset;
+            ttsBtn.textContent = '🔈 Playing…';
+            au.play();
+          } catch (e) {
+            ttsBtn.disabled = false;
+            ttsBtn.textContent = '🔊 Hear briefing';
+          }
+        });
+      }
+    }
+
+    function briefToText(d) {
+      const L = [];
+      L.push('SENTINEL BRIEFING: ' + (d.brand || ''));
+      L.push('');
+      (d.agents || []).forEach(function (a) {
+        L.push('• ' + (a.name || 'Agent'));
+        if (a.thinking) L.push('   thinking: ' + a.thinking);
+        if (a.action) L.push('   action:   ' + a.action);
+        if (a.output) L.push('   output:   ' + a.output);
+        if (a.call) L.push('   tool:     ' + a.call + (a.result ? (' → ' + a.result) : ''));
+      });
+      L.push('');
+      if (d.crisis) L.push('CRISIS: ' + (d.crisis.score != null ? d.crisis.score + '/100 ' : '') + (d.crisis.level || ''));
+      (d.mentions || []).forEach(function (m) { L.push('MENTION [' + (m.platform || 'web') + '] (' + (m.sentiment || '') + '): ' + (m.text || '')); });
+      (d.drafts || []).forEach(function (dd) { L.push('REPLY [' + (dd.sentiment || '') + ']: ' + (dd.reply || '')); });
+      (d.queue || []).forEach(function (q) { L.push('ESCALATE (' + (q.priority || '') + '): ' + (q.text || '')); });
+      L.push('');
+      if (d.briefing) L.push('BRIEFING: ' + d.briefing);
+      return L.join('\n');
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+      return new Promise(function (resolve, reject) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); resolve();
+        } catch (e) { reject(e); }
+      });
+    }
+
+    function reset() {
+      agents.innerHTML = '';
+      log.innerHTML = '';
+      orch.innerHTML = '';
+      brief.hidden = true;
+      shareRow.hidden = true;
+      if (modeEl) modeEl.hidden = true;
+      if (serpEl) serpEl.hidden = true;
+    }
+
+    async function run() {
+      const b = brandEl.value.trim();
+      if (!b) { brandEl.focus(); brandEl.style.borderColor = 'var(--accent)'; return; }
+      brandEl.style.borderColor = '';
+      runBtn.disabled = true;
+      runBtn.textContent = '⏳ Sentinel watching…';
+      stage.hidden = false;
+      reset();
+      data = null;
+      try {
+        const res = await fetch('/api/sentinel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brand: b, platform: platformSel.value ? [platformSel.value] : [], stream: true })
+        });
+        if (!res.ok) throw new Error('bad');
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx); buf = buf.slice(idx + 1);
+            if (!line.trim()) continue;
+            let ev = null;
+            try { ev = JSON.parse(line); } catch (e) { continue; }
+            if (ev.event === 'tool') {
+              const ok = ev.exec && ev.exec.ok;
+              logLine(ok ? 't' : 'a', (AGENT_META[ev.id] ? (AGENT_META[ev.id].icon + ' ') : '🛰 ') + '<b>' + esc(ev.tool || 'tool') + '</b> ' + (ok ? 'executed in ' + ev.exec.ms + 'ms' : 'failed — fallback used'));
+            } else if (ev.event === 'serp') {
+              if (ev.used) logLine('t', 'monitor grounded in live SERP (' + ev.count + ' results)');
+            } else if (ev.event === 'metrics') {
+              tel = ev.telemetry || null;
+              logLine('m', 'metrics · ' + telLine(ev.telemetry));
+            } else if (ev.event === 'orch') {
+              if (ev.text) {
+                orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator composing:</b> <span class="ag-orch-txt">' + esc(ev.text.slice(-360)) + '</span><span class="ag-orch-dims">…</span></span>';
+                orch.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
+              }
+            } else if (ev.event === 'reflect') {
+              logLine('t', (AGENT_META[ev.id] ? AGENT_META[ev.id].icon + ' ' : '') + 'observed real tool result — handoff updated');
+            } else if (ev.event === 'plan' && ev.data && Array.isArray(ev.data.agents) && ev.data.agents.length) {
+              data = ev.data;
+            }
+          }
+        }
+        if (!data) throw new Error('empty');
+      } catch (e) {
+        data = clientFallback(b);
+        logLine('a', 'live API unreachable — using built-in planner');
+      }
+
+      if (modeEl) {
+        modeEl.hidden = false;
+        modeEl.className = 'ag-mode ' + (data.mode === 'ai' ? 'ai' : 'template');
+        modeEl.textContent = data.mode === 'ai' ? '● LIVE LLM' : (data.mode === 'offline' ? '● OFFLINE DEMO' : '● RULE-BASED FALLBACK');
+      }
+      if (serpEl) {
+        if (data.serpUsed) {
+          serpEl.hidden = false;
+          serpEl.textContent = '🔎 LIVE SERP · ' + (data.serpCount || 0) + ' results';
+        } else {
+          serpEl.hidden = true;
+        }
+      }
+
+      orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(data.orchestrator || 'Watching ' + (data.brand || 'the brand') + '…') + '</span>';
+      logLine('a', 'orchestrator: ' + esc(data.orchestrator || 'starting'));
+
+      const seq = data.agents;
+      for (let i = 0; i < seq.length; i++) {
+        const a = seq[i];
+        const id = (a.id || '').toLowerCase();
+        const ui = makeCard(a);
+        agents.appendChild(ui.card);
+        requestAnimationFrame(() => ui.card.classList.add('show'));
+        const sat = document.querySelector('.ag-sat[data-agent="' + id + '"]');
+        const line = document.querySelector('.ag-lines line[data-agent="' + id + '"]');
+        if (sat) sat.classList.add('on');
+        if (line) line.classList.add('on');
+        ui.status.textContent = 'thinking'; ui.status.className = 'ag-status thinking';
+        ui.card.classList.add('active');
+        const liveTxt = a.live || ((a.name || 'Agent') + ' working');
+        logLine('a', (a.name || 'agent') + ' — ' + liveTxt);
+        await type(ui.liveEl, liveTxt + '…');
+        await sleep(THINK);
+        ui.thinkP.textContent = '';
+        await type(ui.thinkP, a.thinking || '');
+        await sleep(STEP);
+        ui.actP.textContent = a.action || '';
+        ui.outP.textContent = a.output || '';
+        ui.liveEl.textContent = liveTxt;
+        ui.liveEl.classList.add('done');
+        if (a.call && ui.callEl) {
+          const exec = a.exec || null;
+          const toolName = esc(a.call || (exec && exec.tool));
+          if (exec && exec.ok) {
+            ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + '</span><span class="ag-callres real">' + esc(a.result || '') + '</span><span class="ag-callms">' + exec.ms + 'ms</span>';
+          } else if (exec && !exec.ok) {
+            ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + '</span><span class="ag-callres err">' + esc((exec.error || 'tool failed')) + '</span>';
+          } else {
+            ui.callEl.innerHTML = '<span class="ag-calltool">' + toolName + '</span> <span class="ag-callres">' + esc(a.result || '') + '</span>';
+          }
+        }
+        ui.status.textContent = 'done'; ui.status.className = 'ag-status done';
+        ui.card.classList.remove('active'); ui.card.classList.add('done');
+        const next = seq[i + 1];
+        if (next && ui.handoffEl) ui.handoffEl.innerHTML = '↓ hands off to ' + esc(next.name);
+        logLine('', (a.name || 'agent') + ' → ' + esc((a.output || '').slice(0, 90)));
+        await sleep(STEP * 0.35);
+      }
+
+      renderBrief(data);
+      runBtn.disabled = false;
+      runBtn.textContent = '▶ Run again';
+    }
+
+    runBtn.addEventListener('click', run);
+    brandEl.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
+
+    // Deep-link: /sentinel.html#{"brand":...} auto-runs Sentinel for that brand.
+    (function () {
+      try {
+        const h = location.hash && location.hash.length > 4 ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : null;
+        if (h && h.brand) {
+          brandEl.value = String(h.brand).slice(0, 120);
+          setTimeout(run, 350);
+        }
+      } catch (e) {}
+    })();
+  </script>
+</Base>
