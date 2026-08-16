@@ -192,3 +192,50 @@ test('stored briefing replays via GET ?run=', async () => {
   assert.equal(replayed.brand, 'the brand', 'replay should return the stored briefing');
   assert.ok(replayed.replayed === true, 'replay flag should be set');
 });
+
+test('history series + trend persist per brand across runs', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+
+  async function runOnce() {
+    const res = mockRes();
+    await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand' } }, res);
+    return JSON.parse(res.lines[0]);
+  }
+
+  const first = await runOnce();
+  assert.ok(Array.isArray(first.history) && first.history.length === 1, 'first run seeds history with one point');
+  assert.ok(first.history[0].score != null && first.history[0].level, 'history point carries score + level');
+  assert.equal(first.trend, null, 'no trend until a second watch exists');
+
+  const second = await runOnce();
+  assert.ok(second.history.length === 2, 'second run appends to history');
+  assert.ok(second.trend && typeof second.trend.delta === 'number', 'trend delta computed vs previous watch');
+  assert.ok(typeof second.trend.prevScore === 'number', 'trend exposes the previous score');
+});
+
+test('GET ?recent=1 lists past runs and GET ?hist=1 returns the series', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  process.env.KV_REST_API_URL = 'https://kv.example.com';
+  process.env.KV_REST_API_TOKEN = 'test';
+  kvStore = {};
+  const handler = require('../libs/grapevine.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { brand: 'the brand' } }, res);
+  const run = JSON.parse(res.lines[0]);
+
+  const r2 = mockRes();
+  await handler({ method: 'GET', url: '/?brand=the%20brand&recent=1', headers: {} }, r2);
+  const recent = JSON.parse(r2.lines[0]);
+  assert.ok(recent.ok === true, 'recent endpoint ok');
+  assert.ok(Array.isArray(recent.runs) && recent.runs.some((x) => x.runId === run.runId), 'recent includes the just-run id');
+  assert.ok(recent.runs[0].at, 'recent entries carry a timestamp');
+
+  const r3 = mockRes();
+  await handler({ method: 'GET', url: '/?brand=the%20brand&hist=1', headers: {} }, r3);
+  const hist = JSON.parse(r3.lines[0]);
+  assert.ok(Array.isArray(hist.history) && hist.history.length >= 1, 'hist endpoint returns points');
+});

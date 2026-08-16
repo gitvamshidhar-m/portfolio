@@ -48,6 +48,18 @@ async function kvGet(key) {
   } catch (e) { return null; }
 }
 function runId(brand) { return crypto.createHash('sha1').update('grapevine|' + String(brand || '')).digest('hex').slice(0, 12); }
+function brandKey(brand) { return crypto.createHash('sha1').update('grapevine:brand|' + String(brand || '')).digest('hex').slice(0, 16); }
+// Read-modify-write a capped per-brand series (history points or run list) in KV, with TTL.
+async function trackSeries(kind, key, item, cap, ttl) {
+  if (!KV_URL || !KV_TOKEN) return [item];
+  let arr = [];
+  const raw = await kvGet('grapevine:' + kind + ':' + key);
+  if (raw) { try { const p = JSON.parse(raw); if (Array.isArray(p)) arr = p; } catch (e) {} }
+  arr.push(item);
+  if (arr.length > cap) arr = arr.slice(-cap);
+  try { kv([['SET', 'grapevine:' + kind + ':' + key, JSON.stringify(arr)], ['EXPIRE', 'grapevine:' + kind + ':' + key, ttl]]); } catch (e) {}
+  return arr;
+}
 
 const PRICE = { inPerM: 0.59, outPerM: 0.79 };
 let telemetry = { calls: 0, prompt: 0, completion: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } };
@@ -176,10 +188,26 @@ module.exports = async function handler(req, res) {
     if (v) {
       try {
         const c = JSON.parse(v);
-        if (c && c.briefing) { c.briefing.replayed = true; return res.json(c.briefing); }
+        if (c && c.briefing) { c.briefing.replayed = true; c.briefing.replayedAt = c.at || null; return res.json(c.briefing); }
       } catch (e) {}
     }
     return res.status(404).json({ error: 'briefing not found' });
+  }
+  // List recent runs for a brand: GET /api/grapevine?brand=<b>&recent=1
+  if (req.method === 'GET' && url2.searchParams.get('recent')) {
+    const bk = brandKey(String(url2.searchParams.get('brand') || '').slice(0, 120));
+    const raw = await kvGet('grapevine:runs:' + bk);
+    let runs = [];
+    if (raw) { try { const p = JSON.parse(raw); if (Array.isArray(p)) runs = p; } catch (e) {} }
+    return res.json({ ok: true, brand: String(url2.searchParams.get('brand') || '').slice(0, 120), runs: runs.slice(-12).reverse() });
+  }
+  // History series for a brand: GET /api/grapevine?brand=<b>&hist=1
+  if (req.method === 'GET' && url2.searchParams.get('hist')) {
+    const bk = brandKey(String(url2.searchParams.get('brand') || '').slice(0, 120));
+    const raw = await kvGet('grapevine:hist:' + bk);
+    let hist = [];
+    if (raw) { try { const p = JSON.parse(raw); if (Array.isArray(p)) hist = p; } catch (e) {} }
+    return res.json({ ok: true, brand: String(url2.searchParams.get('brand') || '').slice(0, 120), history: hist });
   }
   if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/grapevine with {brand, platform?, stream?} — real mention scan + sentiment + crisis tools execute.' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -194,9 +222,20 @@ module.exports = async function handler(req, res) {
   const stream = !!(b.stream);
   if (stream) res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
   const send = function (obj) { if (stream) res.write(JSON.stringify(obj) + '\n'); };
-  const finish = function (obj) {
+  const finish = async function (obj, snapshot) {
     obj.replayed = false;
     obj.runId = runId(brand);
+    // Persist the per-brand history series (capped) + delta vs last watch.
+    if (snapshot) {
+      const bk = brandKey(brand);
+      const hist = await trackSeries('hist', bk, snapshot.point, 24, 604800 * 4);
+      const last = hist.length > 1 ? hist[hist.length - 2] : null;
+      obj.history = hist;
+      obj.trend = (last && last.score != null && snapshot.score != null)
+        ? { delta: snapshot.score - last.score, prevScore: last.score, prevAt: last.at }
+        : null;
+      try { await trackSeries('runs', bk, { runId: obj.runId, at: snapshot.at }, 12, 604800 * 4); } catch (e) {}
+    }
     send({ event: 'plan', data: obj });
     try { kv([['SET', 'grapevine:run:' + obj.runId, JSON.stringify({ at: Date.now(), briefing: obj })], ['EXPIRE', 'grapevine:run:' + obj.runId, 604800]]); } catch (e) {}
     if (stream) res.end();
@@ -368,5 +407,16 @@ module.exports = async function handler(req, res) {
     mentions: mentions, tally: tally, crisis: crisis, queue: queue,
     drafts: (respond && respond.drafts) || []
   }, briefing);
-  finish(payload);
+  await finish(payload, {
+    at: Date.now(),
+    score: (crisis && typeof crisis.score === 'number') ? crisis.score : null,
+    point: {
+      at: Date.now(),
+      score: (crisis && typeof crisis.score === 'number') ? crisis.score : null,
+      level: (crisis && crisis.level) || 'normal',
+      pos: (tally && tally.positive) || 0,
+      neg: (tally && tally.negative) || 0,
+      neu: (tally && tally.neutral) || 0
+    }
+  });
 };

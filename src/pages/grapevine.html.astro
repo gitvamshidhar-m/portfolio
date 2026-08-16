@@ -84,6 +84,10 @@ const body = `<section class="lpage-wrap">
           <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run Grapevine</button>
           <span id="agMode" class="ag-mode" hidden></span>
           <span id="agSerp" class="ag-mode serp" hidden></span>
+          <span id="histWrap" class="ag-histwrap" hidden>
+            <label for="histSel">↻ Past watches</label>
+            <select id="histSel" aria-label="Replay a past watch"><option value="">—</option></select>
+          </span>
           <span class="ag-hint">Try: “an Indian D2C skincare brand” or “a SaaS project management tool”.</span>
         </div>
       </div>
@@ -155,8 +159,8 @@ const body = `<section class="lpage-wrap">
 
     const runBtn = $('runBtn'), brandEl = $('brandInput'), platformSel = $('platformSel');
     const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), brief = $('agBrief'), shareRow = $('agShareRow');
-    const modeEl = $('agMode'), serpEl = $('agSerp');
-    let tel = null, data = null;
+    const modeEl = $('agMode'), serpEl = $('agSerp'), histWrap = $('histWrap'), histSel = $('histSel');
+    let tel = null, data = null, lastBrand = '';
 
     function telLine(t) {
       if (!t) return 'no LLM calls metered';
@@ -236,6 +240,56 @@ const body = `<section class="lpage-wrap">
       return '<span class="ag-senti" style="color:' + c + ';border-color:' + c + '55">' + esc(s) + '</span>';
     }
 
+    // Platform breakdown: tally mentions by platform into top rows with bars.
+    function platformRows(mentions) {
+      const map = {};
+      (mentions || []).forEach(function (m) {
+        const p = String(m.platform || 'Web');
+        map[p] = (map[p] || 0) + 1;
+      });
+      const entries = Object.keys(map).map(function (p) { return { p: p, n: map[p] }; })
+        .sort(function (a, b) { return b.n - a.n; }).slice(0, 7);
+      const max = entries.length ? entries[0].n : 1;
+      if (!entries.length) return '<div class="ag-hint">no mentions yet</div>';
+      return entries.map(function (e) {
+        return '<div class="ag-platrow"><span class="ag-platname">' + esc(e.p) + '</span><span class="ag-platbar"><i style="width:' + Math.max(8, Math.round((e.n / max) * 100)) + '%"></i></span><span class="ag-platn">' + e.n + '</span></div>';
+      }).join('');
+    }
+
+    // Trend sparkline from the KV-persisted history series.
+    function sparkline(history) {
+      const pts = (history || []).filter(function (h) { return h && typeof h.score === 'number'; }).slice(-12);
+      if (pts.length < 2) return '';
+      const W = 120, H = 28, pad = 3;
+      const lo = Math.min.apply(Math, pts.map(function (p) { return p.score; }));
+      const hi = Math.max.apply(Math, pts.map(function (p) { return p.score; }));
+      const rng = (hi - lo) || 1;
+      const step = (W - pad * 2) / (pts.length - 1);
+      const co = pts.map(function (p, i) {
+        const x = pad + i * step;
+        const y = H - pad - ((p.score - lo) / rng) * (H - pad * 2);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      });
+      const last = pts[pts.length - 1].score;
+      const col = last >= 60 ? '#ff6f6f' : (last >= 30 ? '#ffd479' : '#8affc1');
+      return '<svg class="ag-spark" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="sentiment trend"><polyline points="' + co.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="2"/></svg>';
+    }
+
+    function trendHtml(d) {
+      const tr = d.trend || null;
+      const hist = d.history || [];
+      const spark = sparkline(hist);
+      let delta = '';
+      if (tr && typeof tr.delta === 'number') {
+        const up = tr.delta >= 0;
+        if (tr.prevScore != null) {
+          delta = '<div class="ag-trenddelta" style="color:' + (up ? '#ff6f6f' : '#8affc1') + '">' + (up ? '▲ ' : '▼ ') + 'crisis ' + (up ? '+' : '') + Math.abs(tr.delta) + ' pts vs last watch (' + tr.prevScore + ' → ' + (tr.prevScore + tr.delta) + ')</div>';
+        }
+      }
+      if (!spark && !delta) return '<div class="ag-hint">run again to build history — trend appears after 2 watches</div>';
+      return spark + delta;
+    }
+
     function renderBrief(d) {
       const tally = d.tally || {};
       const total = tally.positive + tally.negative + tally.neutral || (d.mentions || []).length || 1;
@@ -246,15 +300,19 @@ const body = `<section class="lpage-wrap">
       const mentions = (d.mentions || []).slice(0, 8).map((m) =>
         '<li>' + (m.platform ? '<b style="color:var(--muted)">' + esc(m.platform) + '</b> · ' : '') + sentiBadge(m.sentiment || 'neutral') + (m.urgency === 'high' ? ' <span class="ag-senti" style="color:#ff6f6f;border-color:#ff6f6f55">urgent</span>' : '') + '<p class="ag-brieftxt">' + esc(m.text || '') + '</p></li>'
       ).join('');
-      const drafts = (d.drafts || []).slice(0, 4).map((dd) =>
-        '<li><span class="ag-draft-senti">' + sentiBadge(dd.sentiment || 'neutral') + '</span><p class="ag-brieftxt">' + esc(dd.reply || '') + '</p></li>'
+      const drafts = (d.drafts || []).slice(0, 4).map((dd, i) =>
+        '<li class="ag-draftli"><div class="ag-draftrow"><span class="ag-draft-senti">' + sentiBadge(dd.sentiment || 'neutral') + '</span><span class="ag-hint">' + esc(dd.platform || '') + '</span></div>' +
+        '<textarea class="ag-draftta" rows="2" data-reply="' + i + '" placeholder="edit this draft reply…">' + esc(dd.reply || '') + '</textarea>' +
+        '<button type="button" class="btn ag-draftcopy" data-reply="' + i + '">⧉ Copy reply</button></li>'
       ).join('');
       const queue = (d.queue || []).slice(0, 4).map((q) =>
         '<li><span class="ag-pri" style="color:' + (q.priority === 'P0' ? '#ff6f6f' : (q.priority === 'P1' ? '#ffd479' : '#9aa0c0')) + '">' + esc(q.priority || 'P2') + '</span> <b style="color:var(--muted)">' + esc(q.platform || '') + '</b> — ' + esc((q.text || '').slice(0, 120)) + '</li>'
       ).join('');
+      const platRows = platformRows(d.mentions || []);
+      const trendB = '<div class="blk"><b>Momentum · last runs</b>' + trendHtml(d) + '</div>';
       brief.innerHTML =
         '<div class="ag-plan-head"><h3>🛰 Grapevine briefing for: ' + esc(d.brand || '') + '</h3>' +
-        '<div class="ag-actions"><button type="button" class="btn" id="agPdfBtn">⬇ PDF</button><button type="button" class="btn" id="agTtsBtn">🔊 Hear briefing</button></div></div>' +
+        '<div class="ag-actions"><button type="button" class="btn" id="agPdfBtn">⬇ PDF</button><button type="button" class="btn" id="agCsvBtn">⬇ CSV</button><button type="button" class="btn" id="agTtsBtn">🔊 Hear briefing</button></div></div>' +
         '<div class="grid">' +
           '<div class="blk"><b>Sentiment</b>' +
             '<div style="font-size:12px;margin-top:4px"><span style="color:#8affc1">▲ ' + (tally.positive || 0) + ' positive</span></div>' + bar(tally.positive || 0, '#2ff3c0') +
@@ -263,15 +321,24 @@ const body = `<section class="lpage-wrap">
             '<div class="ag-hint" style="margin-top:8px">' + (d.serpCount || 0) + ' live mentions scanned</div></div>' +
           '<div class="blk"><b>Crisis score</b><div class="ag-gauge" style="--aglv:' + lvlColor + '">' + (crisis.score != null ? crisis.score : '—') + '<i style="background:' + lvlColor + '">' + esc(level) + '</i></div>' +
             (crisis.negative != null ? '<div class="ag-hint" style="margin-top:8px">' + crisis.negative + '/' + crisis.total + ' mentions negative · volume ' + esc(crisis.vol || '') + '</div>' : '') + '</div>' +
+          '<div class="blk"><b>Top platforms</b><div class="ag-plats">' + platRows + '</div></div>' +
           '<div class="blk"><b>Mentions</b><ul class="ag-mentions">' + (mentions || '<li>—</li>') + '</ul></div>' +
           '<div class="blk"><b>Drafted replies</b><ul class="ag-drafts">' + (drafts || '<li>—</li>') + '</ul></div>' +
-          '<div class="blk" style="grid-column:span 2"><b>Human escalation queue</b><ul class="ag-queue">' + (queue || '<li>—</li>') + '</ul></div>' +
+          '<div class="blk"><b>Human escalation queue</b><ul class="ag-queue">' + (queue || '<li>—</li>') + '</ul></div>' +
+          trendB +
         '</div>' +
         (d.briefing ? '<div class="ag-summary">' + esc(d.briefing) + '</div>' : '') +
         ((d.nextSteps || []).length ? '<div class="ag-summary"><b>Next steps:</b> ' + (d.nextSteps || []).map(function (s) { return '<span class="ag-hint">' + esc(s) + '</span>'; }).join(' &nbsp;→&nbsp; ') + '</div>' : '') +
         (d.telemetry ? '<div class="ag-tel"><b>Run telemetry:</b> ' + esc(telLine(d.telemetry)) + '</div>' : '');
       brief.hidden = false;
       shareRow.hidden = false;
+      // Editable drafts: per-reply copy reads the (possibly edited) textarea value.
+      Array.prototype.slice.call(document.querySelectorAll('.ag-draftcopy')).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const ta = document.querySelector('.ag-draftta[data-reply="' + btn.getAttribute('data-reply') + '"]');
+          copyText((ta && ta.value) ? ta.value : '').then(function () { btn.textContent = '✓ Copied'; setTimeout(function () { btn.textContent = '⧉ Copy reply'; }, 1600); }).catch(function () { btn.textContent = 'Copy failed'; });
+        });
+      });
       const copyBtn = $('agCopyBtn');
       if (copyBtn) {
         copyBtn.addEventListener('click', function () {
@@ -324,6 +391,19 @@ const body = `<section class="lpage-wrap">
           }
         });
       }
+      const csvBtn = $('agCsvBtn');
+      if (csvBtn) {
+        csvBtn.addEventListener('click', function () {
+          const csv = briefCsv(d);
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'grapevine-briefing-' + String(d.brand || 'brand').replace(/[^\w-]+/g, '-').toLowerCase().slice(0, 40) + '.csv';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+        });
+      }
+      populateHist(d.brand);
     }
 
     function briefToText(d) {
@@ -347,6 +427,81 @@ const body = `<section class="lpage-wrap">
       return L.join('\n');
     }
 
+    function briefCsv(d) {
+      const csv = [];
+      const escCell = (v) => { const s = String(v == null ? '' : v); return /\n|,|"/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const row = (...c) => csv.push(c.map(escCell).join(','));
+      row('brand', d.brand || '');
+      row('runId', d.runId || '');
+      row('mode', d.mode || '');
+      row('serp', (d.serpCount || 0) + ' live mentions');
+      if (d.crisis) row('crisis_score', d.crisis.score != null ? d.crisis.score : '', 'crisis_level', d.crisis.level || '');
+      if (d.tally) row('sentiment', 'positive=' + (d.tally.positive || 0), 'negative=' + (d.tally.negative || 0), 'neutral=' + (d.tally.neutral || 0));
+      csv.push('');
+      row('MENTIONS');
+      row('platform', 'sentiment', 'urgency', 'text');
+      (d.mentions || []).forEach((m) => row(m.platform || 'web', m.sentiment || '', m.urgency || '', m.text || ''));
+      csv.push('');
+      row('DRAFT REPLIES');
+      row('sentiment', 'platform', 'reply');
+      (d.drafts || []).forEach((dd) => row(dd.sentiment || '', dd.platform || '', dd.reply || ''));
+      csv.push('');
+      row('ESCALATION QUEUE');
+      row('priority', 'platform', 'text');
+      (d.queue || []).forEach((q) => row(q.priority || '', q.platform || '', q.text || ''));
+      csv.push('');
+      if (d.briefing) row('BRIEFING', d.briefing);
+      (d.nextSteps || []).forEach((s2, i) => row('next_step_' + (i + 1), s2));
+      return '\uFEFF' + csv.join('\n');
+    }
+
+    // Populate the "past watches" dropdown for a brand from KV history.
+    async function populateHist(brand) {
+      if (!brand || !histWrap || !histSel) return;
+      try {
+        const r = await fetch('/api/grapevine?brand=' + encodeURIComponent(brand) + '&recent=1');
+        if (!r.ok) throw new Error('bad');
+        const j = await r.json();
+        const runs = (j && j.runs) || [];
+        histSel.innerHTML = '<option value="">—</option>';
+        runs.forEach(function (run) {
+          const when = new Date(run.at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
+          histSel.insertAdjacentHTML('beforeend', '<option value="' + esc(run.runId) + '">' + esc(when) + (run.runId === data.runId ? ' · current' : '') + '</option>');
+        });
+        histWrap.hidden = runs.length < 1;
+        histSel.disabled = false;
+      } catch (e) {
+        histWrap.hidden = true;
+      }
+    }
+
+    // Replay a stored run: /api/grapevine?run=<id> returns the full briefing JSON.
+    async function replay(runId) {
+      runBtn.disabled = true;
+      runBtn.textContent = '⏳ Loading past watch…';
+      try {
+        const r = await fetch('/api/grapevine?run=' + encodeURIComponent(runId), { cache: 'no-store' });
+        if (!r.ok) throw new Error('bad');
+        const j = await r.json();
+        if (!j || !Array.isArray(j.agents)) throw new Error('bad');
+        data = j;
+        if (modeEl) { modeEl.hidden = false; modeEl.className = 'ag-mode ai'; modeEl.textContent = '● REPLAYED WATCH'; }
+        serpEl.hidden = true;
+        logLine('a', 'replayed stored watch ' + runId);
+        orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(j.orchestrator || 'Watching ' + (j.brand || 'the brand') + '…') + '</span>';
+        renderBrief(j);
+      } catch (e2) {
+        logLine('a', 'replay failed — stored watch may have expired');
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = '▶ Run again';
+      }
+    }
+
+    if (histSel) histSel.addEventListener('change', function () {
+      if (histSel.value) replay(histSel.value);
+    });
+
     function copyText(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
       return new Promise(function (resolve, reject) {
@@ -367,6 +522,7 @@ const body = `<section class="lpage-wrap">
       shareRow.hidden = true;
       if (modeEl) modeEl.hidden = true;
       if (serpEl) serpEl.hidden = true;
+      if (histWrap) histWrap.hidden = true;
     }
 
     async function run() {
@@ -492,13 +648,16 @@ const body = `<section class="lpage-wrap">
     runBtn.addEventListener('click', run);
     brandEl.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
 
-    // Deep-link: /grapevine.html#{"brand":...} auto-runs Grapevine for that brand.
+    // Deep-link: /grapevine.html#{"brand":...} auto-runs Grapevine; #{"runId":...} replays a stored watch.
     (function () {
       try {
         const h = location.hash && location.hash.length > 4 ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : null;
         if (h && h.brand) {
           brandEl.value = String(h.brand).slice(0, 120);
           setTimeout(run, 350);
+        } else if (h && h.runId && histSel) {
+          histSel.value = String(h.runId).slice(0, 64);
+          setTimeout(function () { replay(histSel.value); }, 350);
         }
       } catch (e) {}
     })();
