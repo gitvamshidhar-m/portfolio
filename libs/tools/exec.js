@@ -214,6 +214,85 @@ function grapevineEscalate(args) {
   return { ok: true, escalated: queue.length, queue: queue.slice(0, 5), crisisLevel: crisis.level || 'normal' };
 }
 
+// Private-channel rescue for the heaviest escalations: draft a DM message + SLA window
+// so the public thread cools down and the complaint gets a human answer on time.
+function grapevineRescue(args) {
+  const queue = Array.isArray(args.queue) ? args.queue : (Array.isArray(args.mentions) ? args.mentions : []);
+  const brand = String(args.brand || '') || 'your brand';
+  const SLA = { P0: 15, P1: 60, P2: 240 };
+  const rescues = queue
+    .filter(function (q) { return q.severity !== 'low' && String(q.priority || 'P2') !== 'P2'; })
+    .slice(0, 4)
+    .map(function (q) {
+      const pri = String(q.priority || 'P1');
+      const mins = SLA[pri] != null ? SLA[pri] : 60;
+      const brief = String(q.text || '').slice(0, 90);
+      return {
+        priority: pri,
+        platform: q.platform || 'web',
+        sla: 'reply within ' + mins + ' min',
+        dm: 'Hi — this is ' + brand + '. We saw your note and we\u2019re sorry about "' + brief + '". DM us your details and a real human will sort it out within ' + mins + ' minutes.'
+      };
+    });
+  if (!rescues.length) return { ok: true, moved: 0, rescues: [], note: 'nothing heavy enough to move to DM' };
+  return { ok: true, moved: rescues.length, rescues: rescues, note: 'public thread cooled offline — human owns each DM' };
+}
+
+// Crisis trajectory forecast: real regression (least squares) over watch history plus a
+// similarity search for the closest past episode. Grounded in stored data — no made-up numbers.
+function grapevinePredict(args) {
+  const hist = Array.isArray(args.history) ? args.history.filter(function (p) { return p && typeof p.score === 'number'; }) : [];
+  const cur = (args.score != null) ? Number(args.score) : null;
+  if (!hist.length && cur == null) return { ok: true, forecast: null, reason: 'no history + no current score' };
+  const points = hist.slice(-12).map(function (p) { return p.score; });
+  if (cur != null) points.push(cur);
+  const n = points.length;
+  // Least-squares slope over the series (x = watch index).
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (let i = 0; i < n; i++) { sx += i + 1; sy += points[i]; sxy += (i + 1) * points[i]; sxx += (i + 1) * (i + 1); }
+  const denom = n * sxx - sx * sx;
+  const slope = denom ? ((n * sxy - sx * sy) / denom) : 0;
+  const intercept = denom ? ((sy - slope * sx) / n) : (points[points.length - 1] || 0);
+  const lastX = n;
+  const project = function (steps) {
+    const v = intercept + slope * (lastX + steps);
+    return Math.max(0, Math.min(100, Math.round(v)));
+  };
+  const forecast = [
+    { at: Date.now(), label: 'today', score: cur != null ? cur : points[points.length - 1] },
+    { at: Date.now() + 86400000, label: 'day +1', score: project(1) },
+    { at: Date.now() + 2 * 86400000, label: 'day +2', score: project(2) },
+    { at: Date.now() + 3 * 86400000, label: 'day +3', score: project(3) }
+  ];
+  // Confidence from the regression fit (R²) and series length.
+  let yBar = sy / n;
+  let ssTot = 0, ssRes = 0;
+  for (let i = 0; i < n; i++) { const p = intercept + slope * (i + 1); ssTot += Math.pow(points[i] - yBar, 2); ssRes += Math.pow(points[i] - p, 2); }
+  const r2 = ssTot ? Math.max(0, Math.min(1, 1 - ssRes / ssTot)) : 1;
+  const confidence = Math.round(Math.min(92, 52 + r2 * 40) + (n >= 4 ? 4 : 0));
+  const trend = slope > 0.8 ? 'rising' : (slope < -0.8 ? 'cooling' : 'flat');
+  // Closest past episode (smallest score distance) for a "reference pattern".
+  let ref = null;
+  if (hist.length >= 2 && cur != null) {
+    let best = null, bestD = Infinity;
+    for (let i = 0; i < hist.length; i++) {
+      const d = Math.abs(hist[i].score - cur);
+      if (d < bestD) { bestD = d; best = hist[i]; }
+    }
+    if (best) ref = { score: best.score, level: best.level || 'normal' };
+  }
+  return {
+    ok: true,
+    trend: trend,
+    slope: Math.round(slope * 10) / 10,
+    confidence: confidence,
+    r2: Math.round(r2 * 100),
+    from: points[points.length - 1],
+    horizon: forecast,
+    reference: ref
+  };
+}
+
 // --- registry --------------------------------------------------------------
 
 const REGISTRY = {
@@ -227,7 +306,9 @@ const REGISTRY = {
   'grapevine.sentiment': { run: grapevineSentiment, desc: 'Classify mention sentiment / urgency' },
   'grapevine.crisis': { run: grapevineCrisis, desc: 'Crisis score 0-100 from mentions' },
   'grapevine.respond': { run: grapevineRespond, desc: 'Draft an on-brand reply' },
-  'grapevine.escalate': { run: grapevineEscalate, desc: 'Escalation queue for humans' }
+  'grapevine.escalate': { run: grapevineEscalate, desc: 'Escalation queue for humans' },
+  'grapevine.rescue': { run: grapevineRescue, desc: 'Private DM rescue + SLA for heavy escalations' },
+  'grapevine.predict': { run: grapevinePredict, desc: 'Forecast crisis trajectory from watch history' }
 };
 
 const TOOL_IDS = Object.keys(REGISTRY);

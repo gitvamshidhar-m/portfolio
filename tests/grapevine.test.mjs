@@ -48,7 +48,9 @@ async function fakeFetch(url, opts) {
         { choices: [{ delta: { content: '{"id":"classify","name":"Classify Agent","call":"grapevine.sentiment","toolArgs":{"mentions":[]},"output":"tags","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
         { choices: [{ delta: { content: '{"id":"crisis","name":"Crisis Agent","call":"grapevine.crisis","toolArgs":{},"output":"score","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
         { choices: [{ delta: { content: '{"id":"respond","name":"Respond Agent","call":"grapevine.respond","toolArgs":{"text":"x","sentiment":"negative"},"output":"replies","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
-        { choices: [{ delta: { content: '{"id":"escalate","name":"Escalate Agent","call":"grapevine.escalate","toolArgs":{},"output":"queue","thinking":"t","action":"a","live":"l","result":"r"}],' } }] },
+        { choices: [{ delta: { content: '{"id":"escalate","name":"Escalate Agent","call":"grapevine.escalate","toolArgs":{},"output":"queue","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
+        { choices: [{ delta: { content: '{"id":"concierge","name":"Concierge Agent","call":"grapevine.rescue","toolArgs":{},"output":"rescues","thinking":"t","action":"a","live":"l","result":"r"},' } }] },
+        { choices: [{ delta: { content: '{"id":"prophet","name":"Prophet Agent","call":"grapevine.predict","toolArgs":{},"output":"forecast","thinking":"t","action":"a","live":"l","result":"r"}],' } }] },
         { choices: [{ delta: { content: '"briefing":"watching the brand, mixed sentiment","nextSteps":["approve replies"]}' } }] },
         { choices: [{ delta: {} }], usage: { prompt_tokens: 40, completion_tokens: 60 } },
         { choices: [{ delta: {} }] }
@@ -129,10 +131,10 @@ test('stream emits tool+reflect per agent and a briefing plan', async (t) => {
   const tools = evs.filter((e) => e.event === 'tool');
   const reflects = evs.filter((e) => e.event === 'reflect');
   const plan = evs.find((e) => e.event === 'plan');
-  assert.ok(tools.length >= 5, 'expected 5+ tool events, got ' + tools.length);
-  assert.ok(reflects.length >= 5, 'expected 5+ reflect events, got ' + reflects.length);
+  assert.ok(tools.length >= 7, 'expected 7+ tool events, got ' + tools.length);
+  assert.ok(reflects.length >= 7, 'expected 7+ reflect events, got ' + reflects.length);
   assert.ok(plan, 'missing plan event');
-  assert.ok(Array.isArray(plan.data.agents) && plan.data.agents.length === 5, 'briefing should have 5 agents');
+  assert.ok(Array.isArray(plan.data.agents) && plan.data.agents.length === 7, 'briefing should have 7 agents');
   assert.ok(plan.data.brand === 'the brand', 'brand should be echoed');
   assert.ok(Array.isArray(plan.data.nextSteps), 'nextSteps should be an array');
 });
@@ -156,10 +158,24 @@ test('real tools execute and the briefing carries classified mentions + crisis +
   assert.ok(Array.isArray(d.drafts) && d.drafts.length >= 1 && d.drafts[0].reply, 'replies should be drafted');
   // Escalate built a queue for the negative mention.
   assert.ok(Array.isArray(d.queue), 'escalation queue should be an array');
+  // Concierge moved the real P0/P1 escalations into a private rescue channel with an SLA.
+  assert.ok(Array.isArray(d.rescues), 'concierge rescues should be an array');
+  d.rescues.forEach((r) => {
+    assert.ok(r.priority, 'each rescue carries a priority');
+    assert.ok(r.dm || r.text, 'each rescue carries a DM message');
+    assert.ok(r.sla, 'each rescue carries an SLA window');
+  });
+  // Prophet ran a real regression over watch history + the current score.
+  assert.ok(d.forecast && d.forecast.trend, 'prophet forecast should carry a trend');
+  assert.ok(['rising', 'cooling', 'flat'].indexOf(d.forecast.trend) >= 0, 'trend is a known class');
+  assert.ok(Array.isArray(d.forecast.horizon) && d.forecast.horizon.length === 4, 'forecast projects 4 day-points');
+  assert.ok(typeof d.forecast.r2 === 'number' && d.forecast.confidence >= 0 && d.forecast.confidence <= 92, 'regression fit carries r2 + confidence');
   // Agent cards keep their real exec proof.
   const mon = d.agents.find((a) => a.id === 'monitor');
   assert.ok(mon && mon.exec && mon.exec.ok, 'monitor tool exec proof should be attached');
-  assert.ok(d.telemetry && d.telemetry.tools.calls >= 5, 'telemetry should count the executed tools');
+  const con = d.agents.find((a) => a.id === 'concierge');
+  assert.ok(con && con.exec && con.exec.ok, 'concierge tool exec proof should be attached');
+  assert.ok(d.telemetry && d.telemetry.tools.calls >= 7, 'telemetry should count the executed tools');
 });
 
 test('no key -> rule-based fallback with working tools, zero LLM calls', async () => {
@@ -172,7 +188,7 @@ test('no key -> rule-based fallback with working tools, zero LLM calls', async (
   const plan = evs.find((e) => e.event === 'plan');
   assert.equal(plan.data.mode, 'template');
   assert.equal(plan.data.telemetry.calls, 0, 'no key means no LLM calls metered');
-  assert.ok(evs.filter((e) => e.event === 'tool').length >= 5, 'tools still execute (respond falls back to templates)');
+  assert.ok(evs.filter((e) => e.event === 'tool').length >= 7, 'tools still execute (respond falls back to templates)');
   assert.ok(Array.isArray(plan.data.mentions) && plan.data.mentions.length >= 1, 'monitor still scans real SERP without a key');
 });
 

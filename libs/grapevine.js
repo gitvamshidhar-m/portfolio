@@ -74,18 +74,20 @@ function telAdd(report, usage, ms) {
   return report;
 }
 
-// The Grapevine team: monitor → classify → crisis → respond → escalate.
-const AGENTS = ['monitor', 'classify', 'crisis', 'respond', 'escalate'];
+// The Grapevine team: monitor → classify → crisis → respond → escalate → concierge → prophet.
+const AGENTS = ['monitor', 'classify', 'crisis', 'respond', 'escalate', 'concierge', 'prophet'];
 const PERSONAS = {
   monitor: { name: 'Monitor Agent', persona: 'The Eavesdropper', role: 'Scans live search + social for brand mentions' },
   classify: { name: 'Classify Agent', persona: 'The Judge', role: 'Sentiment, urgency & topic per mention' },
   crisis: { name: 'Crisis Agent', persona: 'The Firefighter', role: 'Detects a storm early, scores the risk' },
   respond: { name: 'Respond Agent', persona: 'The Voice', role: 'Drafts warm, on-brand public replies' },
-  escalate: { name: 'Escalate Agent', persona: 'The Captain', role: 'Decides what a human must see first' }
+  escalate: { name: 'Escalate Agent', persona: 'The Captain', role: 'Decides what a human must see first' },
+  concierge: { name: 'Concierge Agent', persona: 'The De-escalator', role: 'Drafts private rescue messages + response SLAs for heavy escalations' },
+  prophet: { name: 'Prophet Agent', persona: 'The Forecaster', role: 'Projects the crisis trajectory from real watch history' }
 };
 
 function sysPrompt(brand, platforms, serpText, mem) {
-  return 'You are the ORCHESTRATOR of Grapevine, an autonomous reputation & social-listening team. Given a BRAND you must plan and "run" a team of agents that monitor mentions, classify sentiment, detect crises, draft replies, and decide what to escalate to a human. Later agents build on earlier agents\' outputs.\n'
+  return 'You are the ORCHESTRATOR of Grapevine, an autonomous reputation & social-listening team. Given a BRAND you must plan and "run" a team of agents that monitor mentions, classify sentiment, detect crises, draft replies, decide what to escalate, move the heaviest escalations to DM, and forecast the crisis trajectory. Later agents build on earlier agents\' outputs.\n'
     + 'LIVE SEARCH CONTEXT (real mentions for "' + brand + '"):\n' + (serpText || 'No live results — the Monitor Agent will still run a real scan.') + '\n\n'
     + 'MEMORY — PRIOR WATCHES FOR THE SAME BRAND:\n' + (mem || 'No prior history for this brand — first watch.') + '\n\n'
     + 'Use the MEMORY block to sound like a continued conversation: acknowledge what changed since last watch (rising/falling crisis score, new negative spike, resolved topic) when the data supports it.\n\n'
@@ -98,7 +100,9 @@ function sysPrompt(brand, platforms, serpText, mem) {
     + '    {"id":"classify","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: sentiment split it expects>","live":"<4-8 words>","call":"grapevine.sentiment","toolArgs":{"mentions":[{"text":"<sample mention text>","platform":"<platform>"}]},"result":"<predicted tally>"},\n'
     + '    {"id":"crisis","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: how risky the situation looks>","live":"<4-8 words>","call":"grapevine.crisis","toolArgs":{},"result":"<predicted score/level>"},\n'
     + '    {"id":"respond","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: how it will answer the loudest mentions>","live":"<4-8 words>","call":"grapevine.respond","toolArgs":{"text":"<a sample mention>","sentiment":"negative"},"result":"<predicted reply>"},\n'
-    + '    {"id":"escalate","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what needs a human first>","live":"<4-8 words>","call":"grapevine.escalate","toolArgs":{},"result":"<predicted queue>"}\n'
+    + '    {"id":"escalate","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what needs a human first>","live":"<4-8 words>","call":"grapevine.escalate","toolArgs":{},"result":"<predicted queue>"},\n'
+    + '    {"id":"concierge","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: which escalations it will move to a private channel and how fast>","live":"<4-8 words>","call":"grapevine.rescue","toolArgs":{"text":"<the loudest negative mention>"},"result":"<predicted DM rescue + SLA>"},\n'
+    + '    {"id":"prophet","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: where the crisis score is heading and the closest past pattern>","live":"<4-8 words>","call":"grapevine.predict","toolArgs":{},"result":"<predicted trajectory + confidence>"}\n'
     + '  ],\n'
     + '  "briefing":"<2-3 sentence client-ready wrap-up: overall sentiment, top platform, crisis level, recommended next step>",\n'
     + '  "nextSteps":["<step 1>","<step 2>","<step 3>"]\n'
@@ -113,20 +117,36 @@ function fallback(brand, platforms) {
   const ag = (id, thinking, action, output, live, call, toolArgs, result) => ({ id: id, name: PERSONAS[id].name, persona: PERSONAS[id].persona, role: PERSONAS[id].role, tools: [call], thinking: thinking, action: action, output: output, live: live, call: call, toolArgs: toolArgs, result: result, status: 'done' });
   return {
     brand: b,
-    orchestrator: 'Monitor sweeps live search + social for "' + core + '", Classify tags every mention, Crisis scores the risk, Respond drafts replies, Escalate builds the human queue.',
+    orchestrator: 'Monitor sweeps live search + social for "' + core + '", Classify tags every mention, Crisis scores the risk, Respond drafts replies, Escalate builds the human queue, Concierge moves the heavy escalations to DM, Prophet forecasts the trajectory.',
     agents: [
       ag('monitor', 'Sweeps live search and social for every mention of "' + core + '".', 'Queries SERP for brand + review/complaint variants across ' + plats + '.', 'Mentions surfaced across ' + plats + ' — handed to Classify.', 'Scanning live mentions…', 'grapevine.scan', { q: b }, 'live mentions across platforms'),
       ag('classify', 'Tags each mention by sentiment, urgency and platform.', 'Runs the lexicon classifier over every scanned mention.', 'Sentiment split + urgent items tallied — handed to Crisis.', 'Tagging sentiment + urgency…', 'grapevine.sentiment', { mentions: [{ text: 'sample mention', platform: 'web' }] }, 'positive/negative/neutral split'),
       ag('crisis', 'Watches for a negative spike before it compounds.', 'Scores negative share, volume and severity into a 0-100 risk.', 'Risk level computed from the tally — handed to Respond.', 'Scoring the crisis level…', 'grapevine.crisis', {}, 'risk score + level'),
       ag('respond', 'Answers the loudest mentions in the brand voice.', 'Drafts a warm public reply for the top positive + negative mentions.', 'Drafted replies queued for the top mentions — handed to Escalate.', 'Drafting on-brand replies…', 'grapevine.respond', { text: 'example mention', sentiment: 'negative' }, 'drafted replies'),
-      ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — Grapevine stands by.', 'Building the human queue…', 'grapevine.escalate', {}, 'P0/P1/P2 escalation queue')
+      ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — handed to Concierge.', 'Building the human queue…', 'grapevine.escalate', {}, 'P0/P1/P2 escalation queue'),
+      ag('concierge', 'Moves the heaviest escalations off the public thread.', 'Drafts a private DM rescue for each P0/P1 with an SLA deadline.', 'Private rescue messages drafted with SLAs — Grapevine stands by.', 'Drafting DM rescues…', 'grapevine.rescue', { text: 'the loudest negative mention', sla: '15 min' }, 'DM rescue + SLA'),
+      ag('prophet', 'Projects where this situation is heading.', 'Runs a regression over the real watch history to forecast the crisis score.', 'Forecast issued with confidence + closest past pattern.', 'Forecasting the trajectory…', 'grapevine.predict', {}, 'crisis trajectory + confidence')
     ],
-    briefing: 'Grapevine is now watching "' + core + '". It scanned mentions across ' + plats + ', classified sentiment, scored the crisis level, drafted replies and built a human escalation queue — so a brand-team can react in minutes, not days.',
-    nextSteps: ['Approve the drafted replies for the top mentions', 'Assign the P0/P1 escalations to a human owner', 'Set daily SERP watch on "' + core + '"']
+    briefing: 'Grapevine is now watching "' + core + '". It scanned mentions across ' + plats + ', classified sentiment, scored the crisis level, drafted replies, built a human escalation queue, moved the heaviest escalations to DM with SLAs, and forecast where the crisis is heading — so a brand-team can react in minutes, not days.',
+    nextSteps: ['Approve the drafted replies for the top mentions', 'Shift the P0/P1 escalations to DM within their SLA windows', 'Watch the Prophet forecast across the next few watches']
   };
 }
 
 const AGENT_DEFAULTS = {};
+// Guarantee every team member runs even if the LLM omits one: append a stub that the
+// real execution loop still resolves against the actual tool call (call is replaced below).
+function ensureAgents(plan) {
+  if (!plan || !Array.isArray(plan.agents)) return plan;
+  const present = plan.agents.map((a) => String((a && a.id) || '').toLowerCase());
+  AGENTS.forEach(function (id) {
+    if (present.indexOf(id) < 0) {
+      const role = PERSONAS[id];
+      const CALL = { monitor: 'grapevine.scan', classify: 'grapevine.sentiment', crisis: 'grapevine.crisis', respond: 'grapevine.respond', escalate: 'grapevine.escalate', concierge: 'grapevine.rescue', prophet: 'grapevine.predict' };
+      plan.agents.push({ id: id, name: role.name, persona: role.persona, role: role.role, thinking: 'Coordinating with the team.', action: 'Runs the ' + id + ' tool on real data.', output: id + ' pass complete.', live: id + ' working…', call: CALL[id] || '', toolArgs: {}, result: '' });
+    }
+  });
+  return plan;
+}
 function normalizeAgent(a) {
   if (!a || typeof a !== 'object') return null;
   const id = String(a.id || '').toLowerCase();
@@ -449,7 +469,7 @@ async function buildReport(brand, platforms, emit, vs) {
       let out = null;
       try { out = JSON.parse(acc); } catch (e3) { const mm = acc.match(/\{[\s\S]*\}/); if (mm) { try { out = JSON.parse(mm[0]); } catch (e4) {} } }
       const p = safeBriefing(out);
-      if (p) { briefing = p; mode = 'ai'; }
+      if (p) { ensureAgents(p); p.agents = p.agents.map(normalizeAgent).filter(Boolean).slice(0, 8); briefing = p; mode = 'ai'; }
     } catch (e5) {}
   }
 
@@ -557,6 +577,36 @@ async function buildReport(brand, platforms, emit, vs) {
     if (es.exec.ok) e({ event: 'reflect', id: 'escalate', output: escalate.output, passes: escalate.reflection ? escalate.reflection.passes : 1 });
   }
 
+  let rescues = [];
+  const concierge = briefing.agents.find((x) => x.id === 'concierge');
+  if (concierge) {
+    // De-escalation runs on the real escalation queue: P0/P1 move to a private channel.
+    concierge.toolArgs = Object.assign({}, concierge.toolArgs, { queue: queue, brand: brand });
+    const cc = await runOne(concierge);
+    concierge.exec = cc.exec;
+    concierge.realText = cc.exec.ok ? fmtResult(cc.exec) : '';
+    concierge.result = cc.exec.ok ? concierge.realText : (concierge.result + ' · (' + (cc.exec.error || 'tool failed') + ')');
+    e({ event: 'tool', id: 'concierge', tool: cc.exec.tool, exec: { ok: cc.exec.ok, ms: cc.exec.ms, error: cc.exec.error || null } });
+    if (cc.exec.ok && Array.isArray(cc.exec.result.rescues)) rescues = cc.exec.result.rescues;
+    await reflectAgent(concierge, cc.exec, brand, key);
+    if (cc.exec.ok) e({ event: 'reflect', id: 'concierge', output: concierge.output, passes: concierge.reflection ? concierge.reflection.passes : 1 });
+  }
+
+  let forecast = null;
+  const prophet = briefing.agents.find((x) => x.id === 'prophet');
+  if (prophet) {
+    // Forecast is grounded in the real watch history (mem.history) + the live crisis score.
+    prophet.toolArgs = Object.assign({}, prophet.toolArgs, { history: (mem && Array.isArray(mem.history)) ? mem.history : [], score: (crisis && typeof crisis.score === 'number') ? crisis.score : null });
+    const pp = await runOne(prophet);
+    prophet.exec = pp.exec;
+    prophet.realText = pp.exec.ok ? fmtResult(pp.exec) : '';
+    prophet.result = pp.exec.ok ? prophet.realText : (prophet.result + ' · (' + (pp.exec.error || 'tool failed') + ')');
+    e({ event: 'tool', id: 'prophet', tool: pp.exec.tool, exec: { ok: pp.exec.ok, ms: pp.exec.ms, error: pp.exec.error || null } });
+    if (pp.exec.ok && pp.exec.result) forecast = pp.exec.result;
+    await reflectAgent(prophet, pp.exec, brand, key);
+    if (pp.exec.ok) e({ event: 'reflect', id: 'prophet', output: prophet.output, passes: prophet.reflection ? prophet.reflection.passes : 1 });
+  }
+
   telemetry.tools = toolsTel;
   e({ event: 'serp', used: !!serpLive, count: serpLive ? serpLive.length : 0, query: scanQ });
   e({ event: 'metrics', telemetry: telemetry });
@@ -565,7 +615,9 @@ async function buildReport(brand, platforms, emit, vs) {
     mode: mode, telemetry: telemetry, serpUsed: !!serpLive, serpCount: serpLive ? serpLive.length : 0, serpQuery: scanQ, serpQueries: sweep.queries,
     mentions: mentions, tally: tally, crisis: crisis, queue: queue,
     drafts: (respond && respond.drafts) || [],
-    topics: (classify && classify.topics) || null
+    topics: (classify && classify.topics) || null,
+    rescues: rescues,
+    forecast: forecast
   }, briefing);
 
   // Competitor vs mode: scan + classify the rival, then compute share of voice.

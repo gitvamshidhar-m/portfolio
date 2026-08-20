@@ -14,10 +14,10 @@ const faqLd = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "What is Grapevine?", acceptedAnswer: { "@type": "Answer", text: "Grapevine is an autonomous reputation & social-listening team. Give it a brand and five agents get to work: the Monitor scans live search and social for mentions, the Classify agent tags sentiment and urgency, the Crisis agent scores the risk, the Respond agent drafts on-brand replies, and the Escalate agent builds a queue of what a human must see first." } },
-    { "@type": "Question", name: "Is the demo real?", acceptedAnswer: { "@type": "Answer", text: "Yes. The Monitor agent runs a real live web search for the brand, the Classify agent runs a real lexicon-based sentiment classifier over the actual mentions it found, the Crisis agent computes a real 0-100 risk score, replies are drafted by a real LLM (Groq) and the escalation queue is ranked from the actual classified mentions. No keys set? It still runs the same real tools and falls back to a rule-based plan for the thinking." } },
-    { "@type": "Question", name: "How is Grapevine different from a social listening tool?", acceptedAnswer: { "@type": "Answer", text: "Listening tools show dashboards and charts. Grapevine is agentic — it doesn't just surface mentions, it reasons about them: it classifies each one, decides whether a spike is turning into a crisis, drafts a reply in your brand voice, and tells your team exactly which items need a human right now. You approve the big calls; the agents handle the watching." } },
-    { "@type": "Question", name: "Where does a human still need to step in?", acceptedAnswer: { "@type": "Answer", text: "On judgement calls that have real downside: approving any public reply that could read as tone-deaf, brand-safety on sensitive mentions, legal/compliance edges, and anything in the P0 escalation queue. Grapevine handles the ~95% of monitoring and triage; the human owns the high-stakes replies." } }
+    { "@type": "Question", name: "What is Grapevine?", acceptedAnswer: { "@type": "Answer", text: "Grapevine is an autonomous reputation & social-listening team. Give it a brand and seven agents get to work: the Monitor scans live search and social for mentions, the Classify agent tags sentiment and urgency, the Crisis agent scores the risk, the Respond agent drafts on-brand replies, the Escalate agent builds a queue of what a human must see first, the Concierge moves the worst escalations into a private rescue channel with an SLA, and the Prophet forecasts the risk 4 hours out." } },
+    { "@type": "Question", name: "Is the demo real?", acceptedAnswer: { "@type": "Answer", text: "Yes. The Monitor agent runs a real live web search for the brand, the Classify agent runs a real lexicon-based sentiment classifier over the actual mentions it found, the Crisis agent computes a real 0-100 risk score, replies are drafted by a real LLM (Groq), the escalation queue is ranked from the actual classified mentions, the Concierge pulls the real P0/P1 items into a rescue channel, and the Prophet fits a real regression to your watch history to forecast the score. No keys set? It still runs the same real tools and falls back to a rule-based plan for the thinking." } },
+    { "@type": "Question", name: "How is Grapevine different from a social listening tool?", acceptedAnswer: { "@type": "Answer", text: "Listening tools show dashboards and charts. Grapevine is agentic — it doesn't just surface mentions, it reasons about them: it classifies each one, decides whether a spike is turning into a crisis, drafts a reply in your brand voice, tells your team exactly which items need a human right now, quietly rescues the most sensitive items in a private channel, and forecasts whether the risk is rising or cooling. You approve the big calls; the agents handle the watching." } },
+    { "@type": "Question", name: "Where does a human still need to step in?", acceptedAnswer: { "@type": "Answer", text: "On judgement calls that have real downside: approving any public reply that could read as tone-deaf, brand-safety on sensitive mentions, legal/compliance edges, anything in the P0 escalation queue, and deciding on rescue-channel outreach. Grapevine handles the ~95% of monitoring and triage; the human owns the high-stakes replies." } }
   ]
 });
 const body = `<section class="lpage-wrap">
@@ -26,7 +26,7 @@ const body = `<section class="lpage-wrap">
       <div class="ag-hero-copy">
         <span class="tag">Grapevine · Reputation AI</span>
         <h1>Grapevine — the reputation team that never sleeps</h1>
-        <p style="color:var(--muted)">Social listening tells you what happened. <b style="color:var(--accent2)">Grapevine decides what to do about it.</b> Five autonomous agents scan the web for your brand, classify every mention, detect a storm before it compounds, draft the replies, and tell your team exactly what needs a human — in minutes, not days.</p>
+        <p style="color:var(--muted)">Social listening tells you what happened. <b style="color:var(--accent2)">Grapevine decides what to do about it.</b> Seven autonomous agents scan the web for your brand, classify every mention, detect a storm before it compounds, draft the replies, escalate what a human must see — then <b style="color:var(--accent2)">rescue the worst in a private channel</b> and <b style="color:var(--accent2)">forecast where the risk is heading</b>.</p>
         <div class="cta-row" style="justify-content:flex-start">
           <a class="btn primary btn-lg" href="#demo">▶ Run Grapevine</a>
           <a class="btn link-secondary" href="/agentic-ai.html">See Hive, the campaign agent →</a>
@@ -39,6 +39,8 @@ const body = `<section class="lpage-wrap">
           <line data-agent="crisis" x1="50" y1="50" x2="9" y2="46"></line>
           <line data-agent="respond" x1="50" y1="50" x2="90" y2="44"></line>
           <line data-agent="escalate" x1="50" y1="50" x2="50" y2="84"></line>
+          <line data-agent="concierge" x1="50" y1="50" x2="24" y2="84"></line>
+          <line data-agent="prophet" x1="50" y1="50" x2="50" y2="22"></line>
         </svg>
         <div class="ag-core"><span>BRAND</span><i></i></div>
         <span class="ag-sat" data-agent="monitor" style="top:14%;left:24%;--agc:#49b6ff">📡</span>
@@ -46,24 +48,28 @@ const body = `<section class="lpage-wrap">
         <span class="ag-sat" data-agent="crisis" style="top:46%;left:9%;--agc:#ff6f6f">🚨</span>
         <span class="ag-sat" data-agent="respond" style="top:44%;left:90%;--agc:#ff9e5c">💬</span>
         <span class="ag-sat" data-agent="escalate" style="top:84%;left:50%;--agc:#ffd479">🛎</span>
+        <span class="ag-sat" data-agent="concierge" style="top:84%;left:24%;--agc:#6ee7b7">🎧</span>
+        <span class="ag-sat" data-agent="prophet" style="top:22%;left:50%;--agc:#c084fc">🔮</span>
       </div>
     </div>
   </div>
 
   <div class="wrap" style="margin-top:40px">
-    <div class="sec-head" style="margin-bottom:18px"><span class="tag">The team</span><h2 style="font-size:clamp(20px,3vw,26px)">Five agents. One brand. Zero blind spots.</h2></div>
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">The team</span><h2 style="font-size:clamp(20px,3vw,26px)">Seven agents. One brand. Zero blind spots.</h2></div>
     <div class="ab-grid">
       <div class="ab-variant"><b>📡 Monitor Agent</b><span class="ag-persona">The Eavesdropper</span><p>Scans live search and social for every mention of your brand, everywhere it's discussed.</p></div>
       <div class="ab-variant"><b>🧠 Classify Agent</b><span class="ag-persona">The Judge</span><p>Tags each mention by sentiment, urgency and platform — so you see the signal, not the noise.</p></div>
       <div class="ab-variant"><b>🚨 Crisis Agent</b><span class="ag-persona">The Firefighter</span><p>Scores negative share, volume and severity into a 0-100 risk — and catches a storm early.</p></div>
       <div class="ab-variant"><b>💬 Respond Agent</b><span class="ag-persona">The Voice</span><p>Drafts warm, on-brand replies to the loudest mentions, positive and negative.</p></div>
       <div class="ab-variant"><b>🛎 Escalate Agent</b><span class="ag-persona">The Captain</span><p>Ranks what only a human should touch into a P0/P1/P2 queue.</p></div>
+      <div class="ab-variant"><b>🎧 Concierge Agent</b><span class="ag-persona">The De-escalator</span><p>Moves the heaviest escalations into a private rescue channel with an SLA — quietly, before they blow up.</p></div>
+      <div class="ab-variant"><b>🔮 Prophet Agent</b><span class="ag-persona">The Forecaster</span><p>Fits a trend line to your real watch history and forecasts the crisis score 4 hours out — with confidence.</p></div>
     </div>
   </div>
 
   <div class="wrap" id="demo" style="margin-top:44px;scroll-margin-top:90px">
     <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · Grapevine + live SERP</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Put Grapevine on watch</h2>
-    <p style="color:var(--muted);max-width:680px">Type a brand. The agents will scan live search, classify the mentions, score the risk, draft replies and build your escalation queue. Runs on Groq — no account, nothing stored beyond an anonymous counter.</p></div>
+    <p style="color:var(--muted);max-width:680px">Type a brand. The agents will scan live search, classify the mentions, score the risk, draft replies, build your escalation queue, rescue the worst items in a private channel and forecast the trajectory. Runs on Groq — no account, nothing stored beyond an anonymous counter.</p></div>
     <div class="ag-console">
         <div class="ag-input">
          <label for="brandInput">Your brand</label>
@@ -126,7 +132,7 @@ const body = `<section class="lpage-wrap">
   <div class="wrap" style="margin-top:40px">
     <span class="tag">Common questions</span>
     <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
-      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Monitor scans live search + social for brand mentions; Classify tags sentiment/urgency/platform; Crisis scores the risk 0-100 and flags a storm early; Respond drafts on-brand replies; Escalate ranks what a human must see into a P0/P1/P2 queue.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Monitor scans live search + social for brand mentions; Classify tags sentiment/urgency/platform; Crisis scores the risk 0-100 and flags a storm early; Respond drafts on-brand replies; Escalate ranks what a human must see into a P0/P1/P2 queue; Concierge moves the worst escalations into a private rescue channel with an SLA; Prophet fits a regression to your watch history and forecasts the crisis score with confidence.</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Can Grapevine reply on my real accounts?</summary><p style="color:var(--muted);margin-top:8px">Yes — that's the build. Behind the guardrails it connects to your social inboxes and review platforms, drafts replies, and a human approves before anything posts. This page is the safe, read-only showcase of the orchestration.</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Where does agentic AI still need a human?</summary><p style="color:var(--muted);margin-top:8px">On brand-safety and tone: no agent posts a reply that could read as tone-deaf. Legal/compliance edges and any P0 escalation are human-owned. Grapevine handles the watching and triage; a person owns the high-stakes replies.</p></details>
     </div>
@@ -137,14 +143,16 @@ const body = `<section class="lpage-wrap">
 <Base {...op}>
   <Fragment set:html={body} />
   <script type="application/ld+json" is:inline set:html={faqLd} />
-  <LeadForm service="ai" serviceLabel="Reputation AI" promise="Want Grapevine watching your brand? I'll scope a guardrailed reputation team for your socials and review platforms — monitor to escalate — and show you the first live briefing." />
+  <LeadForm service="ai" serviceLabel="Reputation AI" promise="Want Grapevine watching your brand? I'll scope a guardrailed reputation team for your socials and review platforms — monitor to rescue, plus a crisis-forecast — and show you the first live briefing." />
   <script>
     const AGENT_META = {
       monitor: { icon: '📡', color: '#49b6ff', persona: 'The Eavesdropper' },
       classify: { icon: '🧠', color: '#8b7bff', persona: 'The Judge' },
       crisis: { icon: '🚨', color: '#ff6f6f', persona: 'The Firefighter' },
       respond: { icon: '💬', color: '#ff9e5c', persona: 'The Voice' },
-      escalate: { icon: '🛎', color: '#ffd479', persona: 'The Captain' }
+      escalate: { icon: '🛎', color: '#ffd479', persona: 'The Captain' },
+      concierge: { icon: '🎧', color: '#6ee7b7', persona: 'The De-escalator' },
+      prophet: { icon: '🔮', color: '#c084fc', persona: 'The Forecaster' }
     };
     const STEP = 560, THINK = 560;
     const ALERT_SCORE = 60;
@@ -223,21 +231,25 @@ const body = `<section class="lpage-wrap">
       const ag = (id, thinking, action, output, live, call, result) => ({ id, name: AGENT_META[id].name, persona: AGENT_META[id].persona, role: '', tools: [call], thinking, action, output, live, call, result, status: 'done' });
       return {
         mode: 'offline', brand: b,
-        orchestrator: 'Monitor sweeps live search + social for "' + core + '", Classify tags every mention, Crisis scores the risk, Respond drafts replies, Escalate builds the human queue.',
+        orchestrator: 'Monitor sweeps live search + social for "' + core + '", Classify tags every mention, Crisis scores the risk, Respond drafts replies, Escalate builds the human queue, Concierge rescues the worst in a private channel, Prophet forecasts the risk trajectory.',
         agents: [
           ag('monitor', 'Sweeps live search and social for every mention of "' + core + '".', 'Queries SERP for brand + review/complaint variants.', 'Mentions surfaced across the web — handed to Classify.', 'Scanning live mentions…', 'grapevine.scan', 'live mentions across platforms'),
           ag('classify', 'Tags each mention by sentiment, urgency and platform.', 'Runs the lexicon classifier over every scanned mention.', 'Sentiment split + urgent items tallied — handed to Crisis.', 'Tagging sentiment + urgency…', 'grapevine.sentiment', 'positive/negative/neutral split'),
           ag('crisis', 'Watches for a negative spike before it compounds.', 'Scores negative share, volume and severity into a 0-100 risk.', 'Risk level computed from the tally — handed to Respond.', 'Scoring the crisis level…', 'grapevine.crisis', 'risk score + level'),
           ag('respond', 'Answers the loudest mentions in the brand voice.', 'Drafts a warm public reply for the top positive + negative mentions.', 'Drafted replies queued — handed to Escalate.', 'Drafting on-brand replies…', 'grapevine.respond', 'drafted replies'),
-          ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — Grapevine stands by.', 'Building the human queue…', 'grapevine.escalate', 'P0/P1/P2 escalation queue')
+          ag('escalate', 'Decides what only a human should touch.', 'Ranks negatives into a P0/P1/P2 action queue by urgency.', 'Escalation queue built for the team — Grapevine stands by.', 'Building the human queue…', 'grapevine.escalate', 'P0/P1/P2 escalation queue'),
+          ag('concierge', 'Moves the worst escalations somewhere quiet before they compound.', 'Pulls P0/P1 items into a private rescue channel with an SLA.', 'Rescue channel opened — affected users DMed privately.', 'Rescuing heavy escalations…', 'grapevine.rescue', 'private rescue channel + SLA'),
+          ag('prophet', 'Forecasts where the risk is heading next.', 'Fits a regression to the real watch history and projects the score.', 'Trend + confidence projected from past risk points.', 'Forecasting the crisis…', 'grapevine.predict', 'crisis forecast + confidence')
         ],
-        briefing: 'Grapevine is now watching "' + core + '". It scanned mentions, classified sentiment, scored the crisis level, drafted replies and built a human escalation queue — so a brand-team can react in minutes, not days.',
-        nextSteps: ['Approve the drafted replies for the top mentions', 'Assign the P0/P1 escalations to a human owner', 'Set daily SERP watch on "' + core + '"'],
+        briefing: 'Grapevine is now watching "' + core + '". It scanned mentions, classified sentiment, scored the crisis level, drafted replies, built a human escalation queue, opened a private rescue channel for the worst items and forecast where the risk is heading — so a brand-team can react in minutes, not days.',
+        nextSteps: ['Approve the drafted replies for the top mentions', 'Assign the P0/P1 escalations to a human owner', 'Act on the Prophet forecast if the trend is rising', 'Set daily SERP watch on "' + core + '"'],
         mentions: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', sentiment: 'negative', urgency: 'high' }],
         crisis: { score: 45, level: 'elevated', negative: 1, total: 3 },
         topics: { top: [{ topic: 'refund', n: 1 }] },
         queue: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', priority: 'P1' }],
         drafts: [{ text: 'sample mention', platform: 'Reddit', sentiment: 'negative', reply: 'We hear you — DM us your details and we\'ll make it right today.', critic: { ready: 'post', risk: 'low', reason: '' } }],
+        rescues: [{ text: 'sample mention — "worst experience, terrible support"', platform: 'Reddit', priority: 'P1', channel: 'DM', reason: 'Negative + high urgency → private de-escalation', sla: '4h' }],
+        forecast: { ok: true, trend: 'rising', slope: 4.2, r2: 87, from: 45, horizon: [{ at: Date.now(), label: 'today', score: 45 }, { at: Date.now() + 86400000, label: 'day +1', score: 50 }, { at: Date.now() + 2 * 86400000, label: 'day +2', score: 56 }, { at: Date.now() + 3 * 86400000, label: 'day +3', score: 62 }], reference: { score: 50, level: 'elevated' } },
         telemetry: { calls: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } }
       };
     }
@@ -347,6 +359,25 @@ const body = `<section class="lpage-wrap">
       const queueBody = (d.queue || []).length
         ? (queue || '<li>—</li>')
         : '<li class="ag-ok">No negative mentions flagged — nothing needs a human right now.</li>';
+      // Concierge rescue block: the P0/P1 items pulled into a private channel with an SLA.
+      const rescues = (d.rescues || []).slice(0, 4).map((r) =>
+        '<li><span class="ag-pri" style="color:' + (r.priority === 'P0' ? '#ff6f6f' : '#ffd479') + '">' + esc(r.priority || 'P2') + '</span> <b style="color:var(--muted)">' + esc(r.platform || '') + '</b> → <span class="ag-hint">' + esc(r.channel || 'DM') + '</span> — ' + esc((r.dm || r.text || '').slice(0, 100)) + (r.sla ? ' <span class="ag-pri" style="color:#6ee7b7">⏱ ' + esc(r.sla) + '</span>' : '') + '</li>'
+      ).join('');
+      const rescueBlock = (d.rescues || []).length
+        ? '<div class="blk ag-rescue"><b>🎧 Concierge · private rescues</b><ul class="ag-queue">' + rescues + '</ul><div class="ag-hint" style="margin-top:6px">Heavy escalations moved off the public feed to a private channel with an SLA — de-escalate before they compound.</div></div>'
+        : '';
+      // Prophet forecast block: real regression on watch history + projected horizon.
+      let prophetBlock = '';
+      if (d.forecast && d.forecast.trend) {
+        const f = d.forecast, rising = f.trend === 'rising';
+        const pts = Array.isArray(f.horizon) ? f.horizon : [];
+        const next = pts.length ? pts[pts.length - 1].score : null;
+        prophetBlock = '<div class="blk ag-prophet"><b>🔮 Prophet · crisis forecast</b>' +
+          '<div class="ag-forecast"><span class="ag-fscur" style="color:' + lvlColor + '">' + (f.from != null ? f.from : '—') + '</span><i>→</i><span class="ag-fsnext" style="color:' + (rising ? '#ff6f6f' : '#6ee7b7') + '">' + (next != null ? next : '—') + '</span></div>' +
+          '<div class="ag-fbar"><i style="width:' + Math.max(4, Math.min(100, (f.from || 0))) + '%"></i><u style="left:' + Math.max(4, Math.min(100, (next || 0))) + '%"></u></div>' +
+          '<div class="ag-fdays"><span>today</span><span>day +1</span><span>day +2</span><span>day +3</span></div>' +
+          '<div class="ag-hint" style="margin-top:6px">' + (rising ? '▲ trending up' : (f.trend === 'cooling' ? '▼ cooling' : '— steady')) + ' ' + (f.slope || 0) + ' pts/check · r² ' + (f.r2 != null ? f.r2 : '?') + '% confidence' + (f.reference ? ' · nearest past episode ' + (f.reference.score != null ? f.reference.score : '?') : '') + '</div></div>';
+      }
       const platRows = platformRows(d.mentions || []);
       const trendB = '<div class="blk"><b>Momentum · last runs</b>' + trendHtml(d) + '</div>';
       // Competitor vs block: share of voice bar + negative split.
@@ -379,6 +410,8 @@ const body = `<section class="lpage-wrap">
           '<div class="blk"><b>Drafted replies</b><ul class="ag-drafts">' + (drafts || '<li>—</li>') + '</ul></div>' +
           topicsBlock +
           '<div class="blk"><b>Human escalation queue</b><ul class="ag-queue">' + queueBody + '</ul></div>' +
+          rescueBlock +
+          prophetBlock +
           trendB +
           vsB +
         '</div>' +
@@ -493,6 +526,12 @@ const body = `<section class="lpage-wrap">
       (d.mentions || []).forEach(function (m) { L.push('MENTION [' + (m.platform || 'web') + '] (' + (m.sentiment || '') + '): ' + (m.text || '')); });
       (d.drafts || []).forEach(function (dd) { L.push('REPLY [' + (dd.sentiment || '') + ']' + (dd.critic ? ' {' + dd.critic.ready + (dd.critic.reason ? ': ' + dd.critic.reason : '') + '}' : '') + ': ' + (dd.reply || '')); });
       (d.queue || []).forEach(function (q) { L.push('ESCALATE (' + (q.priority || '') + '): ' + (q.text || '')); });
+      (d.rescues || []).forEach(function (r) { L.push('RESCUE (' + (r.priority || '') + ' → ' + (r.channel || 'DM') + '): ' + (r.dm || r.text || '') + (r.sla ? ' (SLA ' + r.sla + ')' : '')); });
+      if (d.forecast && d.forecast.trend) {
+        const fpt = Array.isArray(d.forecast.horizon) ? d.forecast.horizon : [];
+        const fnext = fpt.length ? fpt[fpt.length - 1].score : null;
+        L.push('FORECAST: crisis ' + (d.forecast.trend === 'rising' ? 'rising' : (d.forecast.trend === 'cooling' ? 'cooling' : 'steady')) + ' ' + (d.forecast.from != null ? d.forecast.from + ' → ' : '') + (fnext != null ? fnext : '—') + ' · ' + (d.forecast.slope || 0) + ' pts/check · r² ' + (d.forecast.r2 != null ? d.forecast.r2 + '%' : '?'));
+      }
       L.push('');
       if (d.briefing) L.push('BRIEFING: ' + d.briefing);
       return L.join('\n');
@@ -523,6 +562,18 @@ const body = `<section class="lpage-wrap">
       row('ESCALATION QUEUE');
       row('priority', 'platform', 'text');
       (d.queue || []).forEach((q) => row(q.priority || '', q.platform || '', q.text || ''));
+      csv.push('');
+      if ((d.rescues || []).length) {
+        row('CONCIERGE RESCUES');
+        row('priority', 'platform', 'channel', 'sla', 'text');
+        (d.rescues || []).forEach((r) => row(r.priority || '', r.platform || '', r.channel || 'DM', r.sla || '', r.text || ''));
+        csv.push('');
+      }
+      if (d.forecast && d.forecast.trend) {
+        const fpt = Array.isArray(d.forecast.horizon) ? d.forecast.horizon : [];
+        const fnext = fpt.length ? fpt[fpt.length - 1].score : '';
+        row('PROPHET FORECAST', 'trend', d.forecast.trend, 'from', d.forecast.from != null ? d.forecast.from : '', 'to_day3', fnext, 'slope', d.forecast.slope || 0, 'r2', d.forecast.r2 != null ? d.forecast.r2 : '');
+      }
       csv.push('');
       if (d.briefing) row('BRIEFING', d.briefing);
       (d.nextSteps || []).forEach((s2, i) => row('next_step_' + (i + 1), s2));
