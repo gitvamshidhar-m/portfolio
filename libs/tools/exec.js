@@ -312,6 +312,26 @@ function cTopKw(docs, n) {
 }
 function cDomain(link) { try { return new URL(link).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
 function cReading(text) { return Math.max(1, Math.round(cWords(text) / 220)); }
+function cSyllables(w) {
+  const s = String(w).toLowerCase().replace(/[^a-z]/g, '');
+  if (!s) return 0;
+  let n = (s.match(/[aeiouy]{1,2}/g) || []).length;
+  if (n === 0) n = 1;
+  if (/ies$/.test(s)) n -= 1;
+  if (s.length > 6 && /(ed|es)$/.test(s)) n -= 1;
+  return Math.max(1, n);
+}
+function cFlesch(text) {
+  const plain = String(text || '').replace(/[#*_>`]/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = plain.split(' ').filter(Boolean);
+  const sentences = (plain.match(/[.!?]+(\s|$)/g) || []).length || 1;
+  const syllables = words.reduce(function (a, w) { return a + cSyllables(w); }, 0);
+  if (words.length < 30) return { score: 75, label: 'ok' }; // too short to measure reliably
+  const raw = 206.835 - 1.015 * (words.length / sentences) - 84.6 * (syllables / words.length);
+  const score = Math.round(Math.max(0, Math.min(100, raw)));
+  const label = score >= 70 ? 'easy' : (score >= 50 ? 'fairly easy' : (score >= 30 ? 'standard' : 'difficult'));
+  return { score: score, label: label, words: words.length, sentences: sentences, syllables: syllables };
+}
 function cSlug(title) { return String(title || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 70).replace(/-+$/, '') || 'draft'; }
 function cMetaDesc(draft) {
   const plain = String(draft || '').replace(/[#*_`>\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -319,19 +339,38 @@ function cMetaDesc(draft) {
 }
 
 // Live research: real SERP results → sources, keywords, subtopics and citations.
+// With args.sweep it runs intent variants (guide / examples / benchmarks) and merges
+// the results de-duplicated by link — richer coverage, still 100% real.
 async function contentResearch(args) {
-  const q = String(args.q || args.topic || args.query || '').slice(0, 200);
-  if (!q) return { ok: false, error: 'no query' };
-  const res = await serp(q, { num: 8 });
-  if (!Array.isArray(res) || !res.length) { return { ok: false, error: 'no sources found' }; }
-  const sources = res.map(function (r) { return { title: r.title, domain: r.domain, link: r.link, snippet: r.snippet }; });
+  const base = String(args.q || args.topic || args.query || '').slice(0, 160).trim();
+  if (!base) return { ok: false, error: 'no query' };
+  const queries = [];
+  if (args.sweep) {
+    queries.push(base, base + ' guide', base + ' benchmark');
+  } else {
+    queries.push(base);
+  }
+  const all = [], seen = {};
+  for (const q of queries.slice(0, 3)) {
+    const res = await serp(q, { num: 6 });
+    if (Array.isArray(res)) {
+      res.forEach(function (r) {
+        const link = r.link || '';
+        if (link && seen[link]) return;
+        if (link) seen[link] = 1;
+        all.push({ title: r.title, domain: r.domain, link: link, snippet: r.snippet });
+      });
+    }
+  }
+  if (!all.length) return { ok: false, error: 'no sources found' };
+  const sources = all.slice(0, 10);
   const subtopics = sources.slice(0, 6).map(function (s) { return String(s.title).replace(/[|\\-–—].*$/, '').trim().slice(0, 70); }).filter(function (t) { return t.length > 4; });
   return {
-    ok: true, query: q, title: sources[0] ? sources[0].title : q,
+    ok: true, query: base, queries: queries, title: sources[0] ? sources[0].title : base,
     sources: sources,
     keywords: cTopKw(sources, 8),
     subtopics: subtopics.slice(0, 5),
-    citations: sources.map(function (s) { return { title: s.title, domain: s.domain, link: s.link }; })
+    citations: sources.slice(0, 10).map(function (s) { return { title: s.title, domain: s.domain, link: s.link, snippet: s.snippet }; })
   };
 }
 
@@ -344,6 +383,7 @@ async function contentDraft(args) {
   const context = String(args.context || '').slice(0, 2600);
   const wc = Math.max(300, Math.min(2400, Number(args.wordCount) || 900));
   if (!topic) return { ok: false, error: 'no topic' };
+  const feedback = Array.isArray(args.feedback) ? args.feedback.map(function (f) { return String(f).slice(0, 300); }).filter(Boolean) : [];
   const key = (process.env.GROQ_API_KEY || '').trim();
   const fallbackMd = function () {
     const t = topic.charAt(0).toUpperCase() + topic.slice(1);
@@ -368,8 +408,8 @@ async function contentDraft(args) {
   };
   if (!key) return { ok: true, draft: fallbackMd(), title: topic.charAt(0).toUpperCase() + topic.slice(1) };
   try {
-    const sys = 'You are a staff writer for an independent marketing analyst. Write a practical markdown article.\nRULES:\n- Ground every claim in the LIVE RESEARCH and AUTHOR KNOWLEDGE BASE context below. Never invent numbers, sources or URLs.\n- Do not fabricate a client name for the author — refer to "a client" or "his client".\n- Title is a single H1 (# ...). Use H2 (## ...) for sections and H3 only inside a section. No H4+.\n- Tone: ' + voice + '. For audience: ' + audience + '.\n- Target ~' + wc + ' words. End with an H2 "Key takeaways" listing 3-5 bullets.\n- Return ONLY the raw markdown. No preamble, no code fences, no closing text.';
-    const user = 'TOPIC: ' + topic + '\nKEYWORDS TO WEAVE IN (naturally): ' + kw.join(', ') + '\n\nCONTEXT (live research + verified author facts):\n' + context;
+    const sys = 'You are a staff writer for an independent marketing analyst. Write a practical markdown article.\nRULES:\n- Ground every claim in the LIVE RESEARCH and AUTHOR KNOWLEDGE BASE context below. Never invent numbers, sources or URLs.\n- Do not fabricate a client name for the author — refer to "a client" or "his client".\n- Title is a single H1 (# ...). Use H2 (## ...) for sections and H3 only inside a section. No H4+.\n- Tone: ' + voice + '. For audience: ' + audience + '.\n- Target ~' + wc + ' words. End with an H2 "Key takeaways" listing 3-5 bullets.\n' + (feedback.length ? '- The EDITOR FLAGGED these issues on your previous draft — address EACH one directly, then keep the rest of the draft intact in structure:\n' + feedback.map(f => '  - ' + f).join('\n') + '\n' : '') + '- Return ONLY the raw markdown. No preamble, no code fences, no closing text.';
+    const user = 'TOPIC: ' + topic + '\nKEYWORDS TO WEAVE IN (naturally): ' + kw.join(', ') + '\n\n' + (feedback.length ? 'PREVIOUS DRAFT (rewrite it, fixing the flagged issues):\n' + String(args.draft || '').slice(0, 3000) + '\n\n' : '') + 'CONTEXT (live research + verified author facts):\n' + context;
     const r = await fetch(GROQ, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
@@ -388,6 +428,8 @@ async function contentDraft(args) {
 }
 
 // Deterministic editorial review of the actual draft text against keywords + sources.
+// Includes a claim-coverage pass-rate: sentences whose keywords appear in a cited
+// source's snippet are "traceable claims" — grounded writing, not just vibes.
 function contentEdit(args) {
   const draft = String(args.draft || '');
   const keywords = Array.isArray(args.keywords) ? args.keywords : [];
@@ -405,6 +447,24 @@ function contentEdit(args) {
   const links = (draft.match(/\[[^\]]*\]\(https?:\/\/[^)]+\)/g) || []);
   const claimFlag = /(we guarantee|best in the world|no\. ?1|guaranteed ROI|100%|definitely will|always works)/i;
 
+  // Claim-coverage: sentences that share tokens with a real source snippet.
+  const corpus = sources.slice(0, 8).map(function (s) { return new Set(cToks(s.snippet)); });
+  const bodyLines = draft.split('\n').filter(function (l) {
+    const t = l.trim();
+    return t && !/^#{1,3}\s/.test(t) && !/^[>|\-*]/.test(t) && t.length > 30;
+  });
+  const sentences = [];
+  bodyLines.forEach(function (l) {
+    l.split(/(?<=[.!?])\s+/).forEach(function (s) { const x = s.trim(); if (x.length > 30) sentences.push(x); });
+  });
+  let cited = 0;
+  sentences.forEach(function (s) {
+    const toks = cToks(s);
+    const hit = corpus.some(function (cs) { return toks.filter(function (t) { return cs.has(t); }).length >= 2; });
+    if (hit) cited++;
+  });
+  const passRate = sentences.length ? Math.round((cited / sentences.length) * 100) : 0;
+
   if (wc < 250) issues.push('Too thin: ' + wc + ' words — aim for 300+ so the piece has real substance.');
   if (!hasH1) issues.push('Missing H1 title — every article needs exactly one.');
   if (h2 < 2) issues.push('Only ' + h2 + ' H2 section(s) — add a mid-article section for scannability.');
@@ -415,21 +475,24 @@ function contentEdit(args) {
   if (links.length < 2 && sources.length) issues.push('Only ' + links.length + ' citation link(s) — cite your sources (aim 2+).');
   if (!ctaHits.length) issues.push('No clear call-to-action — tell the reader what to do next.');
   if (/[A-Z]{4,}/.test(draft)) issues.push('Shouting: avoid ALL CAPS runs.');
+  if (sentences.length && passRate < 50) issues.push('Low claim coverage: only ' + passRate + '% of body sentences are traceable to a source — ground more claims in the cited research.');
 
-  const passes = Math.max(0, 8 - issues.length);
-  const score = Math.round((passes / 8) * 100);
-  const verdict = score >= 85 ? 'ready' : (score >= 55 ? 'minor edits' : 'rewrite recommended');
+  const passes = Math.max(0, 9 - issues.length);
+  const score = Math.round((passes / 9) * 100);
+  const verdict = score >= 80 ? 'ready' : (score >= 55 ? 'minor edits' : 'rewrite recommended');
   return {
     ok: true,
+    claimCoverage: { sentences: sentences.length, cited: cited, passRate: passRate },
     stats: { words: wc, readingMin: cReading(draft), sections: h2 + (hasH1 ? 1 : 0), citations: links.length, keywordsMatched: kwHit.length, hedges: hedgeHits.length, cta: ctaHits.length },
-    issues: issues.slice(0, 6),
+    issues: issues.slice(0, 7),
     passes: passes,
     score: score,
     verdict: verdict
   };
 }
 
-// Real on-page SEO score from the actual title, draft and keywords.
+// Real on-page SEO score from the actual title, draft and keywords,
+// including a real Flesch reading-ease measurement.
 function contentSeo(args) {
   const draft = String(args.draft || '');
   const title = String(args.title || '').slice(0, 80);
@@ -441,6 +504,7 @@ function contentSeo(args) {
   let metaTitle = title;
   if (metaTitle.length > 60) metaTitle = metaTitle.slice(0, 57).replace(/\s+\S*$/, '') + '…';
   const metaDesc = cMetaDesc(draft);
+  const readability = cFlesch(draft);
   const checks = [];
   const kwInTitle = keywords.filter(function (k) { return tLower.indexOf(k) >= 0; });
   const kwInBody = keywords.filter(function (k) { return lower.indexOf(k) >= 0; });
@@ -454,6 +518,8 @@ function contentSeo(args) {
   add(h2 >= 2, '≥2 H2 sections for scannability (' + h2 + ')');
   add(wc >= 300, 'Word count ' + wc + ' — meets 300+ baseline');
   add(/^##\s+Key takeaways/im.test(draft), 'Ends with a "Key takeaways" section');
+  add(readability.score >= 50, 'Readability Flesch ' + readability.score + ' (' + readability.label + ') — aim 50+');
+  add(readability.words >= 30, 'Readability measured on a real sample (' + readability.words + ' words)');
   const passes = checks.filter(function (c) { return c.ok; }).length;
   const score = Math.round((passes / checks.length) * 100);
   return {
@@ -462,12 +528,15 @@ function contentSeo(args) {
     passes: passes,
     total: checks.length,
     checks: checks,
+    readability: readability,
     metaTitle: metaTitle,
     metaDesc: metaDesc
   };
 }
 
 // Publish-ready package: slug, meta, markdown export + blended readiness score.
+// Also builds inline citations (claim → source link) and platform variants
+// (LinkedIn post + X thread) derived deterministically from the real draft.
 function contentPublish(args) {
   const draft = String(args.draft || '');
   const title = String(args.title || 'Untitled').slice(0, 80);
@@ -480,7 +549,64 @@ function contentPublish(args) {
   const seoScore = Number(args.seoScore) || 0;
   const links = (draft.match(/\[[^\]]*\]\(https?:\/\/[^)]+\)/g) || []);
   const ready = Math.max(0, Math.min(100, Math.round(seoScore * 0.6 + Math.min(links.length, 5) * 8 + (wc >= 300 ? 5 : 0))));
-  let markdown = '---\ntitle: "' + String(mTitle).replace(/"/g, '\\"') + '"\ndescription: "' + String(mDesc).replace(/"/g, '\\"') + '"\nslug: ' + slug + '\nreadingTime: ' + cReading(draft) + ' min\n---\n\n' + draft;
+
+  // Inline citations: for paragraph lines, attach the best-matching live source to
+  // the most source-traceable sentence as a clickable [n](url) superscript.
+  const citedSets = sources.slice(0, 8).map(function (s) { return { s: s, set: new Set(cToks(s.snippet)) }; });
+  const usedIdx = {};
+  let draftCited = draft.split('\n').map(function (l) {
+    const t = l.trim();
+    if (!t || /^#{1,3}\s/.test(l) || /^[-*]\s/.test(l)) return l; // keep headings/lists as-is
+    const sentences = l.split(/(?<=[.!?])\s+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    let cited = false;
+    const out = sentences.map(function (s) {
+      if (cited) return s;
+      const toks = cToks(s);
+      if (toks.length < 5 || !citedSets.length) return s;
+      let best = -1, bestN = 1;
+      citedSets.forEach(function (cs, i) {
+        if (usedIdx[i]) return;
+        const n = toks.filter(function (tk) { return cs.set.has(tk); }).length;
+        if (n > bestN) { best = i; bestN = n; }
+      });
+      if (best >= 0 && bestN >= 2) {
+        usedIdx[best] = 1;
+        cited = true;
+        const clean = s.replace(/\s+\[\d+\]\([^)]+\)$/, '');
+        return clean + (/\s/.test(clean) ? ' ' : '') + '[' + (best + 1) + '](' + (sources[best].link || '#') + ')';
+      }
+      return s;
+    });
+    return out.join(' ');
+  }).join('\n');
+
+  // Platform variants derived from the real headings + first body line per section.
+  const keywords = Array.isArray(args.keywords) ? args.keywords.slice(0, 3) : [];
+  const kwTag = keywords.length ? '#' + keywords.join(' #').replace(/\s+/g, '') : '#marketing';
+  const introLines = [];
+  (headings.length ? headings : []).forEach(function (h, hi) {
+    const next = draft.split('\n');
+    const idx = next.findIndex(function (l) { return l.indexOf(h) >= 0 && /^#/.test(l); });
+    const body = [];
+    for (let i = (idx >= 0 ? idx + 1 : 0); i < next.length && body.length < 2; i++) {
+      if (/^#/.test(next[i])) break;
+      if (next[i].trim()) body.push(next[i].trim());
+    }
+    const first = body[0] ? body[0].replace(/\*\*/g, '').slice(0, 160) : '';
+    if (first.length > 25 && introLines.length < 4) introLines.push({ h: h, one: first });
+  });
+  if (!introLines.length) {
+    introLines.push({ h: title, one: draft.split('\n').map(function (x) { return x.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim(); }).filter(function (x) { return x.length > 25; })[0] || title });
+  }
+  const linkedin =
+    'I keep seeing teams overthink "' + title + '".\n\n' +
+    introLines.slice(0, 3).map(function (x) { return '• ' + x.one; }).join('\n\n') +
+    '\n\n' + 'What actually moves the number: pick one lever, test it cleanly against a baseline, and scale only what beats your previous best.\n\n' +
+    'Full breakdown, with sources: ' + slug + '\n\n' + kwTag;
+  const thread = introLines.slice(0, 6).map(function (x, i) {
+    return (i + 1) + '. ' + x.h + ' — ' + x.one;
+  }).join('\n\n') + '\n\n' + "What's the change that worked for you? 👇";
+  let markdown = '---\ntitle: "' + String(mTitle).replace(/"/g, '\\"') + '"\ndescription: "' + String(mDesc).replace(/"/g, '\\"') + '"\nslug: ' + slug + '\nreadingTime: ' + cReading(draft) + ' min\n---\n\n' + draftCited;
   if (sources.length) {
     markdown += '\n\n## Sources\n';
     markdown += sources.slice(0, 5).map(function (s, i) { return (i + 1) + '. [' + (s.title || s.domain || 'source') + '](' + s.link + ')'; }).join('\n');
@@ -493,6 +619,9 @@ function contentPublish(args) {
     wordCount: wc,
     readingMin: cReading(draft),
     headings: headings,
+    citations: sources.slice(0, 5).map(function (s) { return { url: s.link, title: s.title || s.domain || 'source' }; }),
+    inlineCitations: (draftCited.match(/\[\d+\]\(/g) || []).length,
+    variants: { linkedin: linkedin, thread: thread },
     markdown: markdown,
     ready: ready,
     ctaPresent: /(click|learn more|try|download|sign up|get started|contact)/i.test(draft)

@@ -8,9 +8,10 @@
 // publish-ready package (slug, meta title/description, markdown export, readiness).
 //
 // POST /api/content  {topic, audience?, voice?, keywords?, wordCount?, stream?} → NDJSON stream or JSON
-//   events: orch | tool | reflect | metrics | plan
+//   events: orch | tool | reflect | metrics | plan | loop
 // GET  /api/content?run=<id> → replay a stored run
 // GET  /api/content?recent=<optional topic> → recent published runs
+// POST /api/content?sub=pdf {runId} → PDF export of a stored run (pdfkit)
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
@@ -85,6 +86,7 @@ const STOP = new Set('a,an,the,and,or,but,to,of,for,in,on,at,is,are,was,were,am,
 
 function toks(s) { return String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(function (t) { return t && !STOP.has(t); }); }
 function sanitize(s, len) { return String(s || '').replace(/\s+/g, ' ').trim().slice(0, len || 200); }
+function cWordsOf(s) { return String(s || '').trim().split(/\s+/).filter(Boolean).length; }
 
 // Keyword mining over real SERP titles+snippets: weighted frequency of 1-2 word n-grams.
 function mineKeywords(docs, topN) {
@@ -276,11 +278,12 @@ async function buildContent(topic, opts, e) {
   let mode = 'template';
 
   // 1) Real research first, so the writer/editor/seo are grounded in live results (RAG).
-  const researchTool = await runTool('content.research', { q: topic });
+  //    sweep:true runs intent variants (topic + guide + benchmark) and merges results.
+  const researchTool = await runTool('content.research', { q: topic, sweep: true });
   telemetry.tools.calls++; telemetry.tools.ms += researchTool.ms;
   const research = researchTool.ok ? researchTool.result : { sources: [], keywords: [], citations: [], query: topic };
   e({ event: 'tool', id: 'researcher', tool: 'content.research', exec: { ok: researchTool.ok, ms: researchTool.ms, error: researchTool.error || null } });
-  e({ event: 'serp', used: researchTool.ok && !!research.sources && research.sources.length, count: research.sources ? research.sources.length : 0, query: topic });
+  e({ event: 'serp', used: researchTool.ok && !!research.sources && research.sources.length, count: research.sources ? research.sources.length : 0, query: topic, queries: research.queries || [topic] });
 
   // RAG context: live SERP snippets + knowledge-base facts for this topic.
   const ragContext = retrieveContext(topic, research);
@@ -302,7 +305,7 @@ async function buildContent(topic, opts, e) {
   // 3) Execution loop — every agent's tool really runs, in order, feeding the next.
   //    The Researcher already ran up front (needed to ground the plan + RAG), so its
   //    real result is adopted here rather than re-run.
-  let metrics = { wordCount: 0, seoScore: 0, readiness: 0, citations: (research.citations || []).length };
+  let metrics = { wordCount: 0, seoScore: 0, readiness: 0, citations: (research.citations || []).length, fixes: 0, converged: false };
   let draft = ''; let title = ''; let editorOut = null; let seoOut = null; let publishOut = null;
   for (const agent of briefing.agents) {
     const id = agent.id;
@@ -332,12 +335,49 @@ async function buildContent(topic, opts, e) {
       await reflectAgent(agent, w, key);
       if (agent.reflection) e({ event: 'reflect', id: 'writer', output: agent.output, passes: 1 });
     } else if (id === 'editor') {
-      agent.toolArgs = Object.assign({}, agent.toolArgs, { draft: draft, keywords: (research.keywords || []).slice(0, 6), sources: research.citations || [] });
-      const ed = await runTool('content.edit', agent.toolArgs);
-      telemetry.tools.calls++; telemetry.tools.ms += ed.ms;
+      // Agentic fix loop: review the draft; if it fails, feed the editor's issues back
+      // to the Writer (with the prior draft) and re-review — up to MAX_FIX passes.
+      const MAX_FIX = 2, PASS_THRESHOLD = 75;
+      let fixPass = 0, converged = false;
+      const review = async function (feed) {
+        if (feed) {
+          const wAg = briefing.agents.find(function (a) { return a.id === 'writer'; });
+          const wArgs = Object.assign({}, agent.toolArgs || {}, wAg ? wAg.toolArgs || {} : {}, {
+            topic: topic, audience: String(opts.audience || '').slice(0, 120), voice: String(opts.voice || '').slice(0, 120),
+            keywords: (research.keywords || []).slice(0, 5), context: ragContext, wordCount: target,
+            feedback: feed, draft: draft
+          });
+          const w = await runTool('content.draft', wArgs);
+          telemetry.tools.calls++; telemetry.tools.ms += w.ms;
+          e({ event: 'tool', id: 'writer', tool: w.tool, exec: { ok: w.ok, ms: w.ms, error: w.error || null, wc: w.ok && w.result ? cWordsOf(w.result.draft) : 0, pass: fixPass } });
+          if (w.ok && w.result) {
+            draft = w.result.draft || draft;
+            title = w.result.title || title;
+            metrics.wordCount = cWordsOf(draft);
+            const w2 = briefing.agents.find(function (a) { return a.id === 'writer'; });
+            if (w2) { w2.exec = w; w2.result = (w.result.title || title) + ' · feedback pass ' + fixPass; }
+          }
+        }
+        const edArgs = Object.assign({}, agent.toolArgs || {}, { draft: draft, keywords: (research.keywords || []).slice(0, 6), sources: research.citations || [] });
+        const ed = await runTool('content.edit', edArgs);
+        telemetry.tools.calls++; telemetry.tools.ms += ed.ms;
+        e({ event: 'tool', id: 'editor', tool: ed.tool, exec: { ok: ed.ok, ms: ed.ms, error: ed.error || null, pass: fixPass } });
+        return ed;
+      };
+      let ed = await review(null);
+      while (fixPass < MAX_FIX && ed.ok && ed.result && (!(ed.result.score >= PASS_THRESHOLD)) && ed.result.issues && ed.result.issues.length) {
+        fixPass++;
+        let issues = ed.result.issues.slice(0, 4);
+        if (ed.result.claimCoverage && ed.result.claimCoverage.passRate < 55) issues = issues.concat('Ground more claims in the cited sources — the editor could only trace ' + ed.result.claimCoverage.passRate + '% of body sentences to a source.');
+        e({ event: 'loop', pass: fixPass, id: 'writer', issues: issues });
+        ed = await review(issues);
+      }
+      converged = !!(ed.ok && ed.result && ed.result.score >= PASS_THRESHOLD);
       agent.exec = ed; editorOut = ed.ok ? ed.result : null;
+      agent.fixPasses = fixPass; agent.converged = converged;
+      metrics.fixes = fixPass; metrics.converged = converged;
       agent.result = ed.ok ? (fmtResult(ed) || 'review complete') : 'review skipped';
-      e({ event: 'tool', id: 'editor', tool: ed.tool, exec: { ok: ed.ok, ms: ed.ms, error: ed.error || null } });
+      e({ event: 'tool', id: 'editor', tool: ed.tool, exec: { ok: ed.ok, ms: ed.ms, error: ed.error || null, final: true, score: ed.ok ? ed.result.score : null } });
       await reflectAgent(agent, ed, key);
       if (agent.reflection) e({ event: 'reflect', id: 'editor', output: agent.output, passes: 1 });
     } else if (id === 'seo') {
@@ -375,9 +415,13 @@ async function buildContent(topic, opts, e) {
     keywords: research.keywords || [],
     draft: draft, title: title,
     editor: editorOut, seo: seoOut, publish: publishOut,
+    variants: (publishOut && publishOut.variants) || null,
+    inlineCitations: (publishOut && publishOut.inlineCitations) || 0,
     metrics: metrics,
+    loop: { fixes: metrics.fixes || 0, converged: !!metrics.converged, threshold: 75, max: 2 },
     serpUsed: researchTool.ok && !!research.sources && research.sources.length,
     serpCount: research.sources ? research.sources.length : 0,
+    serpQueries: research.queries || [topic],
     serpQuery: topic
   }, briefing);
   return payload;
@@ -420,6 +464,75 @@ module.exports = async function handler(req, res) {
   }
   if (req.method === 'GET' && url2.searchParams.get('recent')) {
     return res.json({ ok: true, topic: String(url2.searchParams.get('topic') || '').slice(0, 160), runs: await getRecent(url2.searchParams.get('topic')) });
+  }
+  if (req.method === 'POST' && url2.searchParams.get('sub') === 'pdf') {
+    const b0 = req.body || {};
+    const runId = String(b0.runId || '').slice(0, 64);
+    if (!runId) return res.status(400).json({ error: 'runId required' });
+    const raw = await kvGet('content:run:' + runId);
+    if (!raw) return res.status(404).json({ error: 'run not found' });
+    let obj = null;
+    try { const c = JSON.parse(raw); if (c && c.result) obj = c.result; } catch (e) {}
+    if (!obj || !obj.draft) return res.status(404).json({ error: 'run has no draft' });
+    try {
+      const PDFDocument = require('pdfkit');
+      const d = String(obj.draft || '');
+      const title = String(obj.title || obj.topic || 'Content Engine').slice(0, 120);
+      const metaTitle = (obj.publish && obj.publish.metaTitle) ? String(obj.publish.metaTitle).slice(0, 100) : title;
+      const metaDesc = (obj.publish && obj.publish.metaDesc) ? String(obj.publish.metaDesc).slice(0, 170) : '';
+      const slug = (obj.publish && obj.publish.slug) ? String(obj.publish.slug).slice(0, 80) : 'content';
+      const doc = new PDFDocument({ size: 'A4', margins: { top: 48, bottom: 48, left: 52, right: 52 }, info: { Title: title, Author: 'Vamshidhar Reddy M — Content Engine', Subject: metaTitle } });
+      const chunks = [];
+      doc.on('data', function (c) { chunks.push(c); });
+      const endP = new Promise(function (resolve) { doc.on('end', resolve); });
+      // Cover: title + meta + metrics.
+      doc.font('Helvetica-Bold').fontSize(22).fillColor('#1a1a2e').text(title, { align: 'left' });
+      doc.moveDown(0.3);
+      doc.font('Helvetica').fontSize(11).fillColor('#555').text((obj.metrics && obj.metrics.wordCount ? obj.metrics.wordCount + ' words' : '') + ' · ' + (obj.seo ? ('SEO ' + (obj.seo.score || 0) + '/100') : '') + ' · ' + (obj.publish ? ('ready ' + (obj.publish.ready || 0) + '%') : '') + ' · ' + (obj.loop ? (obj.loop.fixes + ' fix pass(es)') : ''), { align: 'left' });
+      if (metaDesc) { doc.moveDown(0.4); doc.font('Helvetica-Oblique').fontSize(11).fillColor('#333').text(metaDesc, { align: 'left' }); }
+      doc.moveDown(0.5);
+      if ((obj.variants && obj.variants.linkedin) || (obj.variants && obj.variants.thread)) {
+        doc.font('Helvetica-Bold').fontSize(13).fillColor('#1a1a2e').text('Platform variants');
+        doc.moveDown(0.25);
+        if (obj.variants.linkedin) { doc.font('Helvetica-Bold').fontSize(10).fillColor('#0a66c2').text('LinkedIn'); doc.moveDown(0.15); doc.font('Helvetica').fontSize(10).fillColor('#333').text(String(obj.variants.linkedin).slice(0, 600), { align: 'left' }); }
+        if (obj.variants.thread) { doc.moveDown(0.5); doc.font('Helvetica-Bold').fontSize(10).fillColor('#010409').text('X thread'); doc.moveDown(0.15); doc.font('Helvetica').fontSize(10).fillColor('#333').text(String(obj.variants.thread).slice(0, 800), { align: 'left' }); }
+        doc.moveDown(1);
+      }
+      // Body: markdown → simple PDF lines (headings get the H-n font size bump).
+      const lines = String(d).split('\n');
+      lines.forEach(function (l) {
+        const h = l.match(/^(#{1,3})\s+(.*)$/);
+        const bullet = l.match(/^([-*])\s+(.*)$/);
+        const t = l.trim();
+        if (h) {
+          doc.moveDown(0.35);
+          doc.font('Helvetica-Bold').fontSize(h[1].length === 1 ? 17 : (h[1].length === 2 ? 14 : 12)).fillColor('#1a1a2e').text(String(h[2]).replace(/\*\*/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'), { align: 'left' });
+          doc.moveDown(0.2);
+        } else if (bullet) {
+          doc.font('Helvetica').fontSize(10.5).fillColor('#333').text('•  ' + String(bullet[2]).replace(/\*\*/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'), { align: 'left', lineGap: 1 });
+        } else if (t && !/^---/.test(t)) {
+          doc.font('Helvetica').fontSize(10.5).fillColor('#333').text(t.replace(/\*\*/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'), { align: 'left', lineGap: 2 });
+        } else if (!t) {
+          doc.moveDown(0.25);
+        }
+      });
+      // Sources footer.
+      if (obj.citations && obj.citations.length) {
+        doc.moveDown(0.6);
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#1a1a2e').text('Sources');
+        doc.moveDown(0.2);
+        obj.citations.slice(0, 6).forEach(function (s, i) {
+          doc.font('Helvetica').fontSize(9.5).fillColor('#444').text((i + 1) + '. ' + ((s.title || 'source') + ' — ' + (s.link || s.domain || '')), { align: 'left' });
+        });
+      }
+      doc.end();
+      await endP;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="' + slug + '.pdf"');
+      return res.end(Buffer.concat(chunks));
+    } catch (e) {
+      return res.status(500).json({ error: 'pdf generation failed' });
+    }
   }
   if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/content with {topic, audience?, voice?, keyword?, wordCount?, stream?} — 5 agents (research → draft → edit → seo → publish) run real tools with RAG grounding.' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });

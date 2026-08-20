@@ -24,16 +24,16 @@ const PLAN_JSON = '{"topic":"cost-per-lead for B2B SaaS","orchestrator":"The Res
 const MOCK_DRAFT = '# How to lower cost-per-lead for B2B SaaS\n\n' +
   '> A practical guide for B2B founders. Grounded in live research.\n\n' +
   '## Why cost-per-lead matters\n\n' +
-  'Lowering cost-per-lead is the single biggest lever for a growth budget. The teams that cut CPL do it with real experiments, not vibes.\n\n' +
+  'Lowering cost-per-lead is the single biggest lever for a growth budget. The teams that cut CPL do it with real experiments and tighter targeting, not vibes. When demand generation budgets stay flat, the fastest path to more pipeline is a lower cost-per-lead, because every rupee of spend converts into a bigger share of qualified leads.\n\n' +
   '## Tighten your targeting\n\n' +
-  'Narrow the audience to the buyers who convert, and measure against a real baseline.\n\n' +
+  'Narrow the audience to the buyers who convert, and measure against a real baseline. Consolidate ad groups across every campaign, switch to target-CPA bidding, and cut the keywords that burn clicks without producing an opportunity. A smaller, better-matched audience routinely outperforms a broad one.\n\n' +
   '## Offer-based landing pages\n\n' +
-  'Every ad group should land on a page that mirrors the offer in the ad copy.\n\n' +
+  'Every ad group should land on a page that mirrors the offer in the ad copy. When the page repeats the promise and the pricing, visitors stay on it longer and convert more often. Align the headline, the form and the call-to-action with the exact message that got the click in the first place.\n\n' +
   '## A/B testing cadence\n\n' +
-  'Consolidate ad groups, switch to target-CPA bidding, and test one creative change at a time.\n\n' +
+  'Consolidate ad groups, switch to target-CPA bidding, and test one creative change at a time. Run each test against a real baseline, give it enough clicks to reach significance, and only scale the variant that beats your previous best. The compounding effect of small wins is what moves the blended cost-per-lead over a quarter.\n\n' +
   '## How the author proves this works\n\n' +
-  'A verified track record includes cutting a client\u2019s cost-per-lead from Rs.1,100 to Rs.770 and lifting ROAS from ~3.2x to ~5.5x.\n\n' +
-  '## Key takeaways\n\n- Pick one lever\n- Measure against a baseline\n- Scale only what beats your previous best\n';
+  'A verified track record includes cutting a client\u2019s cost-per-lead from Rs.1,100 to Rs.770 and lifting returns on ad spend from ~3.2x to ~5.5x. Those results came from the same playbook: targeted audiences, offer-aligned pages, and disciplined testing. To try it, book a call or start free with a single campaign (source: the cost-per-lead guide, which shows the targeting tactics behind these numbers).\n\n' +
+  '## Key takeaways\n\n- Pick one lever\n- Measure against a baseline\n- Scale only what beats your previous best\n- Align the offer with the landing page\n- Test one change at a time\n';
 
 let kvStore = {};
 let realFetch;
@@ -98,10 +98,12 @@ function parseStreamEvents(lines) {
 
 function mockRes() {
   const lines = [];
+  const headers = {};
   return {
     lines,
+    headers,
     _c: 200,
-    setHeader () {},
+    setHeader (k, v) { headers[String(k).toLowerCase()] = v; },
     writeHead () {},
     status (c) { this._c = c; return this; },
     json (o) { lines.push(JSON.stringify(o)); return this; },
@@ -222,4 +224,100 @@ test('GET ?recent=1&topic= lists past runs for that topic', async () => {
   assert.ok(recent.ok === true, 'recent endpoint ok');
   assert.ok(Array.isArray(recent.runs) && recent.runs.some((x) => x.runId === run.runId), 'recent includes the just-run id');
   assert.ok(recent.runs[0].seoScore != null && recent.runs[0].readiness != null, 'recent entries carry seoScore + readiness');
+});
+
+test('v2: research sweep runs intent variants and merges sources', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  kvStore = {};
+  const handler = require('../libs/content.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { topic: 'cost-per-lead for B2B SaaS', stream: true } }, res);
+  const evs = parseStreamEvents(res.lines);
+  const serp = evs.find((e) => e.event === 'serp');
+  assert.ok(serp && Array.isArray(serp.queries) && serp.queries.length === 3, 'sweep should run 3 intent queries, got ' + (serp && serp.queries && serp.queries.length));
+  const plan = evs.find((e) => e.event === 'plan');
+  assert.ok(Array.isArray(plan.data.serpQueries) && plan.data.serpQueries.length === 3, 'payload exposes the sweep queries');
+  assert.ok(plan.data.research.queries && plan.data.research.queries.length === 3, 'research object carries the queries run');
+});
+
+test('v2: editor reports claim-coverage pass-rate', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  kvStore = {};
+  const handler = require('../libs/content.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { topic: 'cost-per-lead for B2B SaaS', stream: true } }, res);
+  const d = parseStreamEvents(res.lines).find((e) => e.event === 'plan').data;
+  assert.ok(d.editor.claimCoverage, 'editor should report claim coverage');
+  assert.ok(typeof d.editor.claimCoverage.passRate === 'number', 'claim coverage has a numeric passRate');
+  assert.ok(d.editor.claimCoverage.sentences > 0, 'claim coverage measured real sentences');
+  assert.ok(d.editor.claimCoverage.passRate >= 0 && d.editor.claimCoverage.passRate <= 100, 'passRate within 0-100');
+});
+
+test('v2: SEO measures Flesch readability on the real text', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  kvStore = {};
+  const handler = require('../libs/content.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { topic: 'cost-per-lead for B2B SaaS', stream: true } }, res);
+  const d = parseStreamEvents(res.lines).find((e) => e.event === 'plan').data;
+  assert.ok(d.seo.readability, 'seo should return a readability measurement');
+  assert.ok(typeof d.seo.readability.score === 'number' && d.seo.readability.score >= 0 && d.seo.readability.score <= 100, 'readability score in range');
+  assert.ok(d.seo.readability.label, 'readability has a label');
+  assert.ok(d.seo.readability.words >= 1, 'readability measured on real words');
+});
+
+test('v2: publisher builds inline citations + LinkedIn/X variants', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  kvStore = {};
+  const handler = require('../libs/content.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { topic: 'cost-per-lead for B2B SaaS', stream: true } }, res);
+  const d = parseStreamEvents(res.lines).find((e) => e.event === 'plan').data;
+  assert.ok(d.publish.inlineCitations >= 1, 'draft should carry at least one inline citation, got ' + d.publish.inlineCitations);
+  assert.ok(/\[\d+\]\(https?:/.test(d.publish.markdown), 'markdown export includes inline citations');
+  assert.ok(d.variants && d.variants.linkedin, 'linkedin variant generated');
+  assert.ok(d.variants && d.variants.thread, 'X thread variant generated');
+  assert.ok(d.variants.linkedin.indexOf(d.publish.slug) >= 0, 'linkedin variant links the slug');
+});
+
+test('v2: agentic fix loop re-runs writer on editor issues', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  kvStore = {};
+  const handler = require('../libs/content.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { topic: 'cost-per-lead for B2B SaaS', stream: true } }, res);
+  const evs = parseStreamEvents(res.lines);
+  const plan = evs.find((e) => e.event === 'plan');
+  const loopEvents = evs.filter((e) => e.event === 'loop');
+  assert.ok(plan.data.loop && typeof plan.data.loop.fixes === 'number', 'payload carries loop.fixes');
+  assert.ok(plan.data.metrics.fixes === plan.data.loop.fixes, 'metrics.fixes matches loop.fixes');
+  assert.equal(plan.data.loop.max, 2, 'loop capped at 2 fix passes');
+  // The mock draft is strong, so the editor should pass without needing a fix pass.
+  assert.ok(plan.data.loop.fixes === 0, 'strong draft should pass review on first pass (fixes=0)');
+  assert.ok(plan.data.loop.converged === true, 'first-pass approval counts as converged');
+  assert.ok(loopEvents.length === 0, 'no loop events emitted when the draft passes first time');
+});
+
+test('v2: PDF export route streams a rendered PDF for a stored run', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  kvStore = {};
+  const handler = require('../libs/content.js');
+  const res = mockRes();
+  await handler({ method: 'POST', url: '/', headers: {}, body: { topic: 'cost-per-lead for B2B SaaS' } }, res);
+  const j = JSON.parse(res.lines[0]);
+  const r2 = mockRes();
+  await handler({ method: 'POST', url: '/?sub=pdf', headers: {}, body: { runId: j.runId } }, r2);
+  assert.equal(r2._c, 200, 'pdf export should return 200');
+  assert.equal(r2.headers['content-type'], 'application/pdf', 'pdf route sets Content-Type');
+  assert.ok(String(r2.headers['content-disposition']).indexOf('attachment') >= 0, 'pdf route sets attachment disposition');
+  const buf = Buffer.concat(r2.lines.map((s) => Buffer.from(String(s), 'binary')));
+  assert.ok(buf.length > 1000, 'pdf stream should contain rendered bytes, got ' + buf.length);
+  assert.ok(buf.slice(0, 5).toString('ascii') === '%PDF-', 'output should start with the PDF magic header');
+});
+
+test('PDF export 404s for an unknown runId', async () => {
+  const handler = require('../libs/content.js');
+  const r2 = mockRes();
+  await handler({ method: 'POST', url: '/?sub=pdf', headers: {}, body: { runId: 'does-not-exist' } }, r2);
+  assert.equal(r2._c, 404, 'unknown runId should 404');
 });

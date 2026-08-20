@@ -1148,3 +1148,15 @@ html.dark{--bg2:#1a1a24;--card:#1e1e2a;--line:#4a4a5a;--muted:#8888a0}
 .ce-draft-body h3{font-size:14.5px;margin:12px 0 4px}
 .ce-draft-body ul{margin:8px 0;padding-left:18px;list-style:disc}
 .ce-draft-body li{font-size:13px;margin:3px 0;line-height:1.55}
+.ce-cite{display:inline-block;margin:0 2px;font-size:11px;line-height:1}
+.ce-cite a{color:var(--accent2);font-weight:800;text-decoration:none;border-bottom:1px solid transparent}
+.ce-cite a:hover{border-bottom-color:var(--accent2)}
+.ag-loopbadge{display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,#8affc1 14%,transparent);border:1px solid color-mix(in srgb,#8affc1 35%,transparent);color:#8affc1;font-size:11px;font-weight:700}
+.ce-agloop{margin-top:8px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,#ffd479 10%,transparent);border:1px dashed color-mix(in srgb,#ffd479 30%,transparent);color:#ffd479;font-size:12px}
+.ag-variants{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg2);overflow:hidden}
+.ag-variants details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12.5px;font-weight:700;color:var(--accent2)}
+.ag-variants details>summary::-webkit-details-marker{display:none}
+.ag-variants details[open]>summary{border-bottom:1px solid var(--line)}
+.ce-variant{padding:12px}
+.ce-variant b{display:block;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.ce-variant pre{white-space:pre-wrap;font-family:var(--mono,ui-monospace,SFMono-Regular,Consolas,monospace);font-size:12.5px;line-height:1.6;color:var(--txt);background:transparent;margin:0}

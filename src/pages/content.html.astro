@@ -253,6 +253,7 @@ const body = `<section class="lpage-wrap">
         seo: { score: 75, passes: 6, total: 8, checks: [{ ok: true, label: 'Title within 25-60 chars' }, { ok: true, label: 'Meta under 162 chars' }, { ok: false, label: 'Primary keyword in title' }, { ok: false, label: '≥2 researched keywords in body' }, { ok: true, label: 'Exactly one H1' }, { ok: true, label: '≥2 H2 sections' }, { ok: false, label: '300+ word count' }, { ok: true, label: 'Key takeaways section' }], metaTitle: core, metaDesc: 'A practical guide to ' + t + ' for marketers — grounded in live research and a verified track record.' },
         publish: { slug: String(t).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 60), metaTitle: core, metaDesc: 'A practical guide to ' + t + ' for marketers.', wordCount: 120, readingMin: 1, ready: 78, markdown: draft, headings: [core, 'Why ' + t + ' matters', 'The three levers', 'A simple weekly cadence', 'Key takeaways'] },
         metrics: { wordCount: 120, seoScore: 75, readiness: 78, citations: 0 },
+        loop: { fixes: 0, converged: false },
         telemetry: { calls: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } }
       };
     }
@@ -291,7 +292,9 @@ const body = `<section class="lpage-wrap">
         '<li><span class="ag-pri" style="color:#ff9e5c">fix</span> ' + esc(i) + '</li>'
       ).join('');
       const editOk = edit.passes != null
-        ? '<div class="ce-bignum" style="color:' + scoreColor(edit.score || 0) + '">' + edit.score + ' <i>editorial</i></div><div class="ag-hint">' + (edit.passes || 0) + ' checks passed · verdict: <b style="color:var(--txt)">' + esc(edit.verdict || '—') + '</b></div>'
+        ? '<div class="ce-bignum" style="color:' + scoreColor(edit.score || 0) + '">' + edit.score + ' <i>editorial</i></div><div class="ag-hint">' + (edit.passes || 0) + ' checks passed · verdict: <b style="color:var(--txt)">' + esc(edit.verdict || '—') + '</b></div>' +
+          ((edit.claimCoverage && edit.claimCoverage.passRate != null) ? '<div class="ag-hint">claim coverage: ' + edit.claimCoverage.cited + '/' + edit.claimCoverage.sentences + ' sentences traceable to a cited source (' + edit.claimCoverage.passRate + '%)</div>' : '') +
+          (d.loop && d.loop.fixes ? '<div class="ce-agloop">⟳ agentic fix loop: ' + d.loop.fixes + ' pass(es) · ' + (d.loop.converged ? 'converged ✓' : 'gave up, still below ' + (d.loop.threshold || 75) + '/100') + '</div>' : '')
         : '<div class="ag-hint">no editorial pass yet</div>';
 
       const seoChecks = (seo.checks || []).map((c) =>
@@ -300,6 +303,7 @@ const body = `<section class="lpage-wrap">
 
       const seoBlock = seo.score != null
         ? '<div class="blk"><b>🎯 SEO Agent · on-page score</b><div class="ce-gauge" style="--ceg:' + scoreColor(seo.score) + '">' + seo.score + '<i>' + (seo.passes || 0) + '/' + (seo.total || 8) + ' checks</i></div><ul class="ce-checks">' + seoChecks + '</ul>' +
+          (seo.readability ? '<div class="ag-hint">readability: Flesch ' + seo.readability.score + ' (' + esc(seo.readability.label || '') + '), measured on ' + (seo.readability.words || 0) + '+ real words</div>' : '') +
           (seo.metaTitle ? '<div class="ce-meta"><span>meta title · ' + (seo.metaTitle || '').length + ' chars</span><b>' + esc(seo.metaTitle || '') + '</b><span>meta description · ' + (seo.metaDesc || '').length + ' chars</span><b>' + esc(seo.metaDesc || '') + '</b></div>' : '') +
           '</div>'
         : '<div class="blk"><b>🎯 SEO Agent</b><div class="ag-hint">no SEO pass yet</div></div>';
@@ -309,23 +313,39 @@ const body = `<section class="lpage-wrap">
         ? '<div class="blk ce-readyb"><b>🚀 Publisher Agent · ready to post</b>' +
           '<div class="ce-ready"><div class="ce-bignum" style="color:' + readyCol + '">' + (pub.ready || 0) + '%</div><span class="ag-hint">readiness</span></div>' +
           '<div class="ce-meta"><span>slug</span><b>/' + esc(pub.slug || '') + '</b><span>reading time</span><b>' + (pub.readingMin || 1) + ' min · ' + (pub.wordCount || 0) + ' words</b></div>' +
+          (pub.inlineCitations ? '<div class="ag-hint">inline citations: <b>' + pub.inlineCitations + '</b> sentence-level citations attached</div>' : '') +
+          (d.variants ? '<div class="ag-variants"><details><summary>📣 Platform variants — LinkedIn + X thread</summary><div class="ce-variant"><b>LinkedIn post</b><pre>' + esc(d.variants.linkedin || '') + '</pre></div><div class="ce-variant"><b>X thread</b><pre>' + esc(d.variants.thread || '') + '</pre></div></details></div>' : '') +
           (pub.ctaPresent !== undefined ? '<div class="ag-hint">CTA present: ' + (pub.ctaPresent ? 'yes' : 'no — add one before publish') + '</div>' : '') +
           '</div>'
         : '<div class="blk"><b>🚀 Publisher Agent</b><div class="ag-hint">no package yet</div></div>';
 
+      const CITE_RE = /(\[\d+\]\((https?:\/\/[^)]+)\))/g;
+      const citeToHtml = (raw) => {
+        let s = String(raw || '');
+        const parts = [];
+        let last = 0, mm;
+        CITE_RE.lastIndex = 0;
+        while ((mm = CITE_RE.exec(s)) !== null) {
+          parts.push(markdownPlain(s.slice(last, mm.index)));
+          parts.push('<sup class="ce-cite"><a href="' + esc(mm[2]) + '" target="_blank" rel="noopener" title="source ' + mm[1].replace(/[\[\]]/g, '') + '">' + mm[1].replace(/[\[\]]/g, '') + '</a></sup>');
+          last = mm.index + mm[0].length;
+        }
+        parts.push(markdownPlain(s.slice(last)));
+        return parts.join('');
+      };
       const draftHtml = String(d.draft || '').split('\n').map((line) => {
         const m = line.match(/^(#{1,3})\s+(.*)$/);
-        if (m) return '<h' + m[1].length + ' style="margin:14px 0 6px;color:var(--txt)">' + esc(m[2]) + '</h' + m[1].length + '>';
-        if (/^>/.test(line)) return '<p class="ag-hint" style="margin:4px 0">' + esc(markdownPlain(line)) + '</p>';
-        if (/^[-*]\s/.test(line)) return '<li style="font-size:13px;line-height:1.55;margin:3px 0">' + esc(markdownPlain(line.slice(2))) + '</li>';
+        if (m) return '<h' + m[1].length + ' style="margin:14px 0 6px;color:var(--txt)">' + esc(m[2].replace(/\[\d+\]\([^)]*\)/g, '')) + '</h' + m[1].length + '>';
+        if (/^>/.test(line)) return '<p class="ag-hint" style="margin:4px 0">' + citeToHtml(line) + '</p>';
+        if (/^[-*]\s/.test(line)) return '<li style="font-size:13px;line-height:1.55;margin:3px 0">' + citeToHtml(line.slice(2)) + '</li>';
         if (/^\[.+?\]\(https?:\/\/.+\)$/.test(line.trim())) return '<a href="' + esc((line.trim().match(/\((https?:\/\/[^)]+)\)/) || ['', '#'])[1]) + '" target="_blank" rel="noopener" style="color:var(--accent2);font-size:12.5px">' + esc(markdownPlain(line)) + '</a><br>';
-        return '<p style="font-size:13.5px;line-height:1.65;margin:6px 0;color:var(--txt)">' + esc(markdownPlain(line)) + '</p>';
+        return '<p style="font-size:13.5px;line-height:1.65;margin:6px 0;color:var(--txt)">' + citeToHtml(line) + '</p>';
       }).join('');
 
       brief.innerHTML =
         '<div class="ag-plan-head"><h3>📝 Content Engine · ' + esc(d.title || d.topic || '') + '</h3>' +
-        '<div class="ag-actions"><button type="button" class="btn" id="ceCopyBtn">⧉ Copy package</button><button type="button" class="btn" id="ceMdBtn">⬇ Markdown</button><button type="button" class="btn" id="ceTxtBtn">⬇ Plain text</button></div></div>' +
-        '<div class="ce-verdict"><b>' + esc((edit.verdict || 'draft ready') + '') + '</b><span class="ag-hint">' + (metrics.wordCount || 0) + ' words · ' + (d.metrics && d.metrics.citations != null ? d.metrics.citations + ' citations' : 'offline demo') + '</span></div>' +
+        '<div class="ag-actions">' + (d.runId ? '<button type="button" class="btn" id="cePdfBtn">⬇ PDF</button>' : '') + '<button type="button" class="btn" id="ceCopyBtn">⧉ Copy package</button><button type="button" class="btn" id="ceMdBtn">⬇ Markdown</button><button type="button" class="btn" id="ceTxtBtn">⬇ Plain text</button></div></div>' +
+        '<div class="ce-verdict"><b>' + esc((edit.verdict || 'draft ready') + '') + '</b><span class="ag-hint">' + (metrics.wordCount || 0) + ' words · ' + (d.metrics && d.metrics.citations != null ? d.metrics.citations + ' citations' : 'offline demo') + (d.inlineCitations ? ' · ' + d.inlineCitations + ' inline citation(s)' : '') + '</span>' + (d.loop && d.loop.fixes ? '<span class="ag-loopbadge">⟳ ' + d.loop.fixes + ' fix ' + (d.loop.fixes === 1 ? 'pass' : 'passes') + (d.loop.converged ? ' · converged' : '') + '</span>' : '') + '</div>' +
         '<div class="grid">' +
           '<div class="blk"><b>🔍 Research · live sources</b>' + kwChips + '<ul class="ce-sources">' + (sourceList || '<li class="ag-hint">no live sources (offline demo)</li>') + '</ul></div>' +
           '<div class="blk"><b>🧐 Editor Agent · fact-check</b>' + editOk + '<ul class="ce-issues">' + (issues || '<li class="ce-ok">✓ No issues flagged</li>') + '</ul></div>' +
@@ -357,6 +377,21 @@ const body = `<section class="lpage-wrap">
         txtBtn.addEventListener('click', function () {
           downloadFile('content-' + String(d.publish && d.publish.slug || 'article').replace(/[^\w-]+/g, '-') + '.txt', markdownPlain(d.publish && d.publish.markdown || d.draft) + '\n\n—\n' + (sources || []).map(function (s) { return s.domain; }).join(', '), 'text/plain;charset=utf-8');
           txtBtn.textContent = '⬇ Saved'; setTimeout(function () { txtBtn.textContent = '⬇ Plain text'; }, 1800);
+        });
+      }
+      const pdfBtn = $('cePdfBtn');
+      if (pdfBtn && d.runId) {
+        pdfBtn.addEventListener('click', async function () {
+          pdfBtn.disabled = true; pdfBtn.textContent = '⏳ Building PDF…';
+          try {
+            const r = await fetch('/api/content?sub=pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId: String(d.runId || '').slice(0, 64) }) });
+            if (!r.ok) throw new Error('bad');
+            const blob = await r.blob();
+            downloadFile('content-' + String(d.publish && d.publish.slug || 'article').replace(/[^\w-]+/g, '-') + '.pdf', blob, 'application/pdf');
+            pdfBtn.textContent = '✓ PDF saved'; setTimeout(function () { pdfBtn.textContent = '⬇ PDF'; pdfBtn.disabled = false; }, 2000);
+          } catch (e) {
+            pdfBtn.textContent = '✗ PDF failed'; setTimeout(function () { pdfBtn.textContent = '⬇ PDF'; pdfBtn.disabled = false; }, 2000);
+          }
         });
       }
       const shareBtn = $('ceShareBtn');
@@ -512,7 +547,9 @@ const body = `<section class="lpage-wrap">
               const ok = ev.exec && ev.exec.ok;
               logLine(ok ? 't' : 'a', (AGENT_META[ev.id] ? (AGENT_META[ev.id].icon + ' ') : '🛰 ') + '<b>' + esc(ev.tool || 'tool') + '</b> ' + (ok ? 'executed in ' + ev.exec.ms + 'ms' : 'failed — fallback used'));
             } else if (ev.event === 'serp') {
-              if (ev.used) logLine('t', 'researcher grounded in live SERP (' + ev.count + ' results)');
+              if (ev.used) logLine('t', 'researcher grounded in live SERP sweep (' + ev.count + ' results across ' + ((ev.queries || []).length) + ' intent queries)');
+            } else if (ev.event === 'loop') {
+              logLine('a', '⟳ agentic fix pass ' + ev.pass + ' → writer re-drafting with editor feedback (' + (ev.issues || []).length + ' issues)');
             } else if (ev.event === 'metrics') {
               logLine('m', 'metrics · ' + telLine(ev.telemetry));
             } else if (ev.event === 'orch' && ev.text) {
