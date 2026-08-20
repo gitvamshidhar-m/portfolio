@@ -184,7 +184,9 @@ const body = `<section class="lpage-wrap">
       const tok = ((t.prompt || 0) + (t.completion || 0));
       const toolN = (t.tools && t.tools.calls) || 0;
       const toolMs = (t.tools && t.tools.ms) || 0;
-      return (t.prompt ? (t.calls + ' LLM calls · ' + tok.toLocaleString('en-IN') + ' tokens') : ('0 LLM calls')) + ' · ' + t.ms + 'ms LLM · ' + toolN + ' real tools ' + toolMs + 'ms · ≈$' + ((t.cost || 0).toFixed(4)) + ' (est)';
+      const calls = (t.calls || 0) > 0;
+      const tokTxt = tok > 0 ? tok.toLocaleString('en-IN') + ' tokens' : 'tokens n/a (provider sent no usage)';
+      return (calls ? (t.calls + ' LLM calls · ' + tokTxt) : '0 LLM calls') + ' · ' + (t.ms || 0) + 'ms LLM · ' + toolN + ' real tools ' + (toolMs || 0) + 'ms · ≈$' + ((t.cost || 0).toFixed(4)) + ' (est)';
     }
 
     function logLine(cls, html) {
