@@ -4,7 +4,7 @@
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 const CACHE_KEY = 'ship:summary';
 
 function base(u) { return String(u || '').replace(/\/+$/, ''); }

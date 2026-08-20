@@ -8,7 +8,7 @@
 //   events: orch | tool | reflect | serp | metrics | plan
 // GET  /api/grapevine?run=<id> → replay a stored briefing
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 const KV_URL = (process.env.KV_REST_API_URL || '').trim();
 const KV_TOKEN = (process.env.KV_REST_API_TOKEN || '').trim();
 const GROQ_TIMEOUT = 15000;

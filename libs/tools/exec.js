@@ -4,7 +4,7 @@
 const { serp, serpQuery, formatSerp } = require('./serp');
 
 const GROQ = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
 function num(v, dflt) { const n = Number(v); return isFinite(n) ? n : dflt; }
 function money(n) { return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }
