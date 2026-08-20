@@ -258,7 +258,7 @@ async function groqJson(sys, user, maxTokens) {
     const j = await r.json();
     telAdd(telemetry, (j.usage) || null, Date.now() - t0);
     const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
-    let o = null; try { o = JSON.parse(txt); } catch (e) { const mm = txt.match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
+    let o = null; try { o = JSON.parse(txt); } catch (e) { const mm = (txt.replace(/```json|```/g, '')).match(/\{[\s\S]*\}/); if (mm) { try { o = JSON.parse(mm[0]); } catch (e2) {} } }
     return o;
   } catch (e) {
     return null;
@@ -289,7 +289,7 @@ async function buildContent(topic, opts, e) {
   // 2) Orchestrator plan.
   let plan = null;
   if (key) {
-    plan = await groqJson(contentSysPrompt(topic, opts, serpText), 'TOPIC: ' + topic + '\nAUDIENCE: ' + String(opts.audience || '').slice(0, 120) + '\nVOICE: ' + String(opts.voice || '').slice(0, 120) + '\nTARGET LENGTH: ~' + target + ' words', 900);
+    plan = await groqJson(contentSysPrompt(topic, opts, serpText), 'TOPIC: ' + topic + '\nAUDIENCE: ' + String(opts.audience || '').slice(0, 120) + '\nVOICE: ' + String(opts.voice || '').slice(0, 120) + '\nTARGET LENGTH: ~' + target + ' words', 1400);
     let acc = '';
     e({ event: 'orch', text: (plan && plan.orchestrator) || 'Researcher mines real search for "' + topic + '", Writer drafts, Editor reviews, SEO scores, Publisher packages.' });
   } else {
@@ -364,6 +364,9 @@ async function buildContent(topic, opts, e) {
     }
   }
 
+  // Live LLM flag: the badge shows LIVE LLM whenever the orchestrator plan OR the
+  // writer/reflection passes actually hit Groq — not only when the plan JSON parsed.
+  if (key && telemetry.calls > 0) mode = 'ai';
   e({ event: 'metrics', telemetry: telemetry });
 
   const payload = Object.assign({
