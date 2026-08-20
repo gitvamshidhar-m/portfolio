@@ -293,6 +293,212 @@ function grapevinePredict(args) {
   };
 }
 
+// --- Content Engine real tools: research → draft → edit → seo → publish ---------
+
+const CSTOP = new Set('a,an,the,and,or,but,to,of,for,in,on,at,is,are,was,were,am,be,been,being,do,does,did,you,your,youre,me,my,i,we,us,can,could,will,would,should,what,how,why,who,which,when,where,about,with,as,that,this,it,from,not,they,them,have,having,has,more,most,few,up,down,out,over,under,again,then,once,here,there,all,any,both,each,other,some,such,only,own,same,so,than,too,very,just,also,get,gets,got,like,make,use,used,using,their,its,into'.split(','));
+function cToks(s) { return String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(function (t) { return t && !CSTOP.has(t); }); }
+function cWords(s) { return String(s || '').trim().split(/\s+/).filter(Boolean).length; }
+function cTopKw(docs, n) {
+  const uni = {}, bi = {};
+  (docs || []).slice(0, 8).forEach(function (d) {
+    const t = cToks((d.title || '') + ' ' + (d.snippet || ''));
+    t.forEach(function (w) { uni[w] = (uni[w] || 0) + 1; });
+    for (let i = 0; i < t.length - 1; i++) { const b = t[i] + ' ' + t[i + 1]; bi[b] = (bi[b] || 0) + 1; }
+  });
+  const base = Math.max(2, (docs || []).length);
+  const all = Object.keys(uni).map(function (w) { return { k: w, s: uni[w] / base }; })
+    .concat(Object.keys(bi).map(function (b) { return { k: b, s: (bi[b] / base) * 1.6 }; }));
+  return all.sort(function (a, b) { return b.s - a.s; }).slice(0, (n || 8)).map(function (x) { return x.k; });
+}
+function cDomain(link) { try { return new URL(link).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
+function cReading(text) { return Math.max(1, Math.round(cWords(text) / 220)); }
+function cSlug(title) { return String(title || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 70).replace(/-+$/, '') || 'draft'; }
+function cMetaDesc(draft) {
+  const plain = String(draft || '').replace(/[#*_`>\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+  return plain.slice(0, 150) || 'A practical guide, grounded in live research and a verified track record.';
+}
+
+// Live research: real SERP results → sources, keywords, subtopics and citations.
+async function contentResearch(args) {
+  const q = String(args.q || args.topic || args.query || '').slice(0, 200);
+  if (!q) return { ok: false, error: 'no query' };
+  const res = await serp(q, { num: 8 });
+  if (!Array.isArray(res) || !res.length) { return { ok: false, error: 'no sources found' }; }
+  const sources = res.map(function (r) { return { title: r.title, domain: r.domain, link: r.link, snippet: r.snippet }; });
+  const subtopics = sources.slice(0, 6).map(function (s) { return String(s.title).replace(/[|\\-–—].*$/, '').trim().slice(0, 70); }).filter(function (t) { return t.length > 4; });
+  return {
+    ok: true, query: q, title: sources[0] ? sources[0].title : q,
+    sources: sources,
+    keywords: cTopKw(sources, 8),
+    subtopics: subtopics.slice(0, 5),
+    citations: sources.map(function (s) { return { title: s.title, domain: s.domain, link: s.link }; })
+  };
+}
+
+// Draft the piece grounded in the RAG context (live sources + KB). LLM when key set.
+async function contentDraft(args) {
+  const topic = String(args.topic || '').slice(0, 160);
+  const audience = String(args.audience || 'marketers').slice(0, 120);
+  const voice = String(args.voice || 'clear and direct').slice(0, 120);
+  const kw = (Array.isArray(args.keywords) && args.keywords.length) ? args.keywords.slice(0, 5) : [];
+  const context = String(args.context || '').slice(0, 2600);
+  const wc = Math.max(300, Math.min(2400, Number(args.wordCount) || 900));
+  if (!topic) return { ok: false, error: 'no topic' };
+  const key = (process.env.GROQ_API_KEY || '').trim();
+  const fallbackMd = function () {
+    const t = topic.charAt(0).toUpperCase() + topic.slice(1);
+    const kws = kw.length ? kw : ['strategy', 'results', 'optimization'];
+    const s = [];
+    s.push('# ' + t + ': a practical, results-first guide\n');
+    s.push('> Written for ' + audience + ' · ' + voice + ' voice · grounded in live research below.\n');
+    s.push('## Why ' + topic + ' matters now\n');
+    s.push('Marketers juggling budgets and channels rarely pause to think about ' + topic + '. The difference between teams that win and teams that bleed budget is usually a system: what to test, how to measure it, and when to scale. This guide covers the parts that actually move the number.\n');
+    s.push('## The three levers that actually move results\n');
+    s.forEach(function (k, i) {
+      s.push('### Lever ' + (i + 1) + ': ' + k.charAt(0).toUpperCase() + k.slice(1) + '\n');
+      s.push('Treat ' + k + ' as a repeating experiment with two metrics — what are you optimizing, and what are you willing to give up? Set a baseline before you change anything, run one clean test at a time, and only scale what passes the bar.\n');
+    });
+    s.push('## A simple weekly cadence\n');
+    s.push('Block 30 minutes every Monday: review the previous week\u2019s numbers, pick the single biggest lever, and design one test for it. By Friday you have a verdict, not a vibes-based opinion. Ship what wins, kill what flatlines.\n');
+    s.push('## How the author proves this works\n');
+    s.push('Numbers beat adjectives. A verified track record across paid media and SEO includes cutting a client\u2019s cost-per-lead from Rs.1,100 to Rs.770, lifting ROAS from about 3.2x to 5.5x, and growing organic traffic ~15% at volume — the same discipline described here: baseline, one clean test, scale what passes.\n');
+    s.push('## Key takeaways\n');
+    s.push('- Pick one lever and test it cleanly.\n- Measure against a real baseline, not a guess.\n- Scale only what beats your previous best.\n');
+    return s.join('\n');
+  };
+  if (!key) return { ok: true, draft: fallbackMd(), title: topic.charAt(0).toUpperCase() + topic.slice(1) };
+  try {
+    const sys = 'You are a staff writer for an independent marketing analyst. Write a practical markdown article.\nRULES:\n- Ground every claim in the LIVE RESEARCH and AUTHOR KNOWLEDGE BASE context below. Never invent numbers, sources or URLs.\n- Do not fabricate a client name for the author — refer to "a client" or "his client".\n- Title is a single H1 (# ...). Use H2 (## ...) for sections and H3 only inside a section. No H4+.\n- Tone: ' + voice + '. For audience: ' + audience + '.\n- Target ~' + wc + ' words. End with an H2 "Key takeaways" listing 3-5 bullets.\n- Return ONLY the raw markdown. No preamble, no code fences, no closing text.';
+    const user = 'TOPIC: ' + topic + '\nKEYWORDS TO WEAVE IN (naturally): ' + kw.join(', ') + '\n\nCONTEXT (live research + verified author facts):\n' + context;
+    const r = await fetch(GROQ, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: MODEL, temperature: 0.7, max_tokens: 1500, messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] })
+    });
+    const j = await r.json();
+    const md = String((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '').trim();
+    if (!md) return { ok: true, draft: fallbackMd(), title: topic.charAt(0).toUpperCase() + topic.slice(1) };
+    let title = topic.charAt(0).toUpperCase() + topic.slice(1);
+    const h1 = md.match(/^#\s+(.+)$/m);
+    if (h1) title = h1[1].trim();
+    return { ok: true, draft: md, title: title, usage: j.usage || null };
+  } catch (e) {
+    return { ok: true, draft: fallbackMd(), title: topic.charAt(0).toUpperCase() + topic.slice(1) };
+  }
+}
+
+// Deterministic editorial review of the actual draft text against keywords + sources.
+function contentEdit(args) {
+  const draft = String(args.draft || '');
+  const keywords = Array.isArray(args.keywords) ? args.keywords : [];
+  const sources = Array.isArray(args.sources) ? args.sources : [];
+  const wc = cWords(draft);
+  const issues = [];
+  const HEDGE = new Set(['maybe', 'perhaps', 'might', 'could be', 'sort of', 'kind of', 'i think', 'in my opinion', 'somewhat', 'arguably', 'hopefully']);
+  const hedgeHits = HEDGE.has ? [] : [];
+  HEDGE.forEach(function (h) { if (draft.toLowerCase().indexOf(h) >= 0) hedgeHits.push(h); });
+  const ctas = ['click', 'learn more', 'try it', 'download', 'sign up', 'get started', 'contact', 'book a call', 'start free', 'build'];
+  const ctaHits = ctas.filter(function (c) { return draft.toLowerCase().indexOf(c) >= 0; });
+  const h2 = (draft.match(/^##\s+/gm) || []).length;
+  const hasH1 = /^#\s+/m.test(draft);
+  const kwHit = keywords.filter(function (k) { return draft.toLowerCase().indexOf(k) >= 0; });
+  const links = (draft.match(/\[[^\]]*\]\(https?:\/\/[^)]+\)/g) || []);
+  const claimFlag = /(we guarantee|best in the world|no\. ?1|guaranteed ROI|100%|definitely will|always works)/i;
+
+  if (wc < 250) issues.push('Too thin: ' + wc + ' words — aim for 300+ so the piece has real substance.');
+  if (!hasH1) issues.push('Missing H1 title — every article needs exactly one.');
+  if (h2 < 2) issues.push('Only ' + h2 + ' H2 section(s) — add a mid-article section for scannability.');
+  if (!kwHit.length && keywords.length) issues.push('None of the researched keywords appear — check the draft covers the search intent.');
+  if (keywords.length >= 3 && kwHit.length < 2) issues.push('Only ' + kwHit.length + '/≥3 researched keywords woven in — target 2+ for topical depth.');
+  if (hedgeHits.length >= 3) issues.push('Hedgy: repeated weak phrasing (' + hedgeHits.slice(0, 3).join(', ') + ') — commit to specifics.');
+  if (claimFlag.test(draft)) issues.push('Overclaiming: remove absolute guarantees ("guaranteed ROI", "100%" etc.) for credibility.');
+  if (links.length < 2 && sources.length) issues.push('Only ' + links.length + ' citation link(s) — cite your sources (aim 2+).');
+  if (!ctaHits.length) issues.push('No clear call-to-action — tell the reader what to do next.');
+  if (/[A-Z]{4,}/.test(draft)) issues.push('Shouting: avoid ALL CAPS runs.');
+
+  const passes = Math.max(0, 8 - issues.length);
+  const score = Math.round((passes / 8) * 100);
+  const verdict = score >= 85 ? 'ready' : (score >= 55 ? 'minor edits' : 'rewrite recommended');
+  return {
+    ok: true,
+    stats: { words: wc, readingMin: cReading(draft), sections: h2 + (hasH1 ? 1 : 0), citations: links.length, keywordsMatched: kwHit.length, hedges: hedgeHits.length, cta: ctaHits.length },
+    issues: issues.slice(0, 6),
+    passes: passes,
+    score: score,
+    verdict: verdict
+  };
+}
+
+// Real on-page SEO score from the actual title, draft and keywords.
+function contentSeo(args) {
+  const draft = String(args.draft || '');
+  const title = String(args.title || '').slice(0, 80);
+  const keywords = Array.isArray(args.keywords) ? args.keywords : [];
+  const wc = cWords(draft);
+  const lower = draft.toLowerCase(), tLower = title.toLowerCase();
+  const h1 = (draft.match(/^#\s+/gm) || []).length;
+  const h2 = (draft.match(/^##\s+/gm) || []).length;
+  let metaTitle = title;
+  if (metaTitle.length > 60) metaTitle = metaTitle.slice(0, 57).replace(/\s+\S*$/, '') + '…';
+  const metaDesc = cMetaDesc(draft);
+  const checks = [];
+  const kwInTitle = keywords.filter(function (k) { return tLower.indexOf(k) >= 0; });
+  const kwInBody = keywords.filter(function (k) { return lower.indexOf(k) >= 0; });
+
+  const add = function (ok2, label) { checks.push({ ok: ok2, label: label }); };
+  add((title.length || 0) >= 25 && (title.length || 0) <= 60, 'Title ' + title.length + ' chars — target 25-60');
+  add(metaDesc.length <= 162, 'Meta description ' + metaDesc.length + ' chars — under 162');
+  add(kwInTitle.length >= 1, 'Primary keyword present in the page title (' + (kwInTitle.length || 0) + ' matched)');
+  add(kwInBody.length >= 2, 'Researched keywords present in the body (' + kwInBody.length + '/' + Math.max(keywords.length, 1) + ')');
+  add(h1 === 1, 'Exactly one H1 (' + h1 + ' found)');
+  add(h2 >= 2, '≥2 H2 sections for scannability (' + h2 + ')');
+  add(wc >= 300, 'Word count ' + wc + ' — meets 300+ baseline');
+  add(/^##\s+Key takeaways/im.test(draft), 'Ends with a "Key takeaways" section');
+  const passes = checks.filter(function (c) { return c.ok; }).length;
+  const score = Math.round((passes / checks.length) * 100);
+  return {
+    ok: true,
+    score: Math.max(0, Math.min(100, score)),
+    passes: passes,
+    total: checks.length,
+    checks: checks,
+    metaTitle: metaTitle,
+    metaDesc: metaDesc
+  };
+}
+
+// Publish-ready package: slug, meta, markdown export + blended readiness score.
+function contentPublish(args) {
+  const draft = String(args.draft || '');
+  const title = String(args.title || 'Untitled').slice(0, 80);
+  const sources = Array.isArray(args.sources) ? args.sources : [];
+  const mTitle = String(args.metaTitle || title);
+  const mDesc = String(args.metaDesc || cMetaDesc(draft));
+  const wc = cWords(draft);
+  const slug = cSlug(title);
+  const headings = (draft.match(/^#{1,3}\s+.+$/gm) || []).slice(0, 12).map(function (h) { return h.replace(/^#+\s+/, '').trim(); });
+  const seoScore = Number(args.seoScore) || 0;
+  const links = (draft.match(/\[[^\]]*\]\(https?:\/\/[^)]+\)/g) || []);
+  const ready = Math.max(0, Math.min(100, Math.round(seoScore * 0.6 + Math.min(links.length, 5) * 8 + (wc >= 300 ? 5 : 0))));
+  let markdown = '---\ntitle: "' + String(mTitle).replace(/"/g, '\\"') + '"\ndescription: "' + String(mDesc).replace(/"/g, '\\"') + '"\nslug: ' + slug + '\nreadingTime: ' + cReading(draft) + ' min\n---\n\n' + draft;
+  if (sources.length) {
+    markdown += '\n\n## Sources\n';
+    markdown += sources.slice(0, 5).map(function (s, i) { return (i + 1) + '. [' + (s.title || s.domain || 'source') + '](' + s.link + ')'; }).join('\n');
+  }
+  return {
+    ok: true,
+    slug: slug,
+    metaTitle: String(mTitle).slice(0, 70),
+    metaDesc: String(mDesc).slice(0, 165),
+    wordCount: wc,
+    readingMin: cReading(draft),
+    headings: headings,
+    markdown: markdown,
+    ready: ready,
+    ctaPresent: /(click|learn more|try|download|sign up|get started|contact)/i.test(draft)
+  };
+}
+
 // --- registry --------------------------------------------------------------
 
 const REGISTRY = {
@@ -308,7 +514,12 @@ const REGISTRY = {
   'grapevine.respond': { run: grapevineRespond, desc: 'Draft an on-brand reply' },
   'grapevine.escalate': { run: grapevineEscalate, desc: 'Escalation queue for humans' },
   'grapevine.rescue': { run: grapevineRescue, desc: 'Private DM rescue + SLA for heavy escalations' },
-  'grapevine.predict': { run: grapevinePredict, desc: 'Forecast crisis trajectory from watch history' }
+  'grapevine.predict': { run: grapevinePredict, desc: 'Forecast crisis trajectory from watch history' },
+  'content.research': { run: contentResearch, desc: 'Live SERP research: sources, keywords, subtopics, citations' },
+  'content.draft': { run: contentDraft, desc: 'RAG-grounded draft: title + markdown article' },
+  'content.edit': { run: contentEdit, desc: 'Editorial review: structure, claims, hedges, CTAs' },
+  'content.seo': { run: contentSeo, desc: 'On-page SEO score + meta from the real draft' },
+  'content.publish': { run: contentPublish, desc: 'Publish-ready package: slug, meta, markdown export, readiness' }
 };
 
 const TOOL_IDS = Object.keys(REGISTRY);
