@@ -303,9 +303,154 @@ function gtmPublish(args) {
   return { ok: true, slug: t.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'gtm', onePager: md, checklist: ['One-pager published', 'Anchor lead magnet live', 'Paid intent campaigns live', 'Founder LinkedIn post scheduled', 'Newsletter teardown queued', 'One metric dashboard wired'], readiness: 78, markdown: md };
 }
 
+// ---- War-game: competitor intel + agentic debate + Monte Carlo launch simulator ----
+const CHANNEL_BENCH = {
+  'Paid search': { cpc: 4.5, intent: 1.0 },
+  'LinkedIn': { cpc: 9.0, intent: 0.7 },
+  'Google Ads': { cpc: 4.5, intent: 1.0 },
+  'Newsletter/SEO': { cpc: 1.5, intent: 0.6 },
+  'Founder X': { cpc: 3.5, intent: 0.5 },
+  'Paid social': { cpc: 3.5, intent: 0.5 },
+  'Communities': { cpc: 2.0, intent: 0.8 },
+  'Content/SEO': { cpc: 0.6, intent: 0.6 }
+};
+function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function tri(rnd, min, max, mode) { const u = rnd(); const fc = (mode - min) / (max - min || 1); return u < fc ? min + Math.sqrt(u * (max - min) * (mode - min)) : max - Math.sqrt((1 - u) * (max - min) * (max - mode)); }
+
+function gtmCompetitor(args) {
+  const research = args.research || {};
+  const src = research.sources || [];
+  const dom = {};
+  src.forEach(function (s) {
+    const d = s.domain || '';
+    if (d && !/^(linkedin|twitter|x|reddit|youtube|medium|quora|instagram|facebook|pinterest)\./.test(d)) {
+      if (!dom[d]) dom[d] = { name: d, title: '', hits: 0 };
+      dom[d].hits++;
+      if (s.title && !dom[d].title) dom[d].title = s.title;
+    }
+  });
+  let competitors = Object.keys(dom).map(function (d) {
+    return { name: d.replace(/\.\w+$/, ''), note: dom[d].title || 'category leader', url: (src.find(function (s) { return s.domain === d; }) || {}).link || '', hits: dom[d].hits };
+  }).sort(function (a, b) { return b.hits - a.hits; }).slice(0, 3);
+  if (!competitors.length) competitors.push({ name: 'the incumbent', note: 'established player in this category', url: '', hits: 0 });
+  return { ok: true, competitors: competitors };
+}
+
+function runDebate(args) {
+  const comp = (args.competitors && args.competitors[0]) || { name: 'the incumbent', note: 'established player' };
+  const angle = (args.brief && args.brief.angle) || 'a proof-led launch';
+  const transcript = [
+    { speaker: 'Strategist', role: 'cartographer', text: 'Our angle: ' + angle + '. We win on proof, not adjectives.' },
+    { speaker: comp.name, role: 'competitor', text: 'You are entering my lane. ' + (comp.note || 'I already own this category with distribution and trust') + '. Your angle is undifferentiated until you name a number I cannot match.' },
+    { speaker: 'Skeptic', role: "devil's-advocate", text: "The positioning claim needs a verifiable metric. Without a cited result, the competitor's \"trust\" rebuttal wins by default." },
+    { speaker: 'Strategist', role: 'cartographer', text: 'Refined angle: lead with a specific, cited result (CPL/ROAS) and narrow the ICP to the segment incumbents ignore — that is where we are unattackable.' }
+  ];
+  let differentiation = (args.competitors && args.competitors.length) ? 0.55 : 0.4;
+  if (/(proof|roas|cpl|%|result|case|client)/i.test(angle)) differentiation += 0.15;
+  differentiation = Math.min(0.95, Math.max(0.25, differentiation));
+  return { transcript: transcript, refinedAngle: 'Lead with a specific, cited result and narrow the ICP to the segment incumbents ignore.', differentiation: differentiation };
+}
+
+function parsePrice(offer) {
+  const tiers = (offer && offer.tiers) || [];
+  const pick = tiers[1] || tiers[0] || {};
+  const m = String(pick.price || '').match(/[\d,]+/);
+  const p = m ? (parseInt(m[0].replace(/,/g, ''), 10) || 0) : 0;
+  return p || 9900;
+}
+function normChannel(name) {
+  const k = Object.keys(CHANNEL_BENCH).find(function (c) { return name && name.toLowerCase().indexOf(c.toLowerCase().split('/')[0]) >= 0; });
+  return k || name;
+}
+function channelMixFrom(channelOut) {
+  const out = {};
+  const split = (channelOut && channelOut.split) || [];
+  if (split.length) {
+    split.forEach(function (s) { const k = normChannel(s.channel); const share = parseFloat(String(s.share || '0').replace(/[^0-9.]/g, '')) || 0; out[k] = (out[k] || 0) + share; });
+  } else {
+    ['Paid search', 'LinkedIn', 'Newsletter/SEO', 'Communities'].forEach(function (c) { out[c] = 25; });
+  }
+  return out;
+}
+function parseGoal(goalText, price) {
+  const g = String(goalText || '').toLowerCase();
+  if (/cpl|cost.?per.?lead|cac/.test(g)) return { type: 'cac', target: Math.round(price * 1.5) || 15000 };
+  if (/payback|roi|return/.test(g)) return { type: 'payback', target: 90 };
+  return { type: 'leads', target: 80 };
+}
+function mcSimulate(opts) {
+  const budget = Number(opts.budget) || 200000;
+  const price = Number(opts.price) || 9900;
+  const mix = opts.mix || {};
+  const angleLift = Math.max(0, Math.min(0.4, Number(opts.angleLift) || 0.15));
+  const goal = opts.goal || { type: 'leads', target: 80 };
+  const benchmarks = opts.benchmarks || { qual: 0.4 };
+  let entries = Object.keys(mix).filter(function (k) { return CHANNEL_BENCH[k] && mix[k] > 0; });
+  if (!entries.length) entries = ['Paid search', 'LinkedIn', 'Newsletter/SEO', 'Communities'];
+  const tot = entries.reduce(function (s, k) { return s + Number(mix[k] || 0); }, 0) || 1;
+  let clicks = 0, intentW = 0;
+  entries.forEach(function (k) {
+    const c = CHANNEL_BENCH[k];
+    const spend = budget * (Number(mix[k] || 0) / tot);
+    clicks += spend / c.cpc;
+    intentW += c.intent * (Number(mix[k] || 0) / tot);
+  });
+  const baseSignup = 0.05 * (0.7 + 0.6 * intentW) * (1 + angleLift);
+  const baseQual = (benchmarks.qual || 0.4);
+  const basePaid = 0.12 * (1 + angleLift) * (0.7 + 0.5 * intentW);
+  const seed = hashStr(JSON.stringify({ b: Math.round(budget), p: Math.round(price), m: entries.map(function (k) { return k + ':' + Math.round(mix[k]); }).join(','), a: angleLift.toFixed(2) }));
+  const rnd = mulberry32(seed);
+  const N = 400;
+  const cacArr = [], leadArr = [], payArr = [];
+  let hitCount = 0;
+  for (let i = 0; i < N; i++) {
+    const signup = tri(rnd, baseSignup * 0.6, baseSignup * 1.5, baseSignup);
+    const qual = tri(rnd, baseQual * 0.6, baseQual * 1.3, baseQual);
+    const paid = tri(rnd, basePaid * 0.6, basePaid * 1.5, basePaid);
+    const acquisitions = Math.max(0, clicks * signup * qual * paid);
+    const leads = Math.max(0, clicks * signup * qual);
+    const cac = acquisitions > 0 ? budget / acquisitions : 1e9;
+    const payback = acquisitions > 0 ? (cac / (price * 0.6 / 30)) : 999;
+    cacArr.push(cac); leadArr.push(leads); payArr.push(payback);
+    let ok = false;
+    if (goal.type === 'cac') ok = cac <= goal.target;
+    else if (goal.type === 'leads') ok = leads >= goal.target;
+    else if (goal.type === 'payback') ok = payback <= goal.target;
+    if (ok) hitCount++;
+  }
+  cacArr.sort(function (a, b) { return a - b; });
+  leadArr.sort(function (a, b) { return a - b; });
+  payArr.sort(function (a, b) { return a - b; });
+  const pc = function (arr, p) { return arr[Math.floor(p / 100 * (arr.length - 1))]; };
+  return {
+    runs: N, budget: budget, price: price, angleLift: angleLift, goal: goal,
+    clicks: Math.round(clicks),
+    cac: { p10: Math.round(pc(cacArr, 10)), p50: Math.round(pc(cacArr, 50)), p90: Math.round(pc(cacArr, 90)) },
+    leads: { p10: Math.round(pc(leadArr, 10)), p50: Math.round(pc(leadArr, 50)), p90: Math.round(pc(leadArr, 90)) },
+    payback: { p50: Math.round(pc(payArr, 50)), p90: Math.round(pc(payArr, 90)) },
+    pGoal: Math.round((hitCount / N) * 100) / 100
+  };
+}
+function gtmMeasurement(product, sim) {
+  return {
+    events: [
+      { name: 'PageView', props: ['page', 'source'] },
+      { name: 'CTA_Click', props: ['cta_id', 'channel'] },
+      { name: 'Signup', props: ['plan', 'icp_segment'] },
+      { name: 'Qualified_Lead', props: ['score', 'source'] },
+      { name: 'Paid_Conversion', props: ['plan', 'mrr'] },
+      { name: 'Activation', props: ['feature_used'] }
+    ],
+    dashboard: ['CAC', 'CPL', 'Activation rate', 'Payback (days)', 'P(hit goal) = ' + (sim && sim.pGoal != null ? Math.round(sim.pGoal * 100) + '%' : 'n/a')],
+    note: 'Wire these to GA4 / PostHog. The simulator is the planning prior; this dashboard is the observed posterior.'
+  };
+}
+
 async function runGtmTool(tool, args) {
   switch (tool) {
     case 'gtm.brief': return { tool: tool, args: args, ok: true, result: gtmBrief(args), error: null, ms: 0 };
+    case 'gtm.competitor': return { tool: tool, args: args, ok: true, result: gtmCompetitor(args), error: null, ms: 0 };
     case 'content.research': { const r = await runTool('content.research', Object.assign({ sweep: true }, args)); return r; }
     case 'gtm.icp': return { tool: tool, args: args, ok: true, result: gtmIcp(args), error: null, ms: 0 };
     case 'gtm.offer': return { tool: tool, args: args, ok: true, result: gtmOffer(args), error: null, ms: 0 };
@@ -388,8 +533,31 @@ async function buildContent(product, opts, e) {
       e({ event: 'tool', id: 'publisher', tool: 'gtm.publish', exec: { ok: true, ms: 0, error: null } });
     }
   }
+
+  // --- War-game: competitor intel + agentic debate + Monte Carlo simulator ---
+  const compOut = gtmCompetitor({ product: product, research: research });
+  metrics.competitors = (compOut.competitors || []).length;
+  e({ event: 'tool', id: 'competitor', tool: 'gtm.competitor', exec: { ok: true, ms: 0, error: null } });
+  const debate = runDebate({ brief: briefOut, research: research, competitors: compOut.competitors, product: product });
+  (debate.transcript || []).forEach(function (line) { e({ event: 'debate', line: line }); });
+  const angleLift = Math.max(0, Math.min(0.4, (debate.differentiation || 0.4) * 0.4));
+  const price = parsePrice(offerOut);
+  const mix = channelMixFrom(channelOut);
+  const goal = parseGoal(opts.goal, price);
+  const sim = mcSimulate({ budget: 200000, price: price, mix: mix, angleLift: angleLift, goal: goal, benchmarks: { qual: 0.4 } });
+  metrics.pGoal = sim.pGoal; metrics.cac = sim.cac.p50;
+  e({ event: 'sim', sim: sim });
+  const measurement = gtmMeasurement(product, sim);
+
   if (key && telemetry.calls > 0) mode = 'ai';
   e({ event: 'metrics', telemetry: telemetry });
+
+  const displayAgents = (briefing.agents || []).slice();
+  const ri = displayAgents.findIndex(function (a) { return a.id === 'researcher'; });
+  const competitorAgent = { id: 'competitor', name: 'Competitor Agent', role: 'war-games the angle', persona: 'The Incumbent', tools: ['gtm.competitor'], thinking: 'Studies the live category and the incumbents the Researcher surfaced.', action: 'Names the players who already own this angle.', output: (compOut.competitors || []).map(function (c) { return c.name; }).join(', ') || 'none found', live: 'Scanning the category…', call: 'gtm.competitor', result: (compOut.competitors || []).length + ' competitor(s)', status: 'done', exec: { ok: true, ms: 0 } };
+  if (ri >= 0) displayAgents.splice(ri + 1, 0, competitorAgent); else displayAgents.push(competitorAgent);
+  const simulatorAgent = { id: 'simulator', name: 'Market Simulator', role: 'Monte Carlo funnel', persona: 'The Oddsmaker', tools: ['gtm.simulate'], thinking: 'Runs 400 simulated launches across the budget, price and channel mix.', action: 'Estimates CAC, payback and P(hit goal).', output: 'P(hit goal) ' + Math.round(sim.pGoal * 100) + '% · CAC ₹' + sim.cac.p50, live: 'Simulating the funnel…', call: 'gtm.simulate', result: 'CAC p50 ₹' + sim.cac.p50, status: 'done', exec: { ok: true, ms: 0 } };
+  displayAgents.push(simulatorAgent);
 
   const payload = Object.assign({
     mode: mode, telemetry: telemetry, product: product,
@@ -398,11 +566,14 @@ async function buildContent(product, opts, e) {
     reasoning: reasoning,
     brief: briefOut, icp: icpOut, offer: offerOut, channel: channelOut, message: messageOut, skeptic: skepticOut, planner: plannerOut, publish: publishOut,
     metrics: metrics,
+    debate: debate, competitors: compOut.competitors, sim: sim, measurement: measurement,
+    angleLift: angleLift, price: price, mix: mix, goal: goal,
     serpUsed: researchTool.ok && !!research.sources && research.sources.length,
     serpCount: research.sources ? research.sources.length : 0,
     serpQueries: research.queries || [product],
     serpQuery: product
   }, briefing);
+  payload.agents = displayAgents;
   if (reasoning) payload.reasoning = reasoning;
   return payload;
 }
@@ -452,6 +623,18 @@ module.exports = async function handler(req, res) {
       res.setHeader('Content-Disposition', 'attachment; filename="' + (obj.publish.slug || 'gtm') + '.pdf"');
       return res.end(Buffer.concat(chunks));
     } catch (e) { return res.status(500).json({ error: 'pdf failed' }); }
+  }
+  if (req.method === 'POST' && url2.searchParams.get('sub') === 'simulate') {
+    const b2 = req.body || {};
+    const sim = mcSimulate({
+      budget: Number(b2.budget) || 200000,
+      price: Number(b2.price) || 9900,
+      mix: b2.mix || {},
+      angleLift: Number(b2.angleLift) || 0.15,
+      goal: b2.goal || { type: 'leads', target: 80 },
+      benchmarks: b2.benchmarks || { qual: 0.4 }
+    });
+    return res.json({ ok: true, sim: sim });
   }
   if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/gtm with {product, market?, audience?, goal?} — 9 agents (strategist → researcher → icp → offer → channel → message → skeptic → planner → publisher) run real tools with RAG grounding.' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });

@@ -48,6 +48,7 @@ const body = `<section class="lpage-wrap">
           <line data-agent="skeptic" x1="50" y1="50" x2="4" y2="72"></line>
           <line data-agent="planner" x1="50" y1="50" x2="50" y2="84"></line>
           <line data-agent="publisher" x1="50" y1="50" x2="96" y2="72"></line>
+          <line data-agent="simulator" x1="50" y1="50" x2="74" y2="86"></line>
         </svg>
         <div class="ag-core"><span>PRODUCT</span><i></i></div>
         <span class="ag-sat" data-agent="strategist" style="top:30%;left:4%;--agc:#c3a6ff">🧭</span>
@@ -59,6 +60,7 @@ const body = `<section class="lpage-wrap">
         <span class="ag-sat" data-agent="skeptic" style="top:72%;left:4%;--agc:#ff8a8a">⚖️</span>
         <span class="ag-sat" data-agent="planner" style="top:84%;left:50%;--agc:#7dd3fc">🗓️</span>
         <span class="ag-sat" data-agent="publisher" style="top:72%;left:96%;--agc:#fda4af">🚀</span>
+        <span class="ag-sat" data-agent="simulator" style="top:86%;left:74%;--agc:#b6ff9e">🎲</span>
       </div>
     </div>
   </div>
@@ -83,6 +85,8 @@ const body = `<section class="lpage-wrap">
         <div class="ag-node" style="--agc:#7dd3fc"><span class="ag-nico">🗓️</span><b>Planner</b><i>launch calendar</i></div>
         <span class="ag-arrow">→</span>
         <div class="ag-node" style="--agc:#fda4af"><span class="ag-nico">🚀</span><b>Publisher</b><i>one-pager</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#b6ff9e"><span class="ag-nico">🎲</span><b>Simulator</b><i>Monte Carlo</i></div>
       </div>
       <div class="ag-loop"><b>Reasoning in the loop:</b> the Strategist uses a reasoning model (Groq) and shows its chain-of-thought before the rest of the studio builds on the angle. Every downstream agent runs a real tool — live SERP, ICP builders, pricing, budget math, claim verification.</div>
     </div>
@@ -137,6 +141,33 @@ const body = `<section class="lpage-wrap">
     </div>
   </div>
 
+  <div class="wrap" id="warRoom" style="margin-top:44px;display:none;scroll-margin-top:90px">
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">Launch War-Room · debate + Monte Carlo</span><h2 style="font-size:clamp(22px,3.4vw,30px)">We war-game the angle, then simulate the funnel</h2>
+    <p style="color:var(--muted);max-width:680px">The Competitor Agent challenges the angle on live incumbents, the studio debates it, then a Market Simulator runs 400 launches to estimate CAC, payback and the probability you hit your goal. Drag the sliders to re-plan live.</p></div>
+    <div class="wr-grid">
+      <div class="wr-col">
+        <b>⚔️ Debate Theatre</b>
+        <div class="wr-transcript" id="debateLog"></div>
+      </div>
+      <div class="wr-col">
+        <b>🎲 Market Simulator</b>
+        <div class="wr-gauge"><span class="wr-gnum" id="simGauge">–</span><i>P(hit goal)</i></div>
+        <div class="wr-bars">
+          <div class="wr-bar"><label>CAC (₹)</label><div class="wr-barv"><b id="simCac">–</b><small>p10 / p50 / p90</small></div></div>
+          <div class="wr-bar"><label>Qualified leads / 30d</label><div class="wr-barv"><b id="simLeads">–</b></div></div>
+          <div class="wr-bar"><label>Payback (days)</label><div class="wr-barv"><b id="simPay">–</b></div></div>
+        </div>
+        <div class="wr-sliders">
+          <div class="wr-sl"><label>Budget <span id="simBudgetV"></span></label><input id="simBudget" type="range" min="50000" max="1000000" step="10000"></div>
+          <div class="wr-sl"><label>Hero price <span id="simPriceV"></span></label><input id="simPrice" type="range" min="1000" max="200000" step="1000"></div>
+          <div id="simMixWrap" class="wr-mix"></div>
+        </div>
+        <div class="ag-hint" id="simGoalNote"></div>
+      </div>
+    </div>
+    <div class="blk" style="margin-top:14px"><b>📈 Measurement plan</b><div id="measBlock" style="margin-top:6px">–</div></div>
+  </div>
+
   <div class="wrap" style="margin-top:44px">
     <span class="tag">Common questions</span>
     <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
@@ -163,7 +194,9 @@ const body = `<section class="lpage-wrap">
       message: { icon: '✍️', color: '#ffd479', persona: 'The Stress-Tester', name: 'Message Agent' },
       skeptic: { icon: '⚖️', color: '#ff8a8a', persona: "The Devil's Advocate", name: 'Skeptic Agent' },
       planner: { icon: '🗓️', color: '#7dd3fc', persona: 'The Scheduler', name: 'Planner Agent' },
-      publisher: { icon: '🚀', color: '#fda4af', persona: 'The Launcher', name: 'Publisher Agent' }
+      publisher: { icon: '🚀', color: '#fda4af', persona: 'The Launcher', name: 'Publisher Agent' },
+      competitor: { icon: '⚔️', color: '#ffb86b', persona: 'The Incumbent', name: 'Competitor Agent' },
+      simulator: { icon: '🎲', color: '#b6ff9e', persona: 'The Oddsmaker', name: 'Market Simulator' }
     };
     const STEP = 480, THINK = 480;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -428,7 +461,74 @@ const body = `<section class="lpage-wrap">
       brief.hidden = true; shareRow.hidden = true;
       if (modeEl) modeEl.hidden = true;
       if (serpEl) serpEl.hidden = true;
+      if (warRoom) warRoom.hidden = true;
+      if (debateLog) debateLog.innerHTML = '';
     }
+
+    const warRoom = $('warRoom'), debateLog = $('debateLog'), simGauge = $('simGauge'), simCac = $('simCac'), simLeads = $('simLeads'), simPay = $('simPay'), simBudget = $('simBudget'), simBudgetV = $('simBudgetV'), simPrice = $('simPrice'), simPriceV = $('simPriceV'), simMixWrap = $('simMixWrap'), simGoalNote = $('simGoalNote'), measBlock = $('measBlock');
+    let gtmAngleLift = 0.15, gtmGoal = { type: 'leads', target: 80 };
+    function debateLine(line) {
+      if (!debateLog || !line) return;
+      const d = document.createElement('div');
+      d.className = 'wr-line wr-' + (line.role || '').replace(/[^a-z]/g, '');
+      d.innerHTML = '<span class="wr-spk">' + esc(line.speaker || '') + '</span><span class="wr-txt">' + esc(line.text || '') + '</span>';
+      debateLog.appendChild(d);
+    }
+    function fillSim(sim) {
+      if (!sim) return;
+      if (simGauge) { simGauge.textContent = Math.round((sim.pGoal || 0) * 100) + '%'; simGauge.style.color = (sim.pGoal >= 0.6 ? '#8affc1' : (sim.pGoal >= 0.35 ? '#ffd479' : '#ff6f6f')); }
+      if (simCac) simCac.textContent = sim.cac.p10 + ' / ' + sim.cac.p50 + ' / ' + sim.cac.p90;
+      if (simLeads) simLeads.textContent = sim.leads.p50 + ' (p10 ' + sim.leads.p10 + '–p90 ' + sim.leads.p90 + ')';
+      if (simPay) simPay.textContent = sim.payback.p50 + ' (p90 ' + sim.payback.p90 + ')';
+    }
+    function buildMixSliders(mix) {
+      if (!simMixWrap) return;
+      const keys = Object.keys(mix || {});
+      simMixWrap.innerHTML = '';
+      keys.forEach(function (k) {
+        const wrap = document.createElement('div'); wrap.className = 'wr-sl';
+        wrap.innerHTML = '<label>' + esc(k) + ' <span data-v="' + esc(k) + '"></span></label><input type="range" min="0" max="100" step="5" value="' + Math.round(mix[k]) + '" data-ch="' + esc(k) + '">';
+        simMixWrap.appendChild(wrap);
+      });
+    }
+    function readMix() {
+      const out = {}; const ins = simMixWrap ? simMixWrap.querySelectorAll('input[data-ch]') : [];
+      ins.forEach(function (i) { out[i.getAttribute('data-ch')] = Number(i.value) || 0; });
+      return out;
+    }
+    let simTimer = null;
+    function reSimulate() {
+      if (!simBudget) return;
+      const budget = Number(simBudget.value); const price = Number(simPrice.value);
+      const mix = readMix();
+      if (simBudgetV) simBudgetV.textContent = '₹' + budget.toLocaleString('en-IN');
+      if (simPriceV) simPriceV.textContent = '₹' + price.toLocaleString('en-IN');
+      if (simMixWrap) simMixWrap.querySelectorAll('span[data-v]').forEach(function (s) { s.textContent = (mix[s.getAttribute('data-v')] || 0) + '%'; });
+      clearTimeout(simTimer);
+      simTimer = setTimeout(function () {
+        fetch('/api/gtm?sub=simulate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget: budget, price: price, mix: mix, angleLift: gtmAngleLift, goal: gtmGoal }) })
+          .then(function (r) { return r.json(); }).then(function (j) { if (j && j.sim) fillSim(j.sim); }).catch(function () {});
+      }, 250);
+    }
+    function showWarRoom(d) {
+      if (!warRoom) return;
+      if (d.debate && d.debate.transcript && debateLog && !debateLog.children.length) d.debate.transcript.forEach(debateLine);
+      fillSim(d.sim || window.__gtmSim);
+      gtmAngleLift = typeof d.angleLift === 'number' ? d.angleLift : 0.15;
+      gtmGoal = d.goal || { type: 'leads', target: 80 };
+      if (simBudget) simBudget.value = (d.sim && d.sim.budget) || 200000;
+      if (simPrice) simPrice.value = (d.sim && d.sim.price) || (d.price || 9900);
+      if (simGoalNote) { const g = gtmGoal; simGoalNote.textContent = 'Goal: ' + (g.type === 'cac' ? 'CAC ≤ ₹' + g.target : g.type === 'payback' ? 'payback ≤ ' + g.target + 'd' : '≥ ' + g.target + ' qualified leads / 30d'); }
+      buildMixSliders(d.mix || (d.sim && d.sim.mix) || {});
+      reSimulate();
+      warRoom.hidden = false;
+      if (measBlock && d.measurement) {
+        const m = d.measurement;
+        measBlock.innerHTML = '<div class="ag-hint">Track these events:</div><div class="ag-chips">' + (m.events || []).map(function (e) { return '<span>' + esc(e.name) + '</span>'; }).join('') + '</div><div class="ag-hint">Dashboard: ' + (m.dashboard || []).join(' · ') + '</div><div class="ag-hint">' + esc(m.note || '') + '</div>';
+      }
+    }
+    if (simBudget) simBudget.addEventListener('input', reSimulate);
+    if (simPrice) simPrice.addEventListener('input', reSimulate);
 
     async function run() {
       const product = productEl.value.trim();
@@ -459,6 +559,10 @@ const body = `<section class="lpage-wrap">
               logLine('m', 'metrics · ' + telLine(ev.telemetry));
             } else if (ev.event === 'orch' && ev.text) {
               orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(ev.text.slice(0, 300)) + '</span>';
+            } else if (ev.event === 'debate' && ev.line) {
+              debateLine(ev.line);
+            } else if (ev.event === 'sim' && ev.sim) {
+              window.__gtmSim = ev.sim;
             } else if (ev.event === 'plan' && ev.data && Array.isArray(ev.data.agents) && ev.data.agents.length) {
               data = ev.data;
             }
@@ -500,6 +604,7 @@ const body = `<section class="lpage-wrap">
         await sleep(STEP * 0.35);
       }
       renderBrief(data);
+      showWarRoom(data);
       runBtn.disabled = false; runBtn.textContent = '▶ Run again';
     }
 
