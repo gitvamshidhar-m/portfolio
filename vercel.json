@@ -5,7 +5,8 @@
     { "source": "/api/agentic/follow", "destination": "/api/agentic?sub=follow" },
     { "source": "/api/agentic/section", "destination": "/api/agentic?sub=section" },
     { "source": "/api/agentic/pdf", "destination": "/api/agentic?sub=pdf" },
-    { "source": "/api/agentic/regenerate", "destination": "/api/agentic?sub=regenerate" }
+    { "source": "/api/agentic/regenerate", "destination": "/api/agentic?sub=regenerate" },
+    { "source": "/api/tailor/pdf", "destination": "/api/tailor?sub=pdf" }
   ],
   "redirects": [
     {

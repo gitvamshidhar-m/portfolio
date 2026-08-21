@@ -1,0 +1,515 @@
+---
+import Base from '../layouts/Base.astro';
+import LeadForm from '../components/LeadForm.astro';
+
+const op = {
+  title: "GTM Launch Agent — Autonomous 9-Agent Go-To-Market Studio | Vamshidhar Reddy",
+  description: "The GTM Launch Agent is an autonomous 9-agent go-to-market studio: a Strategist plans the angle with a reasoning model (and shows its chain-of-thought), a Researcher mines live search for the category, an ICP agent profiles buyers, an Offer agent prices it, a Channel agent splits the budget, a Message agent stress-tests the positioning, a Skeptic audits every claim, a Planner builds the timeline, and a Publisher assembles a launch-ready one-pager.",
+  canonical: "https://vamshidharm.vercel.app/gtm.html",
+  ogImage: "",
+  variant: 'sub',
+  active: '/gtm.html',
+};
+const faqLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "What is the GTM Launch Agent?", acceptedAnswer: { "@type": "Answer", text: "An autonomous go-to-market studio made of nine agents that collaborate on a single product. The Strategist plans the angle with a reasoning model and surfaces its chain-of-thought; the Researcher runs a live SERP query; the ICP agent profiles buyers; the Offer agent prices it; the Channel agent splits the budget; the Message agent stress-tests the positioning; the Skeptic audits every claim and verifies the citation URLs resolve; the Planner builds the timeline; and the Publisher assembles a launch-ready one-pager with a checklist." } },
+    { "@type": "Question", name: "Is the launch plan real?", acceptedAnswer: { "@type": "Answer", text: "Yes. Every agent's tool really executes. The Researcher runs a live SERP query and shows the actual results; the rest run real deterministic tools grounded in that research plus a knowledge base of verified facts. The Strategist uses a reasoning model so you can see how it arrived at the angle." } },
+    { "@type": "Question", name: "What makes it different from the Content Engine?", acceptedAnswer: { "@type": "Answer", text: "The Content Engine produces a publish-ready article; the GTM Launch Agent produces a launch-ready go-to-market plan. Same nine-agent pattern and the same reasoning-model Strategist, but the downstream agents are ICP, Offer, Channel, Message, Planner and Publisher instead of Writer, Editor, SEO, Connector and Amplifier." } }
+  ]
+});
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org", "@type": "SoftwareApplication",
+  name: "GTM Launch Agent", applicationCategory: "BusinessApplication",
+  operatingSystem: "Web", offers: { "@type": "Offer", price: "0", priceCurrency: "INR" }
+});
+
+const body = `<section class="lpage-wrap">
+  <div class="wrap">
+    <div class="ag-hero">
+      <div class="ag-hero-copy">
+        <span class="tag">GTM Launch Agent · Agentic go-to-market studio</span>
+        <h1>Nine agents. One launch. A launch-ready one-pager.</h1>
+        <p style="color:var(--muted)">Launch planning is slow and full of guesswork. <b style="color:var(--accent2)">The GTM Launch Agent runs the whole pipeline instead.</b> A Strategist sets the angle <b style="color:var(--accent2)">with a reasoning model that shows its chain-of-thought</b>, a Researcher mines live search and returns real citations, an ICP agent profiles buyers, an Offer agent prices it, a Channel agent splits the budget, a Message agent stress-tests the positioning, a Skeptic audits every claim, a Planner builds the timeline, and a Publisher hands back a launch-ready one-pager with a checklist.</p>
+        <div class="cta-row" style="justify-content:flex-start">
+          <a class="btn primary btn-lg" href="#demo">▶ Run the GTM Agent</a>
+          <a class="btn link-secondary" href="/content.html">See the Content Engine →</a>
+        </div>
+      </div>
+      <div class="ag-orbit" aria-hidden="true">
+        <svg class="ag-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line data-agent="strategist" x1="50" y1="50" x2="4" y2="30"></line>
+          <line data-agent="researcher" x1="50" y1="50" x2="24" y2="14"></line>
+          <line data-agent="icp" x1="50" y1="50" x2="74" y2="11"></line>
+          <line data-agent="offer" x1="50" y1="50" x2="9" y2="46"></line>
+          <line data-agent="channel" x1="50" y1="50" x2="50" y2="3"></line>
+          <line data-agent="message" x1="50" y1="50" x2="90" y2="44"></line>
+          <line data-agent="skeptic" x1="50" y1="50" x2="4" y2="72"></line>
+          <line data-agent="planner" x1="50" y1="50" x2="50" y2="84"></line>
+          <line data-agent="publisher" x1="50" y1="50" x2="96" y2="72"></line>
+        </svg>
+        <div class="ag-core"><span>PRODUCT</span><i></i></div>
+        <span class="ag-sat" data-agent="strategist" style="top:30%;left:4%;--agc:#c3a6ff">🧭</span>
+        <span class="ag-sat" data-agent="researcher" style="top:14%;left:24%;--agc:#49b6ff">🔍</span>
+        <span class="ag-sat" data-agent="icp" style="top:11%;left:74%;--agc:#8b7bff">👤</span>
+        <span class="ag-sat" data-agent="offer" style="top:46%;left:9%;--agc:#ff9e5c">💰</span>
+        <span class="ag-sat" data-agent="channel" style="top:3%;left:50%;--agc:#6ee7b7">📡</span>
+        <span class="ag-sat" data-agent="message" style="top:44%;left:90%;--agc:#ffd479">✍️</span>
+        <span class="ag-sat" data-agent="skeptic" style="top:72%;left:4%;--agc:#ff8a8a">⚖️</span>
+        <span class="ag-sat" data-agent="planner" style="top:84%;left:50%;--agc:#7dd3fc">🗓️</span>
+        <span class="ag-sat" data-agent="publisher" style="top:72%;left:96%;--agc:#fda4af">🚀</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:40px">
+    <div class="ag-pipeline">
+      <div class="ag-pipe">
+        <div class="ag-node" style="--agc:#c3a6ff"><span class="ag-nico">🧭</span><b>Strategist</b><i>angle brief</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#49b6ff"><span class="ag-nico">🔍</span><b>Researcher</b><i>live SERP</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#8b7bff"><span class="ag-nico">👤</span><b>ICP</b><i>buyer profiles</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#ff9e5c"><span class="ag-nico">💰</span><b>Offer</b><i>pricing tiers</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#6ee7b7"><span class="ag-nico">📡</span><b>Channel</b><i>budget split</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#ffd479"><span class="ag-nico">✍️</span><b>Message</b><i>positioning</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#ff8a8a"><span class="ag-nico">⚖️</span><b>Skeptic</b><i>claim audit</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#7dd3fc"><span class="ag-nico">🗓️</span><b>Planner</b><i>launch calendar</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#fda4af"><span class="ag-nico">🚀</span><b>Publisher</b><i>one-pager</i></div>
+      </div>
+      <div class="ag-loop"><b>Reasoning in the loop:</b> the Strategist uses a reasoning model (Groq) and shows its chain-of-thought before the rest of the studio builds on the angle. Every downstream agent runs a real tool — live SERP, ICP builders, pricing, budget math, claim verification.</div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:40px">
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">The team</span><h2 style="font-size:clamp(20px,3vw,26px)">A launch studio that plans like a growth lead</h2></div>
+      <div class="ab-grid">
+        <div class="ab-variant"><b>🧭 Strategist Agent</b><span class="ag-persona">The Cartographer</span><p>Sets the GTM angle, positioning, launch hypothesis and the one metric this launch must move — using a reasoning model whose thinking is shown to you.</p></div>
+        <div class="ab-variant"><b>🔍 Researcher Agent</b><span class="ag-persona">The Archaeologist</span><p>Runs a real live search on the category and returns actual sources, citations, keyword set and competitor signals — nothing hallucinated.</p></div>
+        <div class="ab-variant"><b>👤 ICP Agent</b><span class="ag-persona">The Profiler</span><p>Builds 2-3 buyer profiles from the research — pains, triggers and objections — that the Offer and Message agents write against.</p></div>
+        <div class="ab-variant"><b>💰 Offer Agent</b><span class="ag-persona">The Pricer</span><p>Prices the product into tiers with a decoy anchor so the hero offer sells itself, grounded in the ICP and category.</p></div>
+        <div class="ab-variant"><b>📡 Channel Agent</b><span class="ag-persona">The Allocator</span><p>Splits the launch budget across channels by CAC efficiency and reach, returning a real percentage split.</p></div>
+        <div class="ab-variant"><b>✍️ Message Agent</b><span class="ag-persona">The Stress-Tester</span><p>Drafts the hook and stress-tests the positioning against the ICP pains and the Skeptic's objections, issuing a verdict.</p></div>
+        <div class="ab-variant"><b>⚖️ Skeptic Agent</b><span class="ag-persona">The Devil's Advocate</span><p>Audits every claim, verifies the citation URLs actually resolve and scores launch-risk before publishing.</p></div>
+        <div class="ab-variant"><b>🗓️ Planner Agent</b><span class="ag-persona">The Scheduler</span><p>Builds the 0-30 day launch calendar from the plan, sequencing paid, owned and community channels.</p></div>
+        <div class="ab-variant"><b>🚀 Publisher Agent</b><span class="ag-persona">The Launcher</span><p>Assembles the launch-ready one-pager — slug, meta title/description, a markdown export and a launch checklist.</p></div>
+      </div>
+  </div>
+
+  <div class="wrap" id="demo" style="margin-top:44px;scroll-margin-top:90px">
+    <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · GTM Launch Agent</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Give it a product. Get a launch plan.</h2>
+    <p style="color:var(--muted);max-width:680px">Type a product (and optionally an audience and a goal). The nine agents will brief the angle with a reasoning model, mine live search, profile ICPs, price the offer, split the budget, stress-test the messaging, audit every claim, build the timeline and assemble a launch-ready one-pager. Runs on Groq when a key is set; otherwise the same real tools run with a rule-based strategist.</p></div>
+    <div class="ag-console">
+        <div class="ag-input">
+         <label for="productInput">Product to launch</label>
+         <input id="productInput" type="text" placeholder="e.g. an AI lead-scoring SaaS for B2B agencies" />
+         <div class="ag-row">
+           <div><label for="audInput" style="font-size:12px;color:var(--muted)">Audience</label>
+           <input id="audInput" type="text" placeholder="e.g. agency owners" /></div>
+           <div><label for="goalInput" style="font-size:12px;color:var(--muted)">Primary goal</label>
+           <input id="goalInput" type="text" placeholder="e.g. lower cost-per-lead" /></div>
+         </div>
+         <div class="ag-runrow">
+           <button id="runBtn" class="btn primary btn-lg" type="button">▶ Run GTM Agent</button>
+           <span id="ceMode" class="ag-mode" hidden></span>
+           <span id="ceSerp" class="ag-mode serp" hidden></span>
+           <span class="ag-hint">Try: “an AI ad-creative tool for D2C brands” or “a founder coaching program”.</span>
+         </div>
+       </div>
+      <div class="ag-stage" id="agStage" hidden>
+        <div class="ag-orch" id="agOrch"></div>
+        <div class="ag-agents" id="agAgents"></div>
+        <div class="ag-log" id="agLog"></div>
+      </div>
+      <div class="ce-brief" id="ceBrief" hidden></div>
+      <div class="ag-share-row" id="ceShareRow" hidden>
+        <button type="button" class="btn" id="ceCopyBtn">⧉ Copy plan</button>
+        <button type="button" class="btn" id="ceMdBtn">⬇ One-pager MD</button>
+        <button type="button" class="btn" id="ceTxtBtn">⬇ Plain text</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:44px">
+    <span class="tag">Common questions</span>
+    <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Strategist sets the angle with a reasoning model (chain-of-thought shown); Researcher runs a live SERP query and returns real sources, citations and keywords; ICP builds 2-3 buyer profiles with pains, triggers and objections; Offer prices the product into tiers with a decoy anchor; Channel splits the budget by CAC and reach; Message drafts the hook and stress-tests the positioning; Skeptic audits every claim and verifies citation URLs resolve; Planner builds the 0-30 day calendar; Publisher assembles the one-pager with slug, meta and a launch checklist.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Is the reasoning model doing real work?</summary><p style="color:var(--muted);margin-top:8px">Yes — when a GROQ_API_KEY is present the Strategist calls a reasoning model and the page renders its chain-of-thought in the “Strategist · reasoning trace” panel. Without a key it falls back to a rule-based brief but still runs every downstream tool for real. Either way the plan you see is produced by actual tool calls, not placeholders.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Can this publish on my own site?</summary><p style="color:var(--muted);margin-top:8px">The Publisher outputs a one-pager markdown (slug, meta title/description, launch checklist) ready to drop into any CMS or docs tool. A human reviews the Skeptic verdict and locks pricing and the channel split before publishing.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Where does a human still need to step in?</summary><p style="color:var(--muted);margin-top:8px">On judgement: approving the angle, the pricing and the channel split, and the final publish call. The engine handles research, profiling, pricing, budgeting, messaging, claim-audit, scheduling and packaging — the first ~90% of launch planning.</p></details>
+    </div>
+  </div>
+</section>`;
+---
+<Base {...op}>
+  <script type="application/ld+json" is:inline set:html={faqLd} />
+  <script type="application/ld+json" is:inline set:html={jsonLd} />
+  <Fragment set:html={body} />
+  <LeadForm service="ai" serviceLabel="GTM Launch Agent" promise="Want an autonomous launch studio for your team? I'll scope a 9-agent GTM pipeline — reasoning-model strategy to a launch-ready one-pager — and run it on your actual product." />
+  <script>
+    const AGENT_META = {
+      strategist: { icon: '🧭', color: '#c3a6ff', persona: 'The Cartographer', name: 'Strategist Agent' },
+      researcher: { icon: '🔍', color: '#49b6ff', persona: 'The Archaeologist', name: 'Researcher Agent' },
+      icp: { icon: '👤', color: '#8b7bff', persona: 'The Profiler', name: 'ICP Agent' },
+      offer: { icon: '💰', color: '#ff9e5c', persona: 'The Pricer', name: 'Offer Agent' },
+      channel: { icon: '📡', color: '#6ee7b7', persona: 'The Allocator', name: 'Channel Agent' },
+      message: { icon: '✍️', color: '#ffd479', persona: 'The Stress-Tester', name: 'Message Agent' },
+      skeptic: { icon: '⚖️', color: '#ff8a8a', persona: "The Devil's Advocate", name: 'Skeptic Agent' },
+      planner: { icon: '🗓️', color: '#7dd3fc', persona: 'The Scheduler', name: 'Planner Agent' },
+      publisher: { icon: '🚀', color: '#fda4af', persona: 'The Launcher', name: 'Publisher Agent' }
+    };
+    const STEP = 480, THINK = 480;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const $ = (id) => document.getElementById(id);
+
+    async function type(el, text) {
+      if (!el) return;
+      if (reduce) { el.textContent = text; return; }
+      el.textContent = '';
+      for (let i = 0; i < text.length; i++) { el.textContent += text[i]; await sleep(9); }
+    }
+
+    const runBtn = $('runBtn'), productEl = $('productInput'), audEl = $('audInput'), goalEl = $('goalInput');
+    const stage = $('agStage'), orch = $('agOrch'), agents = $('agAgents'), log = $('agLog'), brief = $('ceBrief'), shareRow = $('ceShareRow');
+    const modeEl = $('ceMode'), serpEl = $('ceSerp');
+    let data = null, lastProduct = '';
+
+    function telLine(t) {
+      if (!t) return 'no LLM calls metered';
+      const tok = ((t.prompt || 0) + (t.completion || 0));
+      const toolN = (t.tools && t.tools.calls) || 0;
+      const toolMs = (t.tools && t.tools.ms) || 0;
+      const calls = (t.calls || 0) > 0;
+      const tokTxt = tok > 0 ? tok.toLocaleString('en-IN') + ' tokens' : 'tokens n/a (provider sent no usage)';
+      return (calls ? (t.calls + ' LLM calls · ' + tokTxt) : '0 LLM calls') + ' · ' + (t.ms || 0) + 'ms LLM · ' + toolN + ' real tools ' + (toolMs || 0) + 'ms · ≈$' + ((t.cost || 0).toFixed(4)) + ' (est)';
+    }
+
+    function logLine(cls, html) {
+      const d = document.createElement('div');
+      d.className = 'ln';
+      const t = new Date().toLocaleTimeString('en-IN', { hour12: false });
+      d.innerHTML = '<span class="t">' + t + '</span> ' + (cls ? '<span class="' + cls + '">' + html + '</span>' : html);
+      log.appendChild(d); log.scrollTop = log.scrollHeight;
+    }
+
+    function makeCard(a) {
+      const card = document.createElement('div');
+      card.className = 'ag-card';
+      const id = (a.id || '').toLowerCase();
+      card.setAttribute('data-agent', id);
+      const meta = AGENT_META[id] || {};
+      if (meta.color) card.style.setProperty('--agc', meta.color);
+      card.innerHTML =
+        '<div class="ag-card-head">' +
+          '<span class="ag-ico">' + (meta.icon || '🛰') + '</span>' +
+          '<div><div class="ag-name">' + esc(a.name || 'Agent') + '</div><div class="ag-role">' + esc(a.role || '') + '</div>' + (meta.persona ? '<span class="ag-persona">' + esc(meta.persona) + '</span>' : '') + '</div>' +
+          '<span class="ag-status">queued</span>' +
+        '</div>' +
+        '<div class="ag-live"></div>' +
+        '<div class="ag-tools">' + (Array.isArray(a.tools) ? a.tools.map((t) => '<span>' + esc(t) + '</span>').join('') : '') + '</div>' +
+        '<div class="ag-field think"><span class="k">Thinking</span><p></p></div>' +
+        '<div class="ag-field act"><span class="k">Action</span><p></p></div>' +
+        '<div class="ag-field out"><span class="k">Output</span><p></p></div>' +
+        '<div class="ag-call"></div>' +
+        '<div class="ag-handoff"></div>';
+      const status = card.querySelector('.ag-status');
+      const thinkP = card.querySelector('.ag-field.think p');
+      const actP = card.querySelector('.ag-field.act p');
+      const outP = card.querySelector('.ag-field.out p');
+      const liveEl = card.querySelector('.ag-live');
+      const callEl = card.querySelector('.ag-call');
+      const handoffEl = card.querySelector('.ag-handoff');
+      return { card, status, thinkP, actP, outP, liveEl, callEl, handoffEl };
+    }
+
+    function clientFallback(product, audience) {
+      const p = String(product || 'the product').trim();
+      const core = p.charAt(0).toUpperCase() + p.slice(1);
+      const ag = (id, thinking, action, output, live, call, result) => ({ id, name: AGENT_META[id].name, persona: AGENT_META[id].persona, role: '', tools: [call], thinking, action, output, live, call, result, status: 'done' });
+      return {
+        mode: 'offline', topic: core, product: p, audience: audience || '', goal: '',
+        orchestrator: 'Strategist sets the GTM angle, Researcher mines live search, ICP profiles buyers, Offer prices it, Channel splits the budget, Message stress-tests the positioning, Skeptic audits every claim, Planner builds the timeline, Publisher assembles the one-pager.',
+        reasoning: 'Offline mode — set a GROQ_API_KEY to see the Strategist reason over the category with a reasoning model.',
+        agents: [
+          ag('strategist', 'Frames the GTM angle: positioning, launch hypothesis and the one metric this launch must move.', 'Turns "' + core + '" into a launch brief.', 'Angle + positioning + hypothesis handed downstream.', 'Framing the launch…', 'gtm.brief', 'positioning + hypothesis'),
+          ag('researcher', 'Mines live search for the category, competitors and citable sources.', 'Queries SERP for the product plus intent variants.', 'Real sources + keyword set handed to ICP and Offer.', 'Mining live search…', 'gtm.research', 'source set + keywords'),
+          ag('icp', 'Profiles buyers from the research and the product.', 'Builds 2-3 ICPs with pains, triggers and objections.', 'ICP cards handed to Offer and Message.', 'Profiling buyers…', 'gtm.icp', '2-3 ICPs'),
+          ag('offer', 'Prices the product against the ICP and category.', 'Builds pricing tiers with a decoy anchor.', 'Pricing tiers handed to Channel and Message.', 'Pricing the offer…', 'gtm.offer', 'tiers + anchor'),
+          ag('channel', 'Splits the launch budget across channels.', 'Allocates spend by CAC efficiency and reach.', 'Budget split handed to Message and Planner.', 'Splitting the budget…', 'gtm.channel', 'channel split'),
+          ag('message', 'Stress-tests the positioning against the skeptic.', 'Drafts the hook and checks it against ICP pains.', 'Messaging + verdict handed to Skeptic and Planner.', 'Stress-testing positioning…', 'gtm.message', 'message + verdict'),
+          ag('skeptic', 'Audits every claim and verifies citation URLs.', 'Scans claims, resolves URLs and scores risk.', 'Risk report handed to Planner and Publisher.', 'Auditing claims…', 'gtm.skeptic', 'risk score'),
+          ag('planner', 'Builds the launch timeline from the plan.', 'Sequences the 0-30 day launch calendar.', 'Launch calendar handed to Publisher.', 'Building the timeline…', 'gtm.planner', 'launch calendar'),
+          ag('publisher', 'Assembles the launch-ready one-pager.', 'Builds slug, meta, one-pager and a checklist.', 'A launch-ready package handed back.', 'Assembling one-pager…', 'gtm.publish', 'one-pager + checklist')
+        ],
+        briefing: 'The GTM Launch Agent produced a launch-ready plan for "' + core + '"' + (audience ? (' for ' + audience) : '') + ' — briefed by the Strategist, grounded in live web research, built into ICPs and pricing by the Offer agent, budgeted by the Channel agent, stress-tested by the Message agent, claim-audited by the Skeptic, scheduled by the Planner and packaged by the Publisher.',
+        nextSteps: ['Approve the Strategist angle and the Skeptic verdict', 'Lock pricing and the channel split', 'Publish the one-pager and run the Planner timeline'],
+        research: { sources: [], keywords: ['gtm', 'launch', 'funnel'], citations: [] },
+        sources: [], citations: [], keywords: ['gtm', 'launch', 'funnel'],
+        brief: { angle: 'A clear, results-first GTM angle for ' + p, positioning: 'The fastest way for ' + (audience || 'teams') + ' to ship a credible launch.', hypothesis: 'A tight ICP + one hero offer will beat a broad blast.', metric: 'Cost per qualified lead' },
+        icp: { personas: [{ name: 'The Lean Founder', role: 'owner', pain: 'No time to plan a launch', trigger: 'pre-launch', objection: 'We already have a plan' }] },
+        offer: { tiers: [{ name: 'Starter', price: '$49', note: 'self-serve' }, { name: 'Growth', price: '$199', note: 'most popular', anchor: true }, { name: 'Scale', price: '$499', note: 'done-with-you' }], anchor: 'Growth framed against Scale' },
+        channel: { split: [{ channel: 'Paid search', pct: 35 }, { channel: 'LinkedIn', pct: 25 }, { channel: 'Newsletter', pct: 20 }, { channel: 'Communities', pct: 20 }] },
+        message: { verdict: 'strong', issues: ['Offline demo — run against the live API for a full stress-test.'], hook: 'Ship a credible launch without the launch-plan theatre.' },
+        skeptic: { riskScore: 24, total: 3, linkOk: 3, verdict: 'claims supported by resolved citations', finding: 'All inline citations resolve to real, live URLs.' },
+        planner: { calendar: [{ t: 'T+0', task: 'Publish one-pager' }, { t: 'T+3', task: 'Paid search live' }, { t: 'T+7', task: 'LinkedIn + newsletter' }, { t: 'T+14', task: 'Retarget communities' }, { t: 'T+30', task: 'Review CPL' }] },
+        publish: { slug: String(p).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 60), title: core, metaTitle: core, metaDesc: 'A launch-ready GTM plan for ' + p + '.', checklist: ['Angle approved', 'Pricing locked', 'Channel split set', 'Claims audited', 'One-pager published'], markdown: '# ' + core + ' — Launch one-pager\n\n' + (audience ? 'For: ' + audience + '\n' : '') + 'Angle: ' + core + '\nRisk: low\n' },
+        metrics: { riskScore: 24, readiness: 78 },
+        telemetry: { calls: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } }
+      };
+    }
+
+    function scoreColor(s) {
+      if (s >= 80) return '#8affc1';
+      if (s >= 55) return '#ffd479';
+      return '#ff6f6f';
+    }
+
+    function renderBrief(d) {
+      const brief = d.brief || {};
+      const icp = d.icp || {};
+      const offer = d.offer || {};
+      const channel = d.channel || {};
+      const message = d.message || {};
+      const scept = d.skeptic || {};
+      const planner = d.planner || {};
+      const pub = d.publish || {};
+      const sources = d.sources || [];
+      const kws = d.keywords || [];
+
+      const kwChips = kws.length ? '<div class="ag-chips">' + kws.slice(0, 8).map((k) => '<span>#' + esc(k) + '</span>').join('') + '</div>' : '<div class="ag-hint">no keyword set retrieved</div>';
+      const sourceList = sources.slice(0, 6).map((s, i) => '<li><a href="' + esc(s.link || '#') + '" target="_blank" rel="noopener" style="color:var(--accent2)">' + esc(s.title || s.domain || 'source') + '</a> <span class="ag-hint">(' + esc(s.domain || 'web') + ')</span></li>').join('');
+
+      const briefBlock = brief.angle
+        ? '<div class="blk"><b>🧭 Strategist Agent · launch brief</b>' +
+          '<div class="ag-hint">angle: <b style="color:var(--txt)">' + esc(brief.angle) + '</b></div>' +
+          (brief.positioning ? '<div class="ag-hint">positioning: ' + esc(brief.positioning) + '</div>' : '') +
+          (brief.hypothesis ? '<div class="ag-hint">launch hypothesis: <i>' + esc(brief.hypothesis) + '</i></div>' : '') +
+          (brief.metric ? '<div class="ag-hint">one metric this launch must move: <b style="color:var(--txt)">' + esc(brief.metric) + '</b></div>' : '') +
+          '</div>'
+        : '<div class="blk"><b>🧭 Strategist Agent</b><div class="ag-hint">no brief yet</div></div>';
+
+      const reasonBlock = d.reasoning
+        ? '<div class="blk ce-reason"><b>🧠 Strategist · reasoning trace</b><pre class="ce-reasonbody">' + esc(d.reasoning) + '</pre></div>'
+        : '';
+
+      const researchBlock = '<div class="blk"><b>🔍 Research · live sources</b>' + kwChips + '<ul class="ce-sources">' + (sourceList || '<li class="ag-hint">no live sources (offline demo)</li>') + '</ul></div>';
+
+      const icpCards = (icp.personas || []).map((p) =>
+        '<li class="ce-icp"><b>' + esc(p.name || 'Buyer') + '</b> <span class="ag-hint">' + esc(p.role || '') + '</span>' +
+        (p.pain ? '<div class="ag-hint">pain: ' + esc(p.pain) + '</div>' : '') +
+        (p.trigger ? '<div class="ag-hint">trigger: ' + esc(p.trigger) + '</div>' : '') +
+        (p.objection ? '<div class="ag-hint">objection: ' + esc(p.objection) + '</div>' : '') + '</li>'
+      ).join('');
+      const icpBlock = (icp.personas && icp.personas.length)
+        ? '<div class="blk"><b>👤 ICP Agent · buyer profiles</b><ul class="ce-checks">' + icpCards + '</ul></div>'
+        : '<div class="blk"><b>👤 ICP Agent</b><div class="ag-hint">no ICPs built</div></div>';
+
+      const tierRows = (offer.tiers || []).map((t) =>
+        '<li class="' + (t.anchor ? 'ce-anchor' : 'ce-ok') + '" style="list-style:none">' + (t.anchor ? '★ ' : '→ ') + esc(t.name) + ' · <b>' + esc(t.price || '') + '</b> ' + (t.note ? '<span class="ag-hint">' + esc(t.note) + '</span>' : '') + '</li>'
+      ).join('');
+      const offerBlock = (offer.tiers && offer.tiers.length)
+        ? '<div class="blk"><b>💰 Offer Agent · pricing</b><ul class="ce-checks">' + tierRows + '</ul>' + (offer.anchor ? '<div class="ag-hint">anchor: ' + esc(offer.anchor) + '</div>' : '') + '</div>'
+        : '<div class="blk"><b>💰 Offer Agent</b><div class="ag-hint">no pricing yet</div></div>';
+
+      const splitRows = (channel.split || []).map((c) =>
+        '<li class="ce-ok" style="list-style:none"><span class="ag-hint">' + esc(c.channel) + '</span> <b style="color:var(--accent2)">' + (c.pct != null ? c.pct + '%' : '') + '</b></li>'
+      ).join('');
+      const channelBlock = (channel.split && channel.split.length)
+        ? '<div class="blk"><b>📡 Channel Agent · budget split</b><ul class="ce-checks">' + splitRows + '</ul></div>'
+        : '<div class="blk"><b>📡 Channel Agent</b><div class="ag-hint">no split yet</div></div>';
+
+      const messageBlock = message.verdict
+        ? '<div class="blk"><b>✍️ Message Agent · positioning stress-test</b>' +
+          '<div class="ag-hint">verdict: <b style="color:var(--txt)">' + esc(message.verdict) + '</b></div>' +
+          (message.hook ? '<div class="ag-hint">hook: <i>' + esc(message.hook) + '</i></div>' : '') +
+          ((message.issues || []).length ? '<ul class="ce-issues">' + message.issues.map((i) => '<li><span class="ag-pri" style="color:#ff9e5c">fix</span> ' + esc(i) + '</li>').join('') + '</ul>' : '') +
+          '</div>'
+        : '<div class="blk"><b>✍️ Message Agent</b><div class="ag-hint">no verdict yet</div></div>';
+
+      const riskCol = scoreColor(100 - (scept.riskScore != null ? scept.riskScore : 0));
+      const skepticBlock = scept.riskScore != null
+        ? '<div class="blk"><b>⚖️ Skeptic Agent · claim audit</b>' +
+          '<div class="ce-gauge" style="--ceg:' + riskCol + '">' + scept.riskScore + '<i>risk /100</i></div>' +
+          '<div class="ag-hint">verdict: <b style="color:var(--txt)">' + esc(scept.verdict || '—') + '</b></div>' +
+          ((scept.total != null) ? '<div class="ag-hint">citation verification: <b style="color:var(--txt)">' + (scept.linkOk || 0) + '/' + scept.total + '</b> URLs resolved</div>' : '<div class="ag-hint">no citation URLs resolved (offline)</div>') +
+          (scept.finding ? '<div class="ag-hint">' + esc(scept.finding) + '</div>' : '') + '</div>'
+        : '<div class="blk"><b>⚖️ Skeptic Agent</b><div class="ag-hint">no audit yet</div></div>';
+
+      const calRows = (planner.calendar || []).map((c) =>
+        '<li class="ce-ok" style="list-style:none">→ <b style="color:var(--accent2)">' + esc(c.t) + '</b> ' + esc(c.task || c.channel || '') + '</li>'
+      ).join('');
+      const plannerBlock = (planner.calendar && planner.calendar.length)
+        ? '<div class="blk"><b>🗓️ Planner Agent · launch calendar</b><ul class="ce-checks">' + calRows + '</ul></div>'
+        : '<div class="blk"><b>🗓️ Planner Agent</b><div class="ag-hint">no calendar yet</div></div>';
+
+      const readyCol = scoreColor(pub.ready || 78);
+      const pubBlock = pub.slug
+        ? '<div class="blk ce-readyb"><b>🚀 Publisher Agent · launch one-pager</b>' +
+          (pub.ready != null ? '<div class="ce-ready"><div class="ce-bignum" style="color:' + readyCol + '">' + pub.ready + '%</div><span class="ag-hint">readiness</span></div>' : '') +
+          '<div class="ce-meta"><span>slug</span><b>/' + esc(pub.slug || '') + '</b><span>title</span><b>' + esc(pub.title || pub.metaTitle || '') + '</b></div>' +
+          (pub.metaDesc ? '<div class="ce-meta"><span>meta description</span><b>' + esc(pub.metaDesc) + '</b></div>' : '') +
+          ((pub.checklist || []).length ? '<div class="ag-hint">launch checklist:</div><ul class="ce-checks">' + pub.checklist.map((c) => '<li class="ce-ok" style="list-style:none">✓ ' + esc(c) + '</li>').join('') + '</ul>' : '') +
+          '</div>'
+        : '<div class="blk"><b>🚀 Publisher Agent</b><div class="ag-hint">no one-pager yet</div></div>';
+
+      brief.innerHTML =
+        '<div class="ag-plan-head"><h3>📣 GTM Launch Agent · ' + esc(d.product || d.title || d.topic || '') + '</h3>' +
+        '<div class="ag-actions"><button type="button" class="btn" id="ceCopyBtn">⧉ Copy plan</button><button type="button" class="btn" id="ceMdBtn">⬇ One-pager MD</button><button type="button" class="btn" id="ceTxtBtn">⬇ Plain text</button></div></div>' +
+        '<div class="ce-verdict"><b>Launch plan ready</b><span class="ag-hint">' + (d.metrics && d.metrics.riskScore != null ? 'risk ' + d.metrics.riskScore + '/100' : 'offline demo') + (d.metrics && d.metrics.readiness != null ? ' · readiness ' + d.metrics.readiness + '%' : '') + '</span></div>' +
+        '<div class="grid">' +
+          briefBlock + reasonBlock + researchBlock + icpBlock + offerBlock + channelBlock + messageBlock + skepticBlock + plannerBlock + pubBlock +
+        '</div>' +
+        (d.briefing ? '<div class="ag-summary">' + esc(d.briefing) + '</div>' : '') +
+        ((d.nextSteps || []).length ? '<div class="ag-summary"><b>Next steps:</b> ' + (d.nextSteps || []).map(function (s) { return '<span class="ag-hint">' + esc(s) + '</span>'; }).join(' &nbsp;→&nbsp; ') + '</div>' : '') +
+        (d.telemetry ? '<div class="ag-tel"><b>Run telemetry:</b> ' + esc(telLine(d.telemetry)) + '</div>' : '');
+      brief.hidden = false;
+      shareRow.hidden = false;
+
+      const copyBtn = $('ceCopyBtn');
+      if (copyBtn) copyBtn.addEventListener('click', function () { copyText(briefToText(d)).then(function () { copyBtn.textContent = '✓ Copied'; setTimeout(function () { copyBtn.textContent = '⧉ Copy plan'; }, 1800); }).catch(function () { copyBtn.textContent = 'Copy failed'; }); });
+      const mdBtn = $('ceMdBtn');
+      if (mdBtn) mdBtn.addEventListener('click', function () { downloadFile('gtm-' + String(pub.slug || 'launch').replace(/[^\w-]+/g, '-') + '.md', pub.markdown || ('# ' + (d.product || d.title || '') + '\n\n' + d.briefing), 'text/markdown;charset=utf-8'); mdBtn.textContent = '⬇ Saved'; setTimeout(function () { mdBtn.textContent = '⬇ One-pager MD'; }, 1800); });
+      const txtBtn = $('ceTxtBtn');
+      if (txtBtn) txtBtn.addEventListener('click', function () { downloadFile('gtm-' + String(pub.slug || 'launch').replace(/[^\w-]+/g, '-') + '.txt', briefToText(d), 'text/plain;charset=utf-8'); txtBtn.textContent = '⬇ Saved'; setTimeout(function () { txtBtn.textContent = '⬇ Plain text'; }, 1800); });
+    }
+
+    function briefToText(d) {
+      const L = [];
+      L.push('GTM LAUNCH PLAN: ' + (d.product || d.title || d.topic || ''));
+      if (d.audience) L.push('Audience: ' + d.audience);
+      L.push('');
+      (d.agents || []).forEach(function (a) {
+        L.push('• ' + (a.name || 'Agent'));
+        if (a.thinking) L.push('   thinking: ' + a.thinking);
+        if (a.action) L.push('   action:   ' + a.action);
+        if (a.output) L.push('   output:   ' + a.output);
+        if (a.call) L.push('   tool:     ' + a.call + (a.result ? (' → ' + a.result) : ''));
+      });
+      L.push('');
+      if (d.brief && d.brief.angle) L.push('BRIEF: ' + d.brief.angle + ' · positioning "' + (d.brief.positioning || '') + '" · metric ' + (d.brief.metric || '—'));
+      if (d.reasoning) L.push('REASONING: ' + d.reasoning);
+      if (d.icp && d.icp.personas) L.push('ICP: ' + d.icp.personas.map(function (p) { return p.name + ' (' + (p.pain || '') + ')'; }).join('; '));
+      if (d.offer && d.offer.tiers) L.push('OFFER: ' + d.offer.tiers.map(function (t) { return t.name + ' ' + t.price; }).join(' | '));
+      if (d.channel && d.channel.split) L.push('CHANNELS: ' + d.channel.split.map(function (c) { return c.channel + ' ' + c.pct + '%'; }).join(' · '));
+      if (d.message) L.push('MESSAGE: ' + (d.message.verdict || '') + ' · ' + (d.message.hook || ''));
+      if (d.skeptic) L.push('SKEPTIC: risk ' + (d.skeptic.riskScore != null ? d.skeptic.riskScore + '/100' : '—') + ' · ' + (d.skeptic.verdict || ''));
+      if (d.planner && d.planner.calendar) L.push('PLANNER: ' + d.planner.calendar.map(function (c) { return c.t + ' ' + (c.task || c.channel); }).join(' → '));
+      if (d.publish) L.push('PUBLISH: /' + (d.publish.slug || '') + ' · ' + (d.publish.metaTitle || '') + ' · readiness ' + (d.publish.ready || '—') + '%');
+      L.push('');
+      if (d.publish && d.publish.markdown) L.push('ONE-PAGER:\n' + d.publish.markdown);
+      if (d.briefing) L.push('BRIEFING: ' + d.briefing);
+      return L.join('\n');
+    }
+
+    function downloadFile(name, content, type) {
+      const blob = new Blob([content], { type: type });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+      return new Promise(function (resolve, reject) {
+        try { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); resolve(); } catch (e) { reject(e); }
+      });
+    }
+    function reset() {
+      agents.innerHTML = ''; log.innerHTML = ''; orch.innerHTML = '';
+      brief.hidden = true; shareRow.hidden = true;
+      if (modeEl) modeEl.hidden = true;
+      if (serpEl) serpEl.hidden = true;
+    }
+
+    async function run() {
+      const product = productEl.value.trim();
+      if (!product) { productEl.focus(); productEl.style.borderColor = 'var(--accent)'; return; }
+      productEl.style.borderColor = '';
+      runBtn.disabled = true; runBtn.textContent = '⏳ Studio working…';
+      stage.hidden = false; reset(); data = null;
+      const payload = { product: product, audience: audEl ? audEl.value.trim() : '', goal: goalEl ? goalEl.value.trim() : '', stream: true };
+      try {
+        const res = await fetch('/api/gtm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error('bad');
+        const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx); buf = buf.slice(idx + 1);
+            if (!line.trim()) continue;
+            let ev = null; try { ev = JSON.parse(line); } catch (e) { continue; }
+            if (ev.event === 'tool') {
+              const ok = ev.exec && ev.exec.ok;
+              logLine(ok ? 't' : 'a', (AGENT_META[ev.id] ? (AGENT_META[ev.id].icon + ' ') : '🛰 ') + '<b>' + esc(ev.tool || 'tool') + '</b> ' + (ok ? 'executed in ' + ev.exec.ms + 'ms' : 'failed — fallback used'));
+            } else if (ev.event === 'serp') {
+              if (ev.used) logLine('t', 'researcher grounded in live SERP sweep (' + ev.count + ' results across ' + ((ev.queries || []).length) + ' intent queries)');
+            } else if (ev.event === 'metrics') {
+              logLine('m', 'metrics · ' + telLine(ev.telemetry));
+            } else if (ev.event === 'orch' && ev.text) {
+              orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(ev.text.slice(0, 300)) + '</span>';
+            } else if (ev.event === 'plan' && ev.data && Array.isArray(ev.data.agents) && ev.data.agents.length) {
+              data = ev.data;
+            }
+          }
+        }
+        if (!data) throw new Error('empty');
+      } catch (e) {
+        data = clientFallback(product, audEl ? audEl.value.trim() : '');
+        logLine('a', 'live API unreachable — using built-in planner');
+      }
+      if (modeEl) { modeEl.hidden = false; modeEl.className = 'ag-mode ' + (data.mode === 'ai' ? 'ai' : 'template'); modeEl.textContent = data.mode === 'ai' ? '● LIVE LLM' : (data.mode === 'offline' ? '● OFFLINE DEMO' : '● RULE-BASED FALLBACK'); }
+      if (serpEl) { if (data.serpUsed) { serpEl.hidden = false; serpEl.textContent = '🔎 LIVE SERP · ' + (data.serpCount || 0) + ' results'; } else { serpEl.hidden = true; } }
+      orch.innerHTML = '<span class="ag-spark"></span><span><b>Orchestrator:</b> ' + esc(data.orchestrator || ('Planning ' + (data.product || 'the launch') + '…')) + '</span>';
+      logLine('a', 'orchestrator: ' + esc(data.orchestrator || 'starting'));
+      const seq = data.agents;
+      for (let i = 0; i < seq.length; i++) {
+        const a = seq[i]; const id = (a.id || '').toLowerCase();
+        const ui = makeCard(a); agents.appendChild(ui.card);
+        requestAnimationFrame(() => ui.card.classList.add('show'));
+        const sat = document.querySelector('.ag-sat[data-agent="' + id + '"]');
+        const line = document.querySelector('.ag-lines line[data-agent="' + id + '"]');
+        if (sat) sat.classList.add('on'); if (line) line.classList.add('on');
+        ui.status.textContent = 'thinking'; ui.status.className = 'ag-status thinking'; ui.card.classList.add('active');
+        const liveTxt = a.live || ((a.name || 'Agent') + ' working');
+        logLine('a', (a.name || 'agent') + ' — ' + liveTxt);
+        await type(ui.liveEl, liveTxt + '…'); await sleep(THINK);
+        ui.thinkP.textContent = ''; await type(ui.thinkP, a.thinking || ''); await sleep(STEP);
+        ui.actP.textContent = a.action || ''; ui.outP.textContent = a.output || '';
+        ui.liveEl.textContent = liveTxt; ui.liveEl.classList.add('done');
+        if (a.call && ui.callEl) {
+          const exec = a.exec || null; const toolName = esc(a.call || (exec && exec.tool));
+          if (exec && exec.ok) ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + '</span><span class="ag-callres real">' + esc(a.result || '') + '</span><span class="ag-callms">' + exec.ms + 'ms</span>';
+          else if (exec && !exec.ok) ui.callEl.innerHTML = '<span class="ag-calltool">⚙ ' + toolName + '</span><span class="ag-callres err">' + esc((exec.error || 'tool failed')) + '</span>';
+          else ui.callEl.innerHTML = '<span class="ag-calltool">' + toolName + '</span> <span class="ag-callres">' + esc(a.result || '') + '</span>';
+        }
+        ui.status.textContent = 'done'; ui.status.className = 'ag-status done'; ui.card.classList.remove('active'); ui.card.classList.add('done');
+        const next = seq[i + 1]; if (next && ui.handoffEl) ui.handoffEl.innerHTML = '↓ hands off to ' + esc(next.name);
+        logLine('', (a.name || 'agent') + ' → ' + esc((a.output || '').slice(0, 90)));
+        await sleep(STEP * 0.35);
+      }
+      renderBrief(data);
+      runBtn.disabled = false; runBtn.textContent = '▶ Run again';
+    }
+
+    runBtn.addEventListener('click', run);
+    productEl.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') run(); });
+    (function () {
+      try {
+        const h = location.hash && location.hash.length > 4 ? JSON.parse(decodeURIComponent(location.hash.slice(1))) : null;
+        if (h && h.product) { productEl.value = String(h.product).slice(0, 160); setTimeout(run, 350); }
+      } catch (e) {}
+    })();
+  </script>
+</Base>

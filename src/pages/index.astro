@@ -95,6 +95,26 @@ const body = "<div id=\"progress\"></div>\n<div id=\"glow\"></div>\n\n<div class
     </div>
   </section>
 
+  <section id="agentStudio" class="reveal">
+    <div class="wrap">
+      <div class="sec-head"><span class="tag">⚡ AI agent studio · live demo</span><h2>This site runs a real 9-agent content engine</h2>
+        <p style="color:var(--muted);max-width:700px;margin:0 auto">Not a mockup. Type a topic and a studio of autonomous agents researches the live web, drafts, fact-checks, audits claims, scores SEO, links internally, packages and plans distribution — right here in your browser.</p>
+      </div>
+      <div style="max-width:860px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="asTopic" type="text" value="cost-per-lead for B2B SaaS" placeholder="Type a marketing topic…" style="flex:1;min-width:220px;box-sizing:border-box;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt)">
+          <button class="btn primary" type="button" id="asRun">▶ Run the studio</button>
+        </div>
+        <div id="asStatus" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:30px"></div>
+        <div id="asAgents" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px"></div>
+        <div id="asOut" hidden style="margin-top:12px;display:grid;gap:10px">
+          <div style="font-size:13.5px;line-height:1.6;color:var(--muted)"><b id="asTitle" style="color:var(--txt)"></b><span id="asScore" style="float:right"></span><p id="asSum" style="margin:6px 0 0"></p></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" id="asOpen" target="_blank" rel="noopener" href="/content.html">Open the full studio →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="amaFeed" class="reveal">
     <div class="wrap">
       <div class="sec-head"><span class="tag">Ask me anything · public log</span><h2>Questions people ask the AI chat on this site</h2></div>
@@ -162,6 +182,51 @@ const body = "<div id=\"progress\"></div>\n<div id=\"glow\"></div>\n\n<div class
       .then(function(){btn.disabled=false;btn.textContent='Send Message';});
   });
 })();</script>
+  <script is:inline>/* ---------- live AI agent studio ---------- */
+(function(){
+  var t=document.getElementById('asTopic'),run=document.getElementById('asRun'),st=document.getElementById('asStatus'),ag=document.getElementById('asAgents'),out=document.getElementById('asOut');
+  if(!run||!ag)return;
+  var META={strategist:['🧭','The Strategist'],researcher:['🔍','The Archaeologist'],writer:['✍️','The Wordsmith'],editor:['🧐','The Fact-Checker'],skeptic:['⚖️','The Devil\u2019s Advocate'],seo:['🎯','The Ranker'],connector:['🔗','The Linker'],publisher:['🚀','The Launcher'],amplifier:['📣','The Distributor']};
+  function el(cls,html){var d=document.createElement('div');d.className=cls||'';d.innerHTML=html;return d;}
+  function reset(){st.innerHTML='';ag.innerHTML='';out.hidden=true;out.querySelector('#asTitle').textContent='';out.querySelector('#asSum').textContent='';out.querySelector('#asScore').textContent='';}
+  function card(id,pick){
+    var m=META[(id||'').toLowerCase()]||['🛰',(id||'agent')];
+    var c=el('', '<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted)"><div style="display:flex;gap:6px;align-items:center"><span style="font-size:14px">'+m[0]+'</span><b style="color:var(--txt);font-weight:600">'+m[1]+'</b></div><div class="asstate" style="margin-top:4px;min-height:14px">queued</div></div>');
+    ag.appendChild(c);
+    return c.querySelector('.asstate');
+  }
+  run.addEventListener('click',function(){
+    var topic=(t?t.value:'').trim()||'cost-per-lead for B2B SaaS';
+    reset();run.disabled=true;run.textContent='Running 9 agents…';
+    var q=el('', '<span style="font-size:12px;color:var(--muted)">▶ <b style="color:var(--txt)">'+topic.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</b></span>');st.appendChild(q);
+    fetch('/api/content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:topic,stream:true,wordCount:500})}).then(function(r){
+      if(!r.ok||!r.body)throw new Error('bad');
+      var rd=r.body.getReader(),dec=new TextDecoder(),buf='',cards={};
+      function pump(){
+        return rd.read().then(function(x){if(x.done)return;buf+=dec.decode(x.value,{stream:true});
+        var lines=buf.split('\n');buf=lines.pop();
+        lines.forEach(function(L){
+          if(!L.trim())return;var ev;try{ev=JSON.parse(L);}catch(e){return;}
+          if(ev.event==='tool'&&ev.id){
+            if(!cards[ev.id])cards[ev.id]=card(ev.id);
+            cards[ev.id].textContent=((META[ev.id]||['',''])[1]||ev.id)+' → '+ (ev.exec&&ev.exec.ok?('✓ '+ev.tool+' '+(ev.exec.wc?('('+ev.exec.wc+'w)'):'')):'…');
+          }
+          if(ev.event==='plan'&&ev.data){
+            var d=ev.data;
+            Object.keys(cards).forEach(function(k){if(cards[k].textContent==='queued')cards[k].textContent='—';});
+            out.querySelector('#asTitle').textContent=d.title||d.topic||'';
+            out.querySelector('#asSum').textContent=d.briefing||'';
+            out.querySelector('#asScore').textContent=(d.metrics?'SEO '+(d.metrics.seoScore||0)+'/100 · ready '+(d.metrics.readiness||0)+'% · '+d.metrics.wordCount+' words':'');
+            out.hidden=false;
+          }
+        });return pump();});
+      }
+      return pump();
+    }).catch(function(){st.appendChild(el('', '<span style="font-size:12px;color:#ff6b6b">Studio busy right now — try the full page instead.</span>'));})
+    .then(function(){run.disabled=false;run.textContent='▶ Run the studio';});
+  });
+})();</script>
+
   <script is:inline>/* ---------- data-driven overrides ---------- */
 const DEFAULTS={
   stats:[
@@ -550,7 +615,7 @@ const answers={
 };
 function clearChat(){while(term.firstChild)term.removeChild(term.firstChild);}
 function line(html){const d=document.createElement('div');d.className='out';d.innerHTML=html;term.appendChild(d);while(term.children.length>3)term.removeChild(term.firstChild);term.scrollTop=term.scrollHeight;return d;}
-function botSay(gen,q){const t=line('<span class="c1">Vamshidhar</span><span class="typ"><b></b><b></b><b></b></span>');setBusy(true);setTimeout(async()=>{const j=await gen();setBusy(false);t.innerHTML='<span class="c3">➜</span> '+(j.rag?'<span class="aib">⚡ AI</span> ':'')+'<b style="color:var(--accent2)">Vamshidhar:</b> '+j.answer;if(q&&typeof logQA==='function')logQA(q,j.answer);if(j.citations&&j.citations.length){const s=document.createElement('div');s.className='out src';s.innerHTML='<span class="c3">📎</span> sources: '+j.citations.map(function(c){return '<a href="'+(c.url||'#')+'" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:underline">'+c.label+'</a>';}).join(' · ');term.appendChild(s);while(term.children.length>4)term.removeChild(term.firstChild);}term.scrollTop=term.scrollHeight;},320);}
+function botSay(gen,q){const t=line('<span class="c1">Vamshidhar</span><span class="typ"><b></b><b></b><b></b></span>');setBusy(true);setTimeout(async()=>{const j=await gen();setBusy(false);t.innerHTML='<span class="c3">➜</span> '+(j.rag?'<span class="aib">⚡ AI</span> ':'')+'<b style="color:var(--accent2)">Vamshidhar:</b> '+j.answer+(window.speechSynthesis?' <button type="button" class="lnk" data-speak style="background:none;border:0;cursor:pointer;color:var(--accent2);font-size:12px;padding:0 4px" title="Read the answer aloud">🔊</button>':'');if(q&&typeof logQA==='function')logQA(q,j.answer);if(j.citations&&j.citations.length){const s=document.createElement('div');s.className='out src';s.innerHTML='<span class="c3">📎</span> sources: '+j.citations.map(function(c){return '<a href="'+(c.url||'#')+'" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:underline">'+c.label+'</a>';}).join(' · ');term.appendChild(s);while(term.children.length>4)term.removeChild(term.firstChild);}term.scrollTop=term.scrollHeight;},320);}
 function setBusy(on){if(chatIn){chatIn.disabled=on;chatSend.disabled=on;chatSend.textContent=on?'⋯':'➤';}}
 function clearTerm(){clearChat();line('<span class="c3">➜</span> <b style="color:var(--accent2)">Vamshidhar:</b> ready when you are. try a question above, or press <b style="color:var(--accent2)">?</b> for shortcuts.');}
 function ask(q){line('<span class="c3">➜</span> <b style="color:var(--accent2)">You:</b> '+q);}
@@ -600,6 +665,20 @@ function submitChat(){
 }
 chatSend.addEventListener('click',()=>{ea('chat','sent');submitChat();});
 chatIn.addEventListener('keydown',e=>{if(e.key==='Enter')submitChat();});
+document.addEventListener('click',function(e){
+  const sp=e.target&&e.target.closest?e.target.closest('[data-speak]'):null;
+  if(!sp)return;
+  e.preventDefault();
+  if(!window.speechSynthesis){sp.textContent='🙈';return;}
+  if(window.__speaking){window.speechSynthesis.cancel();window.__speaking=false;return;}
+  const txt=sp.closest('.out')?sp.closest('.out').textContent.replace(/🔊|➜|Vamshidhar:/g,''):'';
+  const u=new SpeechSynthesisUtterance(txt.trim());u.rate=1.02;u.pitch=1;
+  u.onend=function(){window.__speaking=false;};u.onerror=function(){window.__speaking=false;};
+  window.__speaking=true;window.speechSynthesis.speak(u);
+  sp.textContent='⏹';
+  const resetsp=function(){if(sp&&sp.parentNode)sp.textContent='🔊';};
+  u.addEventListener('end',resetsp);u.addEventListener('error',resetsp);
+});
 document.querySelectorAll('.qs button').forEach(b=>b.addEventListener('click',()=>{clearChat();ask(b.textContent);const eq=chipQ[b.dataset.q]||b.textContent;botSay(()=>genAnswer(eq),eq);}));
 document.querySelectorAll('a[href^="https://mail.google.com/mail/"]').forEach(g=>g.addEventListener('click',()=>ea('gmail','compose')));
 document.querySelectorAll('a[aria-label="LinkedIn"]').forEach(x=>x.addEventListener('click',()=>ea('social','linkedin')));

@@ -19,6 +19,7 @@ function getHandler(key) {
     case 'content': return require('../libs/content');
     case 'coverletter': return require('../libs/coverletter');
     case 'github': return require('../libs/github');
+    case 'gtm': return require('../libs/gtm');
     case 'headline': return require('../libs/headline');
     case 'live': return require('../libs/live');
     case 'og': return require('../libs/og');
@@ -29,7 +30,9 @@ function getHandler(key) {
     case 'grapevine': return require('../libs/grapevine');
     case 'stats': return require('../libs/stats');
     case 'status': return require('../libs/status');
+    case 'tailor': return require('../libs/tailor');
     case 'track': return require('../libs/track');
+    case 'vision': return require('../libs/vision');
     case 'views': return require('../libs/views');
     case 'who': return require('../libs/who');
     case 'watch': return require('../libs/watch');

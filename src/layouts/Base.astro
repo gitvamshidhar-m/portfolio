@@ -37,7 +37,10 @@ const subLinks = [
 const links = variant === 'index' ? indexLinks : subLinks;
 const moreLinks = variant === 'index' ? indexMore : [];
 const toolsLinks = [
-  ['/audit.html', 'Audit campaign'], ['/case-study.html', 'Case study'], ['/agentic-ai.html', 'Hive'], ['/grapevine.html', 'Grapevine'], ['/content.html', 'Content Engine'], ['/projects.html#demos', 'Live demos'],
+  ['/audit.html', 'Audit campaign'], ['/case-study.html', 'Case study'], ['/projects.html#demos', 'Live demos'],
+];
+const agentsLinks = [
+  ['/agentic-ai.html', '⚡ Hive'], ['/grapevine.html', '🛎 Grapevine'], ['/content.html', '📝 Content Engine'], ['/gtm.html', '🚀 GTM Agent'],
 ];
 
 // Breadcrumb trail for sub pages
@@ -182,14 +185,20 @@ const ogUrl = ogImage
             ))}
           </div>
         </div>
-        <a href="/agentic-ai.html" class="nav-cta" aria-label="Open Hive agentic AI demo">⚡ Hive</a>
-        <a href="/grapevine.html" class="nav-cta nav-cta-alt" aria-label="Open Grapevine reputation AI demo">🛎 Grapevine</a>
-        <a href="/content.html" class="nav-cta nav-cta-alt" aria-label="Open Content Engine AI studio demo">📝 Content Engine</a>
+        <div class="nav-more" id="navAgents">
+          <button type="button" class="nav-more-btn nav-more-agents" aria-expanded="false" aria-haspopup="true">🤖 Agents ▾</button>
+          <div class="nav-more-dd" role="menu">
+            {agentsLinks.map(([href, label]) => (
+              <a href={href} role="menuitem">{label}</a>
+            ))}
+          </div>
+        </div>
       </div>
       {variant === 'index' && (
         <>
           <span class="pill"><span class="dot"></span><span>Open to work · replies in 24h</span></span>
           <span class="pill" id="clock" title="IST">⏱ --:--:--</span>
+          <a href="/hire.html" class="nav-cta nav-cta-home" aria-label="Hire Vamshidhar for your growth team">Hire me →</a>
         </>
       )}
       <button id="themeBtn" class="icon-btn" title="Toggle theme (t)" aria-label="Toggle theme">🌙</button>
@@ -204,6 +213,8 @@ const ogUrl = ogImage
   {moreLinks.map(([href, label]) => <a href={href}>{label}</a>)}
   <div class="mm-sep">Tools</div>
   {toolsLinks.map(([href, label]) => <a href={href}>{label}</a>)}
+  <div class="mm-sep">Agents</div>
+  {agentsLinks.map(([href, label]) => <a href={href}>{label}</a>)}
 </div>
 
 {!(variant === 'index') && <div id="progress" aria-hidden="true"></div>}
@@ -215,7 +226,9 @@ const ogUrl = ogImage
   <LivePulse />
   <footer>
     <div class="wrap ft">Vamshidhar Reddy M — Strategy. Code. Results. · © 2026 · Built and shipped solo · IST <span id="clock2">--:--:--</span></div>
-    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/hire-recruiters.html">Hiring Managers</a><a href="/projects.html#demos">Live Demos</a><a href="/agentic-ai.html">Hive</a><a href="/grapevine.html">Grapevine</a><a href="/content.html">Content Engine</a><a href="/skills.html">Skills</a><a href="/audit.html">Tools</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/changelog.html">Changelog</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
+    <div class="wrap ft" style="margin-top:14px"><a href="/hire.html">Hire Me</a><a href="/hire-recruiters.html">Hiring Managers</a><a href="/projects.html#demos">Live Demos</a><a href="/agentic-ai.html">Hive</a><a href="/grapevine.html">Grapevine</a><a href="/content.html">Content Engine</a><a 
+href="/gtm.html">GTM Agent</a><a 
+href="/skills.html">Skills</a><a href="/audit.html">Tools</a><a href="/faq.html">FAQ</a><a href="/#insights">ROI Calculator</a><a href="/changelog.html">Changelog</a><a href="/resume.html">Resume</a><a href="/admin.html">Dashboard</a></div>
     <div class="wrap ft" style="margin-top:10px">Services — <a href="/seo.html">SEO &amp; Content</a> · <a href="/ads.html">Paid Media / PPC</a> · <a href="/ai-automation.html">AI Automation</a></div>
     <div class="wrap ft" style="margin-top:12px">
       <span class="tag" style="color:var(--muted)">Building in public</span>

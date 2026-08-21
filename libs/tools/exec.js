@@ -628,6 +628,141 @@ function contentPublish(args) {
   };
 }
 
+// Strategist: front-loads the raw topic → a client-ready brief for the rest of the
+// team (angle, search intent, audience framing, content pillars, CTA, distribution).
+function contentBrief(args) {
+  const topic = String(args.topic || '').slice(0, 160);
+  if (!topic) return { ok: false, error: 'no topic' };
+  const audience = String(args.audience || 'marketers').slice(0, 120);
+  const voice = String(args.voice || 'clear and direct').slice(0, 120);
+  const kw = (Array.isArray(args.keywords) && args.keywords.length) ? args.keywords.slice(0, 5) : [];
+  const t = topic.charAt(0).toUpperCase() + topic.slice(1);
+  const intent = /(how|what|why|when|where|guide|better|improve)/i.test(topic) ? 'informational' : (/price|cost|buy|pricing|vs|compare/i.test(topic) ? 'commercial' : 'informational');
+  const pillars = [
+    'What "' + topic + '" actually means and why it matters now',
+    'The core playbook: the levers that move the outcome',
+    'A concrete example or walkthrough grounded in the research',
+    'Common mistakes and how to avoid them',
+    'Key takeaways + next step (call-to-action)'
+  ];
+  const ctaRecommend = audience === 'marketers' ? 'Book a call' : 'Download the checklist';
+  const suffer = { informational: 'finds it hard to act on generic advice', commercial: 'is comparing options and wants proof it works', transactional: 'wants the fastest path to a result' }[intent];
+  return {
+    ok: true,
+    angle: 'A ' + voice + ' guide that gives ' + audience + ' a working ' + topic + ' playbook — grounded in live research, not generic advice.',
+    intent: intent,
+    audienceFraming: audience + ' ' + suffer + ' — the piece should name their pain and hand them a repeatable process.',
+    pillars: pillars,
+    cta: ctaRecommend,
+    distribution: ['Publish the markdown export to the CMS', 'Share the LinkedIn variant in 1-2 days', 'Schedule the X thread 3-4 days after the post', 'Solicit one backlink from each cited domain'],
+    keywords: kw.length ? kw : [topic.split(/\s+/)[0] || topic]
+  };
+}
+
+// Skeptic (Devil's Advocate): adversarial claim audit over the draft. Extracts the
+// inline [n](url) citations, verifies the cited URLs really resolve (real network
+// HEAD/GET, capped + parallel for latency), checks each cited sentence is traceable
+// to its source snippet, and returns a pre-publish risk report.
+async function contentSkeptic(args) {
+  const draft = String(args.draft || '');
+  const sources = Array.isArray(args.sources) ? args.sources : [];
+  const citeRe = /\[(\d+)\]\(([^)]+)\)/g;
+  const rows = [];
+  const seen = {};
+  let mm;
+  while ((mm = citeRe.exec(draft)) !== null) {
+    const n = Number(mm[1]);
+    const url = String(mm[2]);
+    const src = sources[n - 1] || {};
+    rows.push({ n: n, url: url, title: (src.title || '').slice(0, 120), snippet: (src.snippet || '').slice(0, 220), linkOk: null, traceable: null });
+  }
+  // URL resolution: parallel HEAD/GET with a short timeout (Vercel-friendly).
+  const timeout = function (ms) { return new Promise(function (res) { setTimeout(res, ms); }); };
+  const check = async function (row) {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(function () { c.abort(); }, 5000);
+      const r = await fetch(row.url, { method: 'HEAD', redirect: 'follow', signal: c.signal, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ContentEngine/1.0)' } });
+      clearTimeout(t);
+      if (r.status >= 400) { const r2 = await fetch(row.url, { method: 'GET', redirect: 'follow', signal: c.signal, headers: { 'User-Agent': 'Mozilla/5.0' } }); row.linkOk = r2.status < 400; }
+      else row.linkOk = true;
+      await timeout(30);
+    } catch (e) {
+      clearTimeout();
+      row.linkOk = false;
+    }
+    const toks = cToks(row.snippet);
+    const sentSet = new Set(cToks(draft.split('\n').filter(function (l) { return l.indexOf('[' + row.n + ']') >= 0; }).join(' ')));
+    row.traceable = toks.filter(function (t) { return sentSet.has(t); }).length >= 2;
+    return row;
+  };
+  await Promise.all(rows.slice(0, 4).map(check));
+  const linkOkCount = rows.filter(function (r) { return r.linkOk === true; }).length;
+  const traceCount = rows.filter(function (r) { return r.traceable === true; }).length;
+  const failed = rows.filter(function (r) { return r.linkOk === false; });
+  const riskScore = rows.length
+    ? Math.max(0, Math.min(100, Math.round(((rows.length - linkOkCount) / rows.length) * 60 + ((rows.length - traceCount) / rows.length) * 40)))
+    : 25;
+  const verdict = riskScore <= 20 ? 'low risk — claims check out' : (riskScore <= 55 ? 'medium — confirm the flagged citations before publish' : 'high — several citations failed verification');
+  return {
+    ok: true,
+    rows: rows.slice(0, 8),
+    total: rows.length,
+    linkOk: linkOkCount,
+    traceable: traceCount,
+    failedUrls: failed.map(function (r) { return r.url; }).slice(0, 4),
+    riskScore: riskScore,
+    verdict: verdict
+  };
+}
+
+// Connector (Linker): maps internal links from the piece to the portfolio's own
+// content + knowledge base. Real KB retrieval by topic overlap → link graph.
+function contentLinker(args) {
+  const draft = String(args.draft || '');
+  const topic = String(args.topic || '').slice(0, 160);
+  let kb = [];
+  try { kb = require('../kb'); } catch (e) {}
+  const pool = Array.isArray(kb) ? kb : [];
+  const draftSet = new Set(cToks(topic + ' ' + draft).slice(0, 40));
+  const scored = pool.map(function (chunk) {
+    const set = new Set(cToks(chunk.topic + ' ' + (chunk.text || '')));
+    let n = 0;
+    draftSet.forEach(function (t) { if (set.has(t)) n++; });
+    return { chunk: chunk, score: n };
+  }).sort(function (a, b) { return b.score - a.score; }).filter(function (x) { return x.score >= 1 && x.score <= 10; });
+  const slug = cSlug(topic);
+  const links = scored.slice(0, 4).map(function (s) {
+    const cs = cSlug(s.chunk.topic || '');
+    return { anchor: String(s.chunk.topic || 'related guide').slice(0, 60), url: '/blog/' + cs, why: 'shares ' + s.score + ' keyword(s) with this piece — supports the claim at context ' + s.score, score: s.score };
+  });
+  if (!links.length && slug) links.push({ anchor: 'See how the author ships AI marketing tools', url: '/projects.html', why: 'author proof for this playbook', score: 1 });
+  return { ok: true, topic: topic, links: links, graph: links.map(function (l) { return slug + ' → ' + l.url; }) };
+}
+
+// Amplifier (Distributor): turns the publish-ready package into a distribution plan —
+// schedule, per-platform formatting, hashtags and a newsletter excerpt.
+function contentAmplify(args) {
+  const title = String(args.title || 'this guide').slice(0, 100);
+  const slug = String(args.slug || 'article').slice(0, 80);
+  const kw = (Array.isArray(args.keywords) && args.keywords.length) ? args.keywords.slice(0, 4) : ['marketing'];
+  const variants = (args.variants && typeof args.variants === 'object') ? args.variants : {};
+  const readingMin = Math.max(1, Number(args.readingMin) || 5);
+  const excerpt = String(variants.linkedin || '').slice(0, 140) || ('New on the author\u2019s site: ' + title + ' — ' + readingMin + ' min read.');
+  return {
+    ok: true,
+    schedule: [
+      { day: 'T+0', channel: 'CMS publish + ' + slug, note: 'Canonical post live, sitemap updated' },
+      { day: 'T+1', channel: 'LinkedIn', note: 'Run the LinkedIn variant — timezone-aware, morning' },
+      { day: 'T+3', channel: 'X thread', note: 'Post the thread, tag the cited domains' },
+      { day: 'T+7', channel: 'Newsletter', note: 'Send the excerpt + link to subscribers' }
+    ],
+    hashtags: kw.map(function (k) { return '#' + k.replace(/\s+/g, ''); }).concat(['#ContentOps', '#AI']).slice(0, 5),
+    newsletter: excerpt + ' + the 3-step audit checklist (email capture).',
+    platforms: ['CMS', 'LinkedIn', 'X', 'Email']
+  };
+}
+
 // --- registry --------------------------------------------------------------
 
 const REGISTRY = {
@@ -645,10 +780,14 @@ const REGISTRY = {
   'grapevine.rescue': { run: grapevineRescue, desc: 'Private DM rescue + SLA for heavy escalations' },
   'grapevine.predict': { run: grapevinePredict, desc: 'Forecast crisis trajectory from watch history' },
   'content.research': { run: contentResearch, desc: 'Live SERP research: sources, keywords, subtopics, citations' },
+  'content.brief': { run: contentBrief, desc: 'Strategist brief: angle, intent, pillars, CTA, distribution' },
   'content.draft': { run: contentDraft, desc: 'RAG-grounded draft: title + markdown article' },
   'content.edit': { run: contentEdit, desc: 'Editorial review: structure, claims, hedges, CTAs' },
+  'content.skeptic': { run: contentSkeptic, desc: 'Adversarial claim audit + citation URL verification' },
   'content.seo': { run: contentSeo, desc: 'On-page SEO score + meta from the real draft' },
-  'content.publish': { run: contentPublish, desc: 'Publish-ready package: slug, meta, markdown export, readiness' }
+  'content.linker': { run: contentLinker, desc: 'Internal link graph from the piece to portfolio content' },
+  'content.publish': { run: contentPublish, desc: 'Publish-ready package: slug, meta, markdown export, readiness' },
+  'content.amplify': { run: contentAmplify, desc: 'Distribution plan: schedule, hashtags, newsletter excerpt' }
 };
 
 const TOOL_IDS = Object.keys(REGISTRY);
