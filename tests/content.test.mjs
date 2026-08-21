@@ -112,7 +112,7 @@ function mockRes() {
   };
 }
 
-test('stream emits tool+reflect per agent and a plan with 5 agents', async () => {
+test('stream emits tool+reflect per agent and a plan with 9 agents', async () => {
   kvStore = {};
   const handler = require('../libs/content.js');
   const res = mockRes();
@@ -121,10 +121,10 @@ test('stream emits tool+reflect per agent and a plan with 5 agents', async () =>
   const tools = evs.filter((e) => e.event === 'tool');
   const reflects = evs.filter((e) => e.event === 'reflect');
   const plan = evs.find((e) => e.event === 'plan');
-  assert.ok(tools.length >= 5, 'expected 5 tool events, got ' + tools.length);
-  assert.ok(reflects.length >= 5, 'expected 5 reflect events, got ' + reflects.length);
+  assert.ok(tools.length >= 9, 'expected 9 tool events, got ' + tools.length);
+  assert.ok(reflects.length >= 9, 'expected 9 reflect events, got ' + reflects.length);
   assert.ok(plan, 'missing plan event');
-  assert.ok(Array.isArray(plan.data.agents) && plan.data.agents.length === 5, 'plan should carry 5 agents');
+  assert.ok(Array.isArray(plan.data.agents) && plan.data.agents.length === 9, 'plan should carry 9 agents');
   assert.equal(plan.data.mode, 'ai', 'LLM plan should set ai mode');
   assert.ok(plan.data.nextSteps && plan.data.nextSteps.length >= 1, 'plan should carry nextSteps');
 });

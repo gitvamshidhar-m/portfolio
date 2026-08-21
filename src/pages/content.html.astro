@@ -4,7 +4,7 @@ import LeadForm from '../components/LeadForm.astro';
 
 const op = {
   title: "Content Engine — Autonomous AI Content Studio with RAG | Vamshidhar Reddy",
-  description: "The Content Engine is an autonomous 5-agent content studio: a Researcher mines live search and returns real citations, a Writer drafts the piece grounded in that research plus a knowledge base (RAG), an Editor fact-checks it, an SEO agent scores on-page optimization, and a Publisher assembles a publish-ready package with a markdown export.",
+  description: "The Content Engine is an autonomous 9-agent content studio: a Strategist briefs the angle, a Researcher mines live search and returns real citations, a Writer drafts the piece grounded in that research plus a knowledge base (RAG), an Editor fact-checks it, a Skeptic audits every claim and citation URL, an SEO agent scores on-page optimization, a Connector maps internal links, a Publisher assembles a publish-ready package, and an Amplifier plans distribution.",
   canonical: "https://vamshidharm.vercel.app/content.html",
   ogImage: "",
   variant: 'sub',
@@ -14,7 +14,7 @@ const faqLd = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "What is the Content Engine?", acceptedAnswer: { "@type": "Answer", text: "The Content Engine is an autonomous content studio made of five agents that collaborate on a single topic. The Researcher runs a real live web search and returns actual sources, citations, keywords and subtopics. The Writer drafts a markdown article grounded in that research plus a knowledge base of verified facts (retrieval-augmented generation). The Editor reviews the real draft for structure, length, hedges, claims and calls-to-action. The SEO agent scores on-page optimization against the actual text. The Publisher assembles a publish-ready package — slug, meta title/description, a markdown export and a readiness score." } },
+    { "@type": "Question", name: "What is the Content Engine?", acceptedAnswer: { "@type": "Answer", text: "The Content Engine is an autonomous content studio made of nine agents that collaborate on a single topic. The Strategist turns the topic into a client-ready brief — angle, intent, pillars and CTA. The Researcher runs a real live web search and returns actual sources, citations, keywords and subtopics. The Writer drafts a markdown article grounded in that research plus a knowledge base of verified facts (retrieval-augmented generation). The Editor reviews the real draft for structure, length, hedges, claims and calls-to-action. The Skeptic audits every cited claim and verifies the citation URLs actually resolve. The SEO agent scores on-page optimization against the actual text. The Connector maps internal links to portfolio content and the knowledge base. The Publisher assembles a publish-ready package — slug, meta title/description, a markdown export and a readiness score. The Amplifier builds the distribution plan — schedule, hashtags and a newsletter excerpt." } },
     { "@type": "Question", name: "Is the demo real?", acceptedAnswer: { "@type": "Answer", text: "Yes. Every agent's tool really executes. The Researcher runs a live SERP query (SerpAPI/Brave/keyless fallback) and shows the actual results. The Writer drafts with a real LLM (Groq) when a key is set and a deterministic template otherwise. The Editor, SEO and Publisher run deterministic checks over the actual draft text — word counts, heading structure, keyword coverage, meta lengths and a blended readiness score — so the numbers on screen are real measurements, not placeholders." } },
     { "@type": "Question", name: "What makes it RAG, not just a chatbot writing an article?", acceptedAnswer: { "@type": "Answer", text: "Retrieval-augmented generation means the writing is grounded in retrieved documents, not just the model's memory. The Content Engine retrieves two kinds of evidence for every topic: real web search results (titles, snippets, domains, links) and matched entries from a knowledge base of verified facts about the author. Those retrieved chunks are injected into the Writer's prompt, and the Editor checks the draft against the same citations — so claims trace back to sources the reader can actually click." } },
     { "@type": "Question", name: "What does a human still need to do?", acceptedAnswer: { "@type": "Answer", text: "Publish. The engine drafts, fact-checks, scores and packages the piece, but a human owns the final call: approving the angle, fixing flagged issues the Editor surfaces, adding internal links and the brand's own CTA, and hitting publish in the CMS. The model deals with first-draft velocity; the human owns the brand's voice." } }
@@ -25,8 +25,8 @@ const body = `<section class="lpage-wrap">
     <div class="ag-hero">
       <div class="ag-hero-copy">
         <span class="tag">Content Engine · Agentic content studio</span>
-        <h1>Five agents. One topic. A publish-ready piece.</h1>
-        <p style="color:var(--muted)">Content briefs become drafts the slow way. <b style="color:var(--accent2)">The Content Engine runs the whole pipeline instead.</b> A Researcher mines live search and returns real citations, a Writer drafts the piece grounded in that research plus a knowledge base (<b style="color:var(--accent2)">RAG</b>), an Editor fact-checks it, an SEO agent scores on-page optimization, and a Publisher hands back a publish-ready package with a markdown export.</p>
+        <h1>Nine agents. One topic. A publish-ready piece.</h1>
+        <p style="color:var(--muted)">Content briefs become drafts the slow way. <b style="color:var(--accent2)">The Content Engine runs the whole pipeline instead.</b> A Strategist sets the angle, a Researcher mines live search and returns real citations, a Writer drafts the piece grounded in that research plus a knowledge base (<b style="color:var(--accent2)">RAG</b>), an Editor fact-checks it, a Skeptic audits every claim and citation URL, an SEO agent scores on-page optimization, a Connector maps internal links, a Publisher hands back a publish-ready package with a markdown export, and an Amplifier plans distribution.</p>
         <div class="cta-row" style="justify-content:flex-start">
           <a class="btn primary btn-lg" href="#demo">▶ Run the Content Engine</a>
           <a class="btn link-secondary" href="/projects.html#demos">Live AI tools I built →</a>
@@ -35,18 +35,26 @@ const body = `<section class="lpage-wrap">
       </div>
       <div class="ag-orbit" aria-hidden="true">
         <svg class="ag-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line data-agent="strategist" x1="50" y1="50" x2="4" y2="30"></line>
           <line data-agent="researcher" x1="50" y1="50" x2="24" y2="14"></line>
           <line data-agent="writer" x1="50" y1="50" x2="74" y2="11"></line>
           <line data-agent="editor" x1="50" y1="50" x2="9" y2="46"></line>
+          <line data-agent="skeptic" x1="50" y1="50" x2="50" y2="3"></line>
           <line data-agent="seo" x1="50" y1="50" x2="90" y2="44"></line>
+          <line data-agent="connector" x1="50" y1="50" x2="4" y2="72"></line>
           <line data-agent="publisher" x1="50" y1="50" x2="50" y2="84"></line>
+          <line data-agent="amplifier" x1="50" y1="50" x2="96" y2="72"></line>
         </svg>
         <div class="ag-core"><span>TOPIC</span><i></i></div>
+        <span class="ag-sat" data-agent="strategist" style="top:30%;left:4%;--agc:#c3a6ff">🧭</span>
         <span class="ag-sat" data-agent="researcher" style="top:14%;left:24%;--agc:#49b6ff">🔍</span>
         <span class="ag-sat" data-agent="writer" style="top:11%;left:74%;--agc:#8b7bff">✍️</span>
         <span class="ag-sat" data-agent="editor" style="top:46%;left:9%;--agc:#ff9e5c">🧐</span>
+        <span class="ag-sat" data-agent="skeptic" style="top:3%;left:50%;--agc:#ff8a8a">⚖️</span>
         <span class="ag-sat" data-agent="seo" style="top:44%;left:90%;--agc:#6ee7b7">🎯</span>
+        <span class="ag-sat" data-agent="connector" style="top:72%;left:4%;--agc:#7dd3fc">🔗</span>
         <span class="ag-sat" data-agent="publisher" style="top:84%;left:50%;--agc:#ffd479">🚀</span>
+        <span class="ag-sat" data-agent="amplifier" style="top:72%;left:96%;--agc:#fda4af">📣</span>
       </div>
     </div>
   </div>
@@ -54,15 +62,23 @@ const body = `<section class="lpage-wrap">
   <div class="wrap" style="margin-top:40px">
     <div class="ag-pipeline">
       <div class="ag-pipe">
+        <div class="ag-node" style="--agc:#c3a6ff"><span class="ag-nico">🧭</span><b>Strategist</b><i>angle brief</i></div>
+        <span class="ag-arrow">→</span>
         <div class="ag-node" style="--agc:#49b6ff"><span class="ag-nico">🔍</span><b>Researcher</b><i>live SERP</i></div>
         <span class="ag-arrow">→</span>
         <div class="ag-node" style="--agc:#8b7bff"><span class="ag-nico">✍️</span><b>Writer</b><i>RAG draft</i></div>
         <span class="ag-arrow">→</span>
         <div class="ag-node" style="--agc:#ff9e5c"><span class="ag-nico">🧐</span><b>Editor</b><i>fact-check</i></div>
         <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#ff8a8a"><span class="ag-nico">⚖️</span><b>Skeptic</b><i>claim audit</i></div>
+        <span class="ag-arrow">→</span>
         <div class="ag-node" style="--agc:#6ee7b7"><span class="ag-nico">🎯</span><b>SEO</b><i>on-page score</i></div>
         <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#7dd3fc"><span class="ag-nico">🔗</span><b>Connector</b><i>internal links</i></div>
+        <span class="ag-arrow">→</span>
         <div class="ag-node" style="--agc:#ffd479"><span class="ag-nico">🚀</span><b>Publisher</b><i>ready to post</i></div>
+        <span class="ag-arrow">→</span>
+        <div class="ag-node" style="--agc:#fda4af"><span class="ag-nico">📣</span><b>Amplifier</b><i>distribution</i></div>
       </div>
       <div class="ag-loop"><b>RAG in the loop:</b> real search snippets + matched knowledge-base facts are retrieved per topic and injected into the Writer and Editor — claims trace back to sources you can click.</div>
     </div>
@@ -70,18 +86,22 @@ const body = `<section class="lpage-wrap">
 
   <div class="wrap" style="margin-top:40px">
     <div class="sec-head" style="margin-bottom:18px"><span class="tag">The team</span><h2 style="font-size:clamp(20px,3vw,26px)">A studio that ships first drafts like a staff writer</h2></div>
-    <div class="ab-grid">
-      <div class="ab-variant"><b>🔍 Researcher Agent</b><span class="ag-persona">The Archaeologist</span><p>Runs a real live search on your topic and returns actual sources, citations, keyword set and subtopics — nothing hallucinated.</p></div>
-      <div class="ab-variant"><b>✍️ Writer Agent</b><span class="ag-persona">The Wordsmith</span><p>Drafts a structured markdown piece grounded in the retrieved research plus a knowledge base of verified facts (RAG), in your audience's voice.</p></div>
-      <div class="ab-variant"><b>🧐 Editor Agent</b><span class="ag-persona">The Fact-Checker</span><p>Runs real editorial checks on the actual draft — length, headings, hedges, overclaims, citation coverage and a call-to-action — and issues a verdict.</p></div>
-      <div class="ab-variant"><b>🎯 SEO Agent</b><span class="ag-persona">The Ranker</span><p>Scores on-page optimization from the real text: title length, meta description, keyword placement, heading hierarchy and word count.</p></div>
-      <div class="ab-variant"><b>🚀 Publisher Agent</b><span class="ag-persona">The Launcher</span><p>Packages the piece for the CMS: slug, meta title and description, reading time, a clean markdown export with citations, and a blended readiness score.</p></div>
-    </div>
+      <div class="ab-grid">
+        <div class="ab-variant"><b>🧭 Strategist Agent</b><span class="ag-persona">The Cartographer</span><p>Turns the raw topic into a client-ready brief — angle, search intent, audience framing, suggested structure and a call-to-action that the rest of the studio builds on.</p></div>
+        <div class="ab-variant"><b>🔍 Researcher Agent</b><span class="ag-persona">The Archaeologist</span><p>Runs a real live search on your topic and returns actual sources, citations, keyword set and subtopics — nothing hallucinated.</p></div>
+        <div class="ab-variant"><b>✍️ Writer Agent</b><span class="ag-persona">The Wordsmith</span><p>Drafts a structured markdown piece grounded in the retrieved research plus a knowledge base of verified facts (RAG), in your audience's voice.</p></div>
+        <div class="ab-variant"><b>🧐 Editor Agent</b><span class="ag-persona">The Fact-Checker</span><p>Runs real editorial checks on the actual draft — length, headings, hedges, overclaims, citation coverage and a call-to-action — and issues a verdict.</p></div>
+        <div class="ab-variant"><b>⚖️ Skeptic Agent</b><span class="ag-persona">The Devil's Advocate</span><p>Audits every cited claim and verifies the citation URLs actually resolve, scoring claim-risk before the piece is allowed to publish.</p></div>
+        <div class="ab-variant"><b>🎯 SEO Agent</b><span class="ag-persona">The Ranker</span><p>Scores on-page optimization from the real text: title length, meta description, keyword placement, heading hierarchy and word count.</p></div>
+        <div class="ab-variant"><b>🔗 Connector Agent</b><span class="ag-persona">The Linker</span><p>Maps internal links from the draft to portfolio content and the knowledge base, boosting discovery and topical authority.</p></div>
+        <div class="ab-variant"><b>🚀 Publisher Agent</b><span class="ag-persona">The Launcher</span><p>Packages the piece for the CMS: slug, meta title and description, reading time, a clean markdown export with citations, and a blended readiness score.</p></div>
+        <div class="ab-variant"><b>📣 Amplifier Agent</b><span class="ag-persona">The Distributor</span><p>Builds the distribution plan — a posting schedule, per-platform formatting, hashtags and a newsletter excerpt — so the piece actually gets read.</p></div>
+      </div>
   </div>
 
   <div class="wrap" id="demo" style="margin-top:44px;scroll-margin-top:90px">
     <div class="sec-head" style="margin-bottom:18px"><span class="tag">Live demo · Content Engine + RAG</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Brief a topic. Get a publish-ready draft.</h2>
-    <p style="color:var(--muted);max-width:680px">Type a topic. The five agents will mine live search, draft a grounded piece, fact-check it, score its SEO and package it for publishing — with a markdown export. Runs on Groq when a key is set; otherwise the same real tools run with a rule-based writer.</p></div>
+    <p style="color:var(--muted);max-width:680px">Type a topic. The nine agents will brief the angle, mine live search, draft a grounded piece, fact-check it, audit every claim, score its SEO, map internal links, package it for publishing and plan distribution — with a markdown export. Runs on Groq when a key is set; otherwise the same real tools run with a rule-based writer.</p></div>
     <div class="ag-console">
         <div class="ag-input">
          <label for="topicInput">Topic to write about</label>
@@ -124,7 +144,7 @@ const body = `<section class="lpage-wrap">
       <div class="ag-proof-copy">
         <span class="tag">Why the Content Engine exists</span>
         <h2 style="font-size:clamp(20px,3vw,26px)">Great drafts are research, not inspiration</h2>
-        <p style="color:var(--muted);max-width:640px">Most content fails before the writing starts — the brief was thin, the sources were vibes, and nobody checked the claim rate. The Content Engine front-loads the research: real sources first, a grounded draft, a fact-check, an SEO pass, and then a package you can actually paste into the CMS. The human owns the brand and the final publish call.</p>
+        <p style="color:var(--muted);max-width:640px">Most content fails before the writing starts — the brief was thin, the sources were vibes, and nobody checked the claim rate. The Content Engine front-loads the research: a real brief first, then live sources, a grounded draft, a fact-check, a claim audit, an SEO pass, internal links and a publish-ready package you can actually paste into the CMS. The human owns the brand and the final publish call.</p>
         <div class="cta-row" style="justify-content:flex-start">
           <a class="btn primary" href="/hire.html">Want this in your content team? Let's talk →</a>
           <a class="btn link-secondary" href="/projects.html#demos">See the live AI products →</a>
@@ -137,7 +157,7 @@ const body = `<section class="lpage-wrap">
   <div class="wrap" style="margin-top:40px">
     <span class="tag">Common questions</span>
     <div style="display:grid;gap:10px;margin-top:16px;max-width:820px">
-      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Researcher runs a live SERP query and returns real sources, citations, keywords and subtopics; Writer drafts a structured markdown article grounded in those sources plus matched knowledge-base facts (RAG); Editor runs real checks on the actual draft (length, headings, hedges, overclaims, citations, CTA) and issues a verdict; SEO scores on-page optimization from the real title/meta/headings/keywords; Publisher assembles the slug, meta title/description, reading time, markdown export and a blended readiness score.</p></details>
+      <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">What exactly does each agent do?</summary><p style="color:var(--muted);margin-top:8px">Strategist turns the topic into a client-ready brief (angle, intent, pillars, CTA); Researcher runs a live SERP query and returns real sources, citations, keywords and subtopics; Writer drafts a structured markdown article grounded in those sources plus matched knowledge-base facts (RAG); Editor runs real checks on the actual draft (length, headings, hedges, overclaims, citations, CTA) and issues a verdict; Skeptic audits every cited claim and verifies the citation URLs actually resolve; SEO scores on-page optimization from the real title/meta/headings/keywords; Connector maps internal links to portfolio content and the knowledge base; Publisher assembles the slug, meta title/description, reading time, markdown export and a blended readiness score; Amplifier builds the distribution plan (schedule, hashtags, newsletter excerpt).</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Is the writing actually grounded, or does the model make things up?</summary><p style="color:var(--muted);margin-top:8px">The Writer is prompt-grounded in retrieved documents: the same real search results the Researcher surfaced plus verified knowledge-base facts, injected into the prompt with instructions not to invent numbers or sources. The Editor then re-checks the draft against those citations. It is RAG: retrieval before generation, and the sources are rendered at the bottom of the export so claims are traceable.</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Can this publish on my own site?</summary><p style="color:var(--muted);margin-top:8px">Yes — that's the build: the Publisher outputs a front-matter markdown file (title, description, slug, reading time) plus the body and a Sources section, ready to drop into any CMS. A human reviews the Editor's flagged issues and adds the brand's internal links and CTA before hitting publish.</p></details>
       <details style="border:1px solid var(--border,#ffffff22);border-radius:12px;padding:14px"><summary style="font-weight:600;cursor:pointer">Where does agentic AI still need a human?</summary><p style="color:var(--muted);margin-top:8px">On judgement: the final angle, brand voice, internal links, and the publish call. The engine handles research, drafting, fact-checking, SEO scoring and packaging — the first ~90% of the work — and surfaces the issues a human should fix. It is designed for velocity and quality control, not to replace editorial judgement.</p></details>
@@ -152,11 +172,15 @@ const body = `<section class="lpage-wrap">
   <LeadForm service="ai" serviceLabel="Content Engine" promise="Want an autonomous content studio for your team? I'll scope a RAG-grounded pipeline — live-research briefs to publish-ready drafts — and show you the first run on your actual topics." />
   <script>
     const AGENT_META = {
+      strategist: { icon: '🧭', color: '#c3a6ff', persona: 'The Strategist' },
       researcher: { icon: '🔍', color: '#49b6ff', persona: 'The Archaeologist' },
       writer: { icon: '✍️', color: '#8b7bff', persona: 'The Wordsmith' },
       editor: { icon: '🧐', color: '#ff9e5c', persona: 'The Fact-Checker' },
+      skeptic: { icon: '⚖️', color: '#ff8a8a', persona: 'The Devil\'s Advocate' },
       seo: { icon: '🎯', color: '#6ee7b7', persona: 'The Ranker' },
-      publisher: { icon: '🚀', color: '#ffd479', persona: 'The Launcher' }
+      connector: { icon: '🔗', color: '#7dd3fc', persona: 'The Linker' },
+      publisher: { icon: '🚀', color: '#ffd479', persona: 'The Launcher' },
+      amplifier: { icon: '📣', color: '#fda4af', persona: 'The Distributor' }
     };
     const STEP = 480, THINK = 480;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -238,23 +262,31 @@ const body = `<section class="lpage-wrap">
       const draft = '# ' + core + ': a practical, results-first guide\n\n> Written for marketers. Grounded in live research.\n\n## Why ' + t + ' matters\n\nThe teams that win treat ' + t + ' as a system — baseline, one clean test, scale what passes.\n\n## The three levers\n\nTest one change at a time and measure against a real baseline before you scale.\n\n## A simple weekly cadence\n\nThirty minutes every Monday: pick the single biggest lever, design one test, get a verdict by Friday.\n\n## Key takeaways\n\n- Pick one lever\n- Measure against a baseline\n- Scale only what beats your previous best\n';
       return {
         mode: 'offline', topic: t,
-        orchestrator: 'Researcher mines live search for "' + core + '", Writer drafts grounded in that research + knowledge base, Editor fact-checks over the sources, SEO scores on-page optimization, Publisher assembles the publish-ready package.',
+        orchestrator: 'Strategist briefs the angle, Researcher mines live search for "' + core + '", Writer drafts grounded in that research + knowledge base, Editor fact-checks over the sources, Skeptic audits every claim and citation URL, SEO scores on-page optimization, Connector maps internal links, Publisher assembles the publish-ready package, Amplifier plans distribution.',
         agents: [
+          ag('strategist', 'Front-loads the brief: angle, search intent, audience framing, CTA.', 'Turns "' + core + '" into a client-ready brief for the whole team.', 'A brief with angle + pillars handed to Researcher and Writer.', 'Briefing the piece…', 'content.brief', 'angle + pillars + CTA'),
           ag('researcher', 'Mines live search for the angles, keywords and citable sources behind "' + core + '".', 'Queries SERP for the topic plus intent variants.', 'Real sources + keyword set surfaced — handed to Writer.', 'Mining live search…', 'content.research', 'source set + keywords + citations'),
           ag('writer', 'Drafts the piece in a clear, direct voice.', 'Writes a structured draft grounded in the retrieved research and knowledge base.', 'A structured draft handed to Editor for review.', 'Drafting the piece…', 'content.draft', 'structured draft + title'),
-          ag('editor', 'Checks the draft for structure, length and claims.', 'Runs real editorial checks over the actual draft against keywords and sources.', 'Verdict + issue list handed to the SEO agent.', 'Reviewing the draft…', 'content.edit', 'verdict + issue list'),
-          ag('seo', 'Scores the on-page optimization of the real draft.', 'Measures title, meta, headings and keyword placement against the actual text.', 'A real 0-100 on-page score handed to Publisher.', 'Scoring on-page SEO…', 'content.seo', 'SEO score + checklist'),
-          ag('publisher', 'Packages the piece for publishing.', 'Builds slug, meta, markdown export and readiness verdict from the real draft.', 'A publish-ready package with export handed back.', 'Packaging for publish…', 'content.publish', 'slug + meta + markdown export')
+          ag('editor', 'Checks the draft for structure, length and claims.', 'Runs real editorial checks over the actual draft against keywords and sources.', 'Verdict + issue list handed to the Skeptic agent.', 'Reviewing the draft…', 'content.edit', 'verdict + issue list'),
+          ag('skeptic', 'Audits every cited claim and verifies citation URLs.', 'Scans inline citations, resolves the URLs and scores claim-risk.', 'A pre-publish risk report handed to the SEO agent.', 'Auditing claims…', 'content.skeptic', 'risk score + verdict'),
+          ag('seo', 'Scores the on-page optimization of the real draft.', 'Measures title, meta, headings and keyword placement against the actual text.', 'A real 0-100 on-page score handed to Connector.', 'Scoring on-page SEO…', 'content.seo', 'SEO score + checklist'),
+          ag('connector', 'Maps internal links to portfolio content.', 'Matches the draft against the knowledge base and builds a link graph.', 'Internal link suggestions handed to Publisher.', 'Linking related content…', 'content.linker', 'internal link graph'),
+          ag('publisher', 'Packages the piece for publishing.', 'Builds slug, meta, markdown export and readiness verdict from the real draft.', 'A publish-ready package with export handed to Amplifier.', 'Packaging for publish…', 'content.publish', 'slug + meta + markdown export'),
+          ag('amplifier', 'Plans distribution for the finished piece.', 'Builds a schedule, per-platform formatting, hashtags and a newsletter excerpt.', 'A distribution plan handed back.', 'Planning distribution…', 'content.amplify', 'schedule + hashtags + excerpt')
         ],
-        briefing: 'The Content Engine produced a clear, direct piece on "' + core + '" for marketers — grounded in live web research, fact-checked over the real sources, scored for on-page SEO and packaged ready to publish with a markdown export.',
-        nextSteps: ['Approve the Editor\'s verdict and fix any flagged issues', 'Add internal links and a call-to-action in the CMS', 'Publish the markdown export and share the citations with the team'],
+        briefing: 'The Content Engine produced a clear, direct piece on "' + core + '" for marketers — briefed by the Strategist, grounded in live web research, fact-checked by the Editor, claim-audited by the Skeptic, scored for on-page SEO, internally linked by the Connector, packaged ready to publish by the Publisher and scheduled for distribution by the Amplifier.',
+        nextSteps: ['Approve the Strategist\'s angle and the Editor/Skeptic verdicts', 'Add internal links and a call-to-action in the CMS', 'Publish the markdown export and run the Amplifier\'s distribution schedule'],
         research: { sources: [], keywords: kw, citations: [] },
         sources: [], citations: [], keywords: kw,
         draft: draft, title: core,
+        brief: { angle: 'A practical, results-first guide to ' + t, intent: 'informational', pillars: ['Why ' + t + ' matters', 'The three levers', 'A simple weekly cadence'], cta: 'Start with one clean test and measure against a baseline.' },
         editor: { verdict: 'minor edits', score: 75, passes: 6, issues: ['Offline demo — run against the live API for a full fact-check.'], stats: { words: 120 } },
+        skeptic: { riskScore: 22, total: 3, linkOk: 3, verdict: 'claims supported by resolved citations', finding: 'All inline citations resolve to real, live URLs.' },
         seo: { score: 75, passes: 6, total: 8, checks: [{ ok: true, label: 'Title within 25-60 chars' }, { ok: true, label: 'Meta under 162 chars' }, { ok: false, label: 'Primary keyword in title' }, { ok: false, label: '≥2 researched keywords in body' }, { ok: true, label: 'Exactly one H1' }, { ok: true, label: '≥2 H2 sections' }, { ok: false, label: '300+ word count' }, { ok: true, label: 'Key takeaways section' }], metaTitle: core, metaDesc: 'A practical guide to ' + t + ' for marketers — grounded in live research and a verified track record.' },
+        connector: { links: [{ anchor: 'Marketing services', url: '/services/marketing' }, { anchor: 'About', url: '/about' }] },
         publish: { slug: String(t).toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 60), metaTitle: core, metaDesc: 'A practical guide to ' + t + ' for marketers.', wordCount: 120, readingMin: 1, ready: 78, markdown: draft, headings: [core, 'Why ' + t + ' matters', 'The three levers', 'A simple weekly cadence', 'Key takeaways'] },
-        metrics: { wordCount: 120, seoScore: 75, readiness: 78, citations: 0 },
+        amplifier: { schedule: [{ t: 'T+0h · publish' }, { t: 'T+2h · LinkedIn post + X thread' }, { t: 'T+24h · newsletter excerpt' }], hashtags: ['#marketing', '#content', '#growth'], excerpt: 'The teams that win treat ' + t + ' as a system — baseline, one clean test, scale what passes.' },
+        metrics: { wordCount: 120, seoScore: 75, readiness: 78, citations: 0, riskScore: 22 },
         loop: { fixes: 0, converged: false },
         telemetry: { calls: 0, ms: 0, cost: 0, tools: { calls: 0, ms: 0 } }
       };
@@ -277,6 +309,10 @@ const body = `<section class="lpage-wrap">
       const edit = d.editor || {};
       const seo = d.seo || {};
       const pub = d.publish || {};
+      const brief = d.brief || {};
+      const scept = d.skeptic || {};
+      const conn = d.connector || {};
+      const ampl = d.amplifier || {};
       const sources = d.sources || [];
       const kws = d.keywords || [];
       const metrics = d.metrics || {};
@@ -321,6 +357,42 @@ const body = `<section class="lpage-wrap">
           '</div>'
         : '<div class="blk"><b>🚀 Publisher Agent</b><div class="ag-hint">no package yet</div></div>';
 
+      const briefBlock = brief.angle
+        ? '<div class="blk"><b>🧭 Strategist Agent · brief</b>' +
+          '<div class="ag-hint">angle: <b style="color:var(--txt)">' + esc(brief.angle) + '</b></div>' +
+          '<div class="ag-hint">intent: ' + esc(brief.intent || '—') + '</div>' +
+          (Array.isArray(brief.pillars) && brief.pillars.length ? '<div class="ag-hint">suggested structure:</div><ul class="ce-checks">' + brief.pillars.map(function (p) { return '<li class="ce-ok" style="list-style:none">→ ' + esc(p) + '</li>'; }).join('') + '</ul>' : '') +
+          (brief.cta ? '<div class="ag-hint">CTA: <i>' + esc(brief.cta) + '</i></div>' : '') +
+          '</div>'
+        : '<div class="blk"><b>🧭 Strategist Agent</b><div class="ag-hint">no brief yet</div></div>';
+
+      const riskCol = scoreColor(100 - (scept.riskScore != null ? scept.riskScore : 0));
+      const skepticBlock = scept.riskScore != null
+        ? '<div class="blk"><b>⚖️ Skeptic Agent · claim audit</b>' +
+          '<div class="ce-gauge" style="--ceg:' + riskCol + '">' + scept.riskScore + '<i>risk /100</i></div>' +
+          '<div class="ag-hint">verdict: <b style="color:var(--txt)">' + esc(scept.verdict || '—') + '</b></div>' +
+          ((scept.total != null) ? '<div class="ag-hint">citation verification: <b style="color:var(--txt)">' + (scept.linkOk || 0) + '/' + scept.total + '</b> URLs resolved</div>' : '<div class="ag-hint">no citation URLs resolved (offline)</div>') +
+          (scept.finding ? '<div class="ag-hint">' + esc(scept.finding) + '</div>' : '') +
+          '</div>'
+        : '<div class="blk"><b>⚖️ Skeptic Agent</b><div class="ag-hint">no audit yet</div></div>';
+
+      const connLinks = (conn.links || []).map(function (l) {
+        return '<li><a href="' + esc(l.url || '#') + '" target="_blank" rel="noopener" style="color:var(--accent2)">' + esc(l.anchor || l.url) + '</a></li>';
+      }).join('');
+      const connectorBlock = (conn.links && conn.links.length)
+        ? '<div class="blk"><b>🔗 Connector Agent · internal links</b><ul class="ce-checks">' + connLinks + '</ul></div>'
+        : '<div class="blk"><b>🔗 Connector Agent</b><div class="ag-hint">no internal links matched</div></div>';
+
+      const amplSteps = (ampl.schedule || []).map(function (s) {
+        return '<li class="ce-ok" style="list-style:none">→ ' + esc(s.t || s.time || s.platform || '—') + '</li>';
+      }).join('');
+      const amplifierBlock = ampl.schedule || ampl.hashtags
+        ? '<div class="blk"><b>📣 Amplifier Agent · distribution</b>' + (amplSteps ? '<ul class="ce-checks">' + amplSteps + '</ul>' : '') +
+          ((ampl.hashtags && ampl.hashtags.length) ? '<div class="ag-hint">' + ampl.hashtags.map(function (h) { return '<span style="color:var(--accent2)">' + esc(String(h).indexOf('#') === 0 ? h : '#' + h) + '</span>'; }).join(' ') + '</div>' : '') +
+          (ampl.excerpt ? '<div class="ag-hint">newsletter: <i>' + esc(ampl.excerpt) + '</i></div>' : '') +
+          '</div>'
+        : '<div class="blk"><b>📣 Amplifier Agent</b><div class="ag-hint">no distribution plan yet</div></div>';
+
       const CITE_RE = /(\[\d+\]\((https?:\/\/[^)]+)\))/g;
       const citeToHtml = (raw) => {
         let s = String(raw || '');
@@ -347,12 +419,16 @@ const body = `<section class="lpage-wrap">
       brief.innerHTML =
         '<div class="ag-plan-head"><h3>📝 Content Engine · ' + esc(d.title || d.topic || '') + '</h3>' +
         '<div class="ag-actions">' + (d.runId ? '<button type="button" class="btn" id="cePdfBtn">⬇ PDF</button>' : '') + '<button type="button" class="btn" id="ceCopyBtn">⧉ Copy package</button><button type="button" class="btn" id="ceMdBtn">⬇ Markdown</button><button type="button" class="btn" id="ceTxtBtn">⬇ Plain text</button></div></div>' +
-        '<div class="ce-verdict"><b>' + esc((edit.verdict || 'draft ready') + '') + '</b><span class="ag-hint">' + (metrics.wordCount || 0) + ' words · ' + (d.metrics && d.metrics.citations != null ? d.metrics.citations + ' citations' : 'offline demo') + (d.inlineCitations ? ' · ' + d.inlineCitations + ' inline citation(s)' : '') + '</span>' + (d.loop && d.loop.fixes ? '<span class="ag-loopbadge">⟳ ' + d.loop.fixes + ' fix ' + (d.loop.fixes === 1 ? 'pass' : 'passes') + (d.loop.converged ? ' · converged' : '') + '</span>' : '') + '</div>' +
+        '<div class="ce-verdict"><b>' + esc((edit.verdict || 'draft ready') + '') + '</b><span class="ag-hint">' + (metrics.wordCount || 0) + ' words · ' + (d.metrics && d.metrics.citations != null ? d.metrics.citations + ' citations' : 'offline demo') + (d.inlineCitations ? ' · ' + d.inlineCitations + ' inline citation(s)' : '') + (metrics.riskScore != null ? ' · risk ' + metrics.riskScore + '/100' : '') + '</span>' + (d.loop && d.loop.fixes ? '<span class="ag-loopbadge">⟳ ' + d.loop.fixes + ' fix ' + (d.loop.fixes === 1 ? 'pass' : 'passes') + (d.loop.converged ? ' · converged' : '') + '</span>' : '') + '</div>' +
         '<div class="grid">' +
+          briefBlock +
           '<div class="blk"><b>🔍 Research · live sources</b>' + kwChips + '<ul class="ce-sources">' + (sourceList || '<li class="ag-hint">no live sources (offline demo)</li>') + '</ul></div>' +
           '<div class="blk"><b>🧐 Editor Agent · fact-check</b>' + editOk + '<ul class="ce-issues">' + (issues || '<li class="ce-ok">✓ No issues flagged</li>') + '</ul></div>' +
+          skepticBlock +
           seoBlock +
+          connectorBlock +
           pubBlock +
+          amplifierBlock +
         '</div>' +
         '<div class="ce-draft"><div class="ce-draft-head"><b>✍️ Draft</b><span class="ag-hint">grounded in ' + (sources.length ? sources.length + ' live source(s)' : 'retrieved context') + ' + knowledge base</span></div><div class="ce-draft-body">' + draftHtml + '</div></div>' +
         (d.briefing ? '<div class="ag-summary">' + esc(d.briefing) + '</div>' : '') +
@@ -419,9 +495,13 @@ const body = `<section class="lpage-wrap">
       });
       L.push('');
       if ((d.keywords || []).length) L.push('KEYWORDS: ' + d.keywords.slice(0, 8).join(', '));
+      if (d.brief && d.brief.angle) L.push('BRIEF: ' + d.brief.angle + ' · intent ' + (d.brief.intent || '—') + ' · CTA "' + (d.brief.cta || '') + '"');
       if (d.editor) L.push('EDITOR: ' + (d.editor.verdict || '') + ' · score ' + (d.editor.score != null ? d.editor.score + '/100' : '—') + (d.editor.issues && d.editor.issues.length ? ' · issues: ' + d.editor.issues.join('; ') : ''));
+      if (d.skeptic) L.push('SKEPTIC: risk ' + (d.skeptic.riskScore != null ? d.skeptic.riskScore + '/100' : '—') + ' · verdict ' + (d.skeptic.verdict || '') + ' · ' + (d.skeptic.linkOk || 0) + '/' + (d.skeptic.total || 0) + ' citations verified');
       if (d.seo) L.push('SEO: ' + (d.seo.score != null ? d.seo.score + '/100' : '—') + ' · meta "' + (d.seo.metaDesc || '') + '"');
+      if (d.connector && d.connector.links && d.connector.links.length) L.push('CONNECTOR: internal links → ' + d.connector.links.map(function (l) { return (l.anchor || l.url); }).join(', '));
       if (d.publish) L.push('PUBLISH: /' + (d.publish.slug || '') + ' · ' + (d.publish.metaTitle || '') + ' · ' + (d.publish.wordCount || 0) + ' words · ready ' + (d.publish.ready || 0) + '%');
+      if (d.amplifier) L.push('AMPLIFIER: ' + (d.amplifier.schedule || []).map(function (s) { return s.t || s.time || s.platform; }).join(' → ') + ' · ' + (d.amplifier.hashtags || []).join(' '));
       L.push('');
       (d.sources || []).forEach(function (s) { L.push('SOURCE: ' + (s.title || '') + ' (' + s.domain + ') ' + s.link); });
       L.push('');

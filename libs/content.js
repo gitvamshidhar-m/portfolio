@@ -1,11 +1,15 @@
-// Content Engine — an autonomous 5-agent content studio powered by RAG.
-// Given a topic, five agents work in sequence: researcher → writer → editor →
-// seo → publisher. Every agent's tool really executes: the Researcher runs a live
+// Content Engine — an autonomous 9-agent content studio powered by RAG.
+// Given a topic, nine agents work in sequence: strategist → researcher → writer → editor →
+// skeptic → seo → connector → publisher → amplifier. Every agent's tool really executes: the
+// Strategist turns the topic into a brief, the Researcher runs a live
 // SERP query and returns real sources/citations, the Writer drafts the piece
 // grounded in RAG (retrieved SERP snippets + the author's knowledge base), the
-// Editor runs real editorial checks over the actual draft, the SEO agent computes
-// a real on-page score from the actual text/meta, and the Publisher assembles a
-// publish-ready package (slug, meta title/description, markdown export, readiness).
+// Editor runs real editorial checks over the actual draft, the Skeptic audits every
+// claim and verifies the citation URLs resolve, the SEO agent computes
+// a real on-page score from the actual text/meta, the Connector maps internal links,
+// and the Publisher assembles a
+// publish-ready package (slug, meta title/description, markdown export, readiness) while
+// the Amplifier plans distribution.
 //
 // POST /api/content  {topic, audience?, voice?, keywords?, wordCount?, stream?} → NDJSON stream or JSON
 //   events: orch | tool | reflect | metrics | plan | loop
@@ -69,16 +73,21 @@ function telAdd(report, usage, ms) {
   return report;
 }
 
-// The Content Engine team: researcher → writer → editor → seo → publisher.
-const AGENTS = ['researcher', 'writer', 'editor', 'seo', 'publisher'];
+// The Content Engine team: strategist → researcher → writer → editor → skeptic →
+// seo → connector → publisher → amplifier.
+const AGENTS = ['strategist', 'researcher', 'writer', 'editor', 'skeptic', 'seo', 'connector', 'publisher', 'amplifier'];
 const PERSONAS = {
+  strategist: { name: 'Strategist Agent', persona: 'The Cartographer', role: 'Turns the raw topic into a client-ready brief — angle, intent, pillars, CTA, distribution' },
   researcher: { name: 'Researcher Agent', persona: 'The Archaeologist', role: 'Mines live search for angles, keywords and citable sources' },
   writer: { name: 'Writer Agent', persona: 'The Wordsmith', role: 'Drafts the piece grounded in retrieved research + knowledge base' },
   editor: { name: 'Editor Agent', persona: 'The Fact-Checker', role: 'Reviews the draft over the real sources — structure, length, claims' },
+  skeptic: { name: 'Skeptic Agent', persona: 'The Devil\u2019s Advocate', role: 'Audits every cited claim and verifies the citation URLs actually resolve' },
   seo: { name: 'SEO Agent', persona: 'The Ranker', role: 'Scores on-page SEO from the actual title, headings and meta' },
-  publisher: { name: 'Publisher Agent', persona: 'The Launcher', role: 'Assembles the publish-ready package — slug, meta, markdown export' }
+  connector: { name: 'Connector Agent', persona: 'The Linker', role: 'Maps internal links from the piece to portfolio content + the knowledge base' },
+  publisher: { name: 'Publisher Agent', persona: 'The Launcher', role: 'Assembles the publish-ready package — slug, meta, markdown export' },
+  amplifier: { name: 'Amplifier Agent', persona: 'The Distributor', role: 'Builds the distribution plan — schedule, hashtags, newsletter excerpt' }
 };
-const TOOL_FOR = { researcher: 'content.research', writer: 'content.draft', editor: 'content.edit', seo: 'content.seo', publisher: 'content.publish' };
+const TOOL_FOR = { strategist: 'content.brief', researcher: 'content.research', writer: 'content.draft', editor: 'content.edit', skeptic: 'content.skeptic', seo: 'content.seo', connector: 'content.linker', publisher: 'content.publish', amplifier: 'content.amplify' };
 
 // --- RAG: stopwords + keyword mining + knowledge-base retrieval -----------------
 
@@ -146,20 +155,24 @@ function retrieveContext(topic, research) {
 // --- Orchestrator plan -----------------------------------------------------------
 
 function contentSysPrompt(topic, opts, serpText) {
-  return 'You are the ORCHESTRATOR of the Content Engine, an autonomous content studio. Given a TOPIC, plan a team of 5 agents that works in strict order: researcher → writer → editor → seo → publisher. Later agents build on earlier outputs. The server executes each agent\'s tool for real and overwrites the predicted results, so your "result" fields are predictions only.\n'
+  return 'You are the ORCHESTRATOR of the Content Engine, an autonomous content studio. Given a TOPIC, plan a team of 9 agents that works in strict order: strategist → researcher → writer → editor → skeptic → seo → connector → publisher → amplifier. Later agents build on earlier outputs. The server executes each agent\'s tool for real and overwrites the predicted results, so your "result" fields are predictions only.\n'
     + 'LIVE SEARCH CONTEXT (real results for "' + topic + '"):\n' + (serpText || 'No live results — the Researcher Agent will still run a real query.') + '\n\n'
     + 'Return ONLY valid minified JSON (no markdown) with exactly this shape:\n'
     + '{\n'
     + '  "topic":"<echo the topic>",\n'
-    + '  "orchestrator":"<one line: how the 5-agent studio will produce the piece>",\n'
+    + '  "orchestrator":"<one line: how the 9-agent studio will produce the piece>",\n'
     + '  "agents":[\n'
+    + '    {"id":"strategist","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the angle, intent and CTA of the brief>","live":"<4-8 words present continuous>","call":"content.brief","toolArgs":{"topic":"<topic>"},"result":"<predicted brief: angle + pillars>"},\n'
     + '    {"id":"researcher","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences grounded in the LIVE SEARCH CONTEXT — name real sources/angles>","live":"<4-8 words present continuous>","call":"content.research","toolArgs":{"q":"<exact topic query>"},"result":"<predicted keyword set + sources>"},\n'
     + '    {"id":"writer","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the piece it will draft and its angle>","live":"<4-8 words>","call":"content.draft","toolArgs":{"topic":"<topic>","audience":"<audience>","voice":"<voice>","wordCount":<target words>},"result":"<predicted title + section plan>"},\n'
     + '    {"id":"editor","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: what editorial checks it will run over the draft>","live":"<4-8 words>","call":"content.edit","toolArgs":{"draft":"<sample>","keywords":[]},"result":"<predicted issues + verdict>"},\n'
+    + '    {"id":"skeptic","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: adversarial claim audit + citation verification>","live":"<4-8 words>","call":"content.skeptic","toolArgs":{"draft":"<sample>","sources":[]},"result":"<predicted risk score + verdict>"},\n'
     + '    {"id":"seo","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the on-page metrics it will score>","live":"<4-8 words>","call":"content.seo","toolArgs":{"draft":"<sample>","title":"<predicted title>"},"result":"<predicted score 0-100>"},\n'
-    + '    {"id":"publisher","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the publish-ready package it will assemble>","live":"<4-8 words>","call":"content.publish","toolArgs":{"draft":"<sample>","title":"<predicted title>"},"result":"<predicted slug + readiness>"}\n'
+    + '    {"id":"connector","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the internal link graph it will map>","live":"<4-8 words>","call":"content.linker","toolArgs":{"draft":"<sample>","topic":"<topic>"},"result":"<predicted internal links>"},\n'
+    + '    {"id":"publisher","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the publish-ready package it will assemble>","live":"<4-8 words>","call":"content.publish","toolArgs":{"draft":"<sample>","title":"<predicted title>"},"result":"<predicted slug + readiness>"},\n'
+    + '    {"id":"amplifier","thinking":"<1 sentence>","action":"<1 sentence>","output":"<1-2 sentences: the distribution plan it will build>","live":"<4-8 words>","call":"content.amplify","toolArgs":{"title":"<predicted title>","slug":"<predicted slug>"},"result":"<predicted schedule + hashtags>"}\n'
     + '  ],\n'
-    + '  "briefing":"<2-3 sentence client-ready wrap-up: the angle, the verdict, the SEO score, readiness to publish>",\n'
+    + '  "briefing":"<2-3 sentence client-ready wrap-up: the angle, the editorial+Skeptic verdicts, the SEO score, readiness to publish and the distribution plan>",\n'
     + '  "nextSteps":["<step 1>","<step 2>","<step 3>"]\n'
     + '}\n'
     + 'Rules: be concrete and specific to the TOPIC and audience "' + String(opts.audience || '').slice(0, 120) + '" and voice "' + String(opts.voice || '').slice(0, 120) + '". Ground the Researcher\'s output in the LIVE SEARCH CONTEXT (name real domains/angles you see there). Every agent MUST include "live" (4-8 words, present continuous) and a "call" with matching "toolArgs". "result" is a PREDICTION only — the server executes the real tool and replaces it. Output MUST be parseable JSON.';
@@ -174,16 +187,20 @@ function fallback(topic, opts) {
   const wc = Math.max(300, Math.min(2400, Number(opts.wordCount) || 900));
   return {
     topic: t,
-    orchestrator: 'The Researcher mines live search for angles and citable sources on "' + core + '", the Writer drafts the piece grounded in that research, the Editor fact-checks it over the real sources, the SEO agent scores on-page optimization, and the Publisher assembles the publish-ready package.',
+    orchestrator: 'The Strategist briefs the angle, the Researcher mines live search for sources and citations, the Writer drafts a piece grounded in that research, the Editor fact-checks it, the Skeptic audits every claim and citation URL, the SEO agent scores on-page optimization, the Connector maps internal links, the Publisher assembles the publish-ready package, and the Amplifier plans distribution.',
     agents: [
+      ag('strategist', 'Front-loads the brief: angle, search intent, audience framing, CTA, distribution.', 'Turns "' + core + '" into a client-ready brief for the whole team.', 'A brief with angle + pillars handed to Researcher and Writer.', 'Briefing the piece…', { topic: t, audience: audience, voice: voice }, 'angle + pillars + CTA'),
       ag('researcher', 'Mines live search for the angles, keywords and citable sources behind "' + core + '".', 'Queries SERP for the topic plus intent variants.', 'Real sources + keyword set surfaced — handed to Writer.', 'Mining live search…', { q: t }, 'keyword set + citable sources'),
-      ag('writer', 'Drafts the piece in a ' + voice + ' voice for ' + audience + '.', 'Writes a structured draft grounded in the retrieved research and the author\'s knowledge base.', 'A ' + wc + '-word structured draft handed to Editor.', 'Drafting the piece…', { topic: t, audience: audience, voice: voice, wordCount: wc }, 'structured draft + title'),
-      ag('editor', 'Checks the draft for structure, length and claims.', 'Runs real editorial checks over the actual draft text against the cited sources.', 'Verdict + issue list handed to the SEO agent.', 'Reviewing the draft…', { draft: 'TBD', keywords: [] }, 'verdict + issue list'),
-      ag('seo', 'Scores the on-page optimization of the real draft.', 'Measures title length, meta, headings, keyword placement and readability against the actual text.', 'A real 0-100 on-page score handed to Publisher.', 'Scoring on-page SEO…', { draft: 'TBD', title: 'TBD' }, 'SEO score + checklist'),
-      ag('publisher', 'Packages the piece for publishing.', 'Builds the slug, meta title/description, markdown export and readiness verdict.', 'A publish-ready package with export handed back to you.', 'Packaging for publish…', { draft: 'TBD', title: 'TBD' }, 'slug + meta + readiness')
+      ag('writer', 'Drafts the piece in a ' + voice + ' voice for ' + audience + '.', 'Writes a structured draft grounded in the brief, retrieved research and the author\'s knowledge base.', 'A ' + wc + '-word structured draft handed to Editor.', 'Drafting the piece…', { topic: t, audience: audience, voice: voice, wordCount: wc }, 'structured draft + title'),
+      ag('editor', 'Checks the draft for structure, length and claims.', 'Runs real editorial checks over the actual draft text against the cited sources.', 'Verdict + issue list handed to the Skeptic agent.', 'Reviewing the draft…', { draft: 'TBD', keywords: [] }, 'verdict + issue list'),
+      ag('skeptic', 'Audits every cited claim and verifies citation URLs.', 'Scans the inline citations, resolves the URLs for real and scores the claim-risk.', 'A pre-publish risk report handed to the SEO agent.', 'Auditing claims…', { draft: 'TBD', sources: [] }, 'risk score + verdict'),
+      ag('seo', 'Scores the on-page optimization of the real draft.', 'Measures title length, meta, headings, keyword placement and readability against the actual text.', 'A real 0-100 on-page score handed to Connector.', 'Scoring on-page SEO…', { draft: 'TBD', title: 'TBD' }, 'SEO score + checklist'),
+      ag('connector', 'Maps internal links to portfolio content.', 'Matches the draft against the knowledge base and builds a link graph.', 'Internal link suggestions handed to Publisher.', 'Linking related content…', { draft: 'TBD', topic: t }, 'internal link graph'),
+      ag('publisher', 'Packages the piece for publishing.', 'Builds the slug, meta title/description, markdown export (with citations + internal links) and readiness verdict.', 'A publish-ready package with export handed to Amplifier.', 'Packaging for publish…', { draft: 'TBD', title: 'TBD' }, 'slug + meta + readiness'),
+      ag('amplifier', 'Plans distribution for the finished piece.', 'Builds a schedule, per-platform formatting, hashtags and a newsletter excerpt.', 'A distribution plan handed back to you.', 'Planning distribution…', { title: 'TBD', slug: 'TBD' }, 'schedule + hashtags + excerpt')
     ],
-    briefing: 'The Content Engine produced a ' + voice + ' ' + wc + '-word piece on "' + core + '" for ' + audience + ' — grounded in live web research, fact-checked over the real sources, scored for on-page SEO, and packaged ready to publish with a markdown export.',
-    nextSteps: ['Approve the Editor\'s verdict and fix any flagged issues', 'Add a call-to-action and any internal links in the CMS', 'Publish the markdown export and share the citations with the team']
+    briefing: 'The Content Engine turned "' + core + '" into a ' + voice + ' ' + wc + '-word piece for ' + audience + ' — briefed by the Strategist, grounded in live web research, fact-checked by the Editor, claim-audited by the Skeptic, scored for on-page SEO, internally linked by the Connector, packaged ready to publish by the Publisher and scheduled for distribution by the Amplifier.',
+    nextSteps: ['Approve the Strategist\'s angle and the Editor/Skeptic verdicts', 'Add internal links and a call-to-action in the CMS', 'Publish the markdown export and run the Amplifier\'s distribution schedule']
   };
 }
 
@@ -193,7 +210,7 @@ function ensureAgents(plan) {
   AGENTS.forEach(function (id) {
     if (present.indexOf(id) < 0) {
       const role = PERSONAS[id];
-      const dflt = { researcher: { q: plan.topic || 'the topic' }, writer: { topic: plan.topic || 'the topic' }, editor: { draft: 'TBD', keywords: [] }, seo: { draft: 'TBD', title: 'TBD' }, publisher: { draft: 'TBD', title: 'TBD' } };
+      const dflt = { strategist: { topic: plan.topic || 'the topic' }, researcher: { q: plan.topic || 'the topic' }, writer: { topic: plan.topic || 'the topic' }, editor: { draft: 'TBD', keywords: [] }, skeptic: { draft: 'TBD', sources: [] }, seo: { draft: 'TBD', title: 'TBD' }, connector: { draft: 'TBD', topic: plan.topic || 'the topic' }, publisher: { draft: 'TBD', title: 'TBD' }, amplifier: { title: 'TBD', slug: 'TBD' } };
       plan.agents.push({ id: id, name: role.name, persona: role.persona, role: role.role, thinking: 'Coordinating with the studio team.', action: 'Runs the ' + id + ' tool on real data.', output: id + ' pass complete.', live: id + ' working…', call: TOOL_FOR[id], toolArgs: dflt[id] || {}, result: '' });
     }
   });
@@ -221,7 +238,7 @@ function normalizeAgent(a) {
 }
 function safeBriefing(obj) {
   if (!obj || !Array.isArray(obj.agents)) return null;
-  obj.agents = obj.agents.map(normalizeAgent).filter(Boolean).slice(0, 6);
+  obj.agents = obj.agents.map(normalizeAgent).filter(Boolean).slice(0, 9);
   if (!obj.agents.length) return null;
   obj.topic = String(obj.topic || '').slice(0, 160);
   obj.orchestrator = String(obj.orchestrator || '').slice(0, 400);
@@ -298,18 +315,32 @@ async function buildContent(topic, opts, e) {
   } else {
     e({ event: 'orch', text: 'No LLM key — running the rule-based studio: research → draft → edit → seo → publish.' });
   }
-  if (plan) { ensureAgents(plan); plan.agents = plan.agents.map(normalizeAgent).filter(Boolean).slice(0, 6); if (plan.agents.length) { mode = 'ai'; } else { plan = null; } }
+  if (plan) { ensureAgents(plan); plan.agents = plan.agents.map(normalizeAgent).filter(Boolean).slice(0, 9); if (plan.agents.length) { mode = 'ai'; } else { plan = null; } }
   const briefing = plan || fallback(topic, opts);
   briefing.topic = String(topic || '').slice(0, 160); // honor the real request topic, not the plan's echo
 
   // 3) Execution loop — every agent's tool really runs, in order, feeding the next.
   //    The Researcher already ran up front (needed to ground the plan + RAG), so its
   //    real result is adopted here rather than re-run.
-  let metrics = { wordCount: 0, seoScore: 0, readiness: 0, citations: (research.citations || []).length, fixes: 0, converged: false };
+  let metrics = { wordCount: 0, seoScore: 0, readiness: 0, citations: (research.citations || []).length, fixes: 0, converged: false, riskScore: null };
   let draft = ''; let title = ''; let editorOut = null; let seoOut = null; let publishOut = null;
+  let briefOut = null; let skepticOut = null; let connectorOut = null; let amplifierOut = null;
+  const briefCtx = function () {
+    if (!briefOut) return '';
+    return '\nSTRATEGIST BRIEF (the angle the Writer must honor):\nAngle: ' + String(briefOut.angle || '').slice(0, 300) + '\nIntent: ' + String(briefOut.intent || '') + '\nPillars (suggested structure):\n- ' + (Array.isArray(briefOut.pillars) ? briefOut.pillars.join('\n- ') : '') + '\nCTA: ' + String(briefOut.cta || '');
+  };
   for (const agent of briefing.agents) {
     const id = agent.id;
-    if (id === 'researcher') {
+    if (id === 'strategist') {
+      agent.toolArgs = Object.assign({}, agent.toolArgs || {}, { topic: topic, audience: String(opts.audience || '').slice(0, 120), voice: String(opts.voice || '').slice(0, 120), keywords: (research.keywords || []).slice(0, 5) });
+      const b = await runTool('content.brief', agent.toolArgs);
+      telemetry.tools.calls++; telemetry.tools.ms += b.ms;
+      agent.exec = b; briefOut = b.ok ? b.result : null;
+      agent.result = briefOut ? (briefOut.angle || '').slice(0, 120) + ' · intent ' + briefOut.intent : 'brief unavailable';
+      e({ event: 'tool', id: 'strategist', tool: b.tool, exec: { ok: b.ok, ms: b.ms, error: b.error || null } });
+      await reflectAgent(agent, b, key);
+      if (agent.reflection) e({ event: 'reflect', id: 'strategist', output: agent.output, passes: 1 });
+    } else if (id === 'researcher') {
       agent.toolArgs = Object.assign({}, agent.toolArgs, { q: topic });
       const r = researchTool;
       agent.title = research.title || '';
@@ -321,7 +352,7 @@ async function buildContent(topic, opts, e) {
       if (agent.reflection) e({ event: 'reflect', id: 'researcher', output: agent.output, passes: 1 });
     } else if (id === 'writer') {
       const kw = (research.keywords || []).slice(0, 5);
-      agent.toolArgs = Object.assign({}, agent.toolArgs, { topic: topic, audience: String(opts.audience || '').slice(0, 120), voice: String(opts.voice || '').slice(0, 120), keywords: kw, context: ragContext, wordCount: target });
+      agent.toolArgs = Object.assign({}, agent.toolArgs, { topic: topic, audience: String(opts.audience || '').slice(0, 120), voice: String(opts.voice || '').slice(0, 120), keywords: kw, context: ragContext + briefCtx(), wordCount: target });
       const w = await runTool('content.draft', agent.toolArgs);
       telemetry.tools.calls++; telemetry.tools.ms += w.ms;
       agent.exec = w;
@@ -344,7 +375,7 @@ async function buildContent(topic, opts, e) {
           const wAg = briefing.agents.find(function (a) { return a.id === 'writer'; });
           const wArgs = Object.assign({}, agent.toolArgs || {}, wAg ? wAg.toolArgs || {} : {}, {
             topic: topic, audience: String(opts.audience || '').slice(0, 120), voice: String(opts.voice || '').slice(0, 120),
-            keywords: (research.keywords || []).slice(0, 5), context: ragContext, wordCount: target,
+            keywords: (research.keywords || []).slice(0, 5), context: ragContext + briefCtx(), wordCount: target,
             feedback: feed, draft: draft
           });
           const w = await runTool('content.draft', wArgs);
@@ -380,6 +411,16 @@ async function buildContent(topic, opts, e) {
       e({ event: 'tool', id: 'editor', tool: ed.tool, exec: { ok: ed.ok, ms: ed.ms, error: ed.error || null, final: true, score: ed.ok ? ed.result.score : null } });
       await reflectAgent(agent, ed, key);
       if (agent.reflection) e({ event: 'reflect', id: 'editor', output: agent.output, passes: 1 });
+    } else if (id === 'skeptic') {
+      agent.toolArgs = Object.assign({}, agent.toolArgs || {}, { draft: draft, sources: research.citations || [] });
+      const sk = await runTool('content.skeptic', agent.toolArgs);
+      telemetry.tools.calls++; telemetry.tools.ms += sk.ms;
+      agent.exec = sk; skepticOut = sk.ok ? sk.result : null;
+      metrics.riskScore = (skepticOut && skepticOut.riskScore) || null;
+      agent.result = skepticOut ? ('risk ' + skepticOut.riskScore + '/100 · ' + (skepticOut.linkOk || 0) + '/' + (skepticOut.total || 0) + ' citations verified') : 'audit skipped';
+      e({ event: 'tool', id: 'skeptic', tool: sk.tool, exec: { ok: sk.ok, ms: sk.ms, error: sk.error || null } });
+      await reflectAgent(agent, sk, key);
+      if (agent.reflection) e({ event: 'reflect', id: 'skeptic', output: agent.output, passes: 1 });
     } else if (id === 'seo') {
       agent.toolArgs = Object.assign({}, agent.toolArgs, { draft: draft, title: title, keywords: (research.keywords || []).slice(0, 6) });
       const so = await runTool('content.seo', agent.toolArgs);
@@ -390,6 +431,15 @@ async function buildContent(topic, opts, e) {
       e({ event: 'tool', id: 'seo', tool: so.tool, exec: { ok: so.ok, ms: so.ms, error: so.error || null } });
       await reflectAgent(agent, so, key);
       if (agent.reflection) e({ event: 'reflect', id: 'seo', output: agent.output, passes: 1 });
+    } else if (id === 'connector') {
+      agent.toolArgs = Object.assign({}, agent.toolArgs || {}, { draft: draft, topic: topic });
+      const lk = await runTool('content.linker', agent.toolArgs);
+      telemetry.tools.calls++; telemetry.tools.ms += lk.ms;
+      agent.exec = lk; connectorOut = lk.ok ? lk.result : null;
+      agent.result = (connectorOut && connectorOut.links && connectorOut.links.length) ? (connectorOut.links.length + ' internal links mapped: ' + connectorOut.links.map(function (x) { return x.url; }).join(', ')) : 'no internal links matched';
+      e({ event: 'tool', id: 'connector', tool: lk.tool, exec: { ok: lk.ok, ms: lk.ms, error: lk.error || null } });
+      await reflectAgent(agent, lk, key);
+      if (agent.reflection) e({ event: 'reflect', id: 'connector', output: agent.output, passes: 1 });
     } else if (id === 'publisher') {
       const meta = (seoOut && (seoOut.metaTitle || seoOut.metaDesc)) ? seoOut : {};
       agent.toolArgs = Object.assign({}, agent.toolArgs, { draft: draft, title: title, keywords: (research.keywords || []).slice(0, 6), sources: research.citations || [], metaTitle: meta.metaTitle || '', metaDesc: meta.metaDesc || '', seoScore: metrics.seoScore });
@@ -397,10 +447,23 @@ async function buildContent(topic, opts, e) {
       telemetry.tools.calls++; telemetry.tools.ms += p.ms;
       agent.exec = p; publishOut = p.ok ? p.result : null;
       metrics.readiness = (publishOut && publishOut.ready) || 0;
+      if (publishOut && connectorOut && Array.isArray(connectorOut.links) && connectorOut.links.length) {
+        publishOut.markdown += '\n\n## Related on this site\n' + connectorOut.links.map(function (l) { return '- [' + (l.anchor || l.url) + '](' + l.url + ')'; }).join('\n');
+        publishOut.internalLinks = connectorOut.links;
+      }
       agent.result = publishOut ? (publishOut.slug + ' · ' + publishOut.readingMin + ' min read · ready ' + publishOut.ready + '%') : 'package unavailable';
       e({ event: 'tool', id: 'publisher', tool: p.tool, exec: { ok: p.ok, ms: p.ms, error: p.error || null } });
       await reflectAgent(agent, p, key);
       if (agent.reflection) e({ event: 'reflect', id: 'publisher', output: agent.output, passes: 1 });
+    } else if (id === 'amplifier') {
+      agent.toolArgs = Object.assign({}, agent.toolArgs || {}, { title: title || topic, slug: (publishOut && publishOut.slug) || 'article', keywords: (research.keywords || []).slice(0, 4), readingMin: (publishOut && publishOut.readingMin) || 5, variants: (publishOut && publishOut.variants) || {} });
+      const am = await runTool('content.amplify', agent.toolArgs);
+      telemetry.tools.calls++; telemetry.tools.ms += am.ms;
+      agent.exec = am; amplifierOut = am.ok ? am.result : null;
+      agent.result = amplifierOut ? (amplifierOut.schedule.length + ' distribution steps · ' + amplifierOut.hashtags.join(' ')) : 'plan unavailable';
+      e({ event: 'tool', id: 'amplifier', tool: am.tool, exec: { ok: am.ok, ms: am.ms, error: am.error || null } });
+      await reflectAgent(agent, am, key);
+      if (agent.reflection) e({ event: 'reflect', id: 'amplifier', output: agent.output, passes: 1 });
     }
   }
 
@@ -414,7 +477,7 @@ async function buildContent(topic, opts, e) {
     research: research, sources: research.sources || [], citations: research.citations || [],
     keywords: research.keywords || [],
     draft: draft, title: title,
-    editor: editorOut, seo: seoOut, publish: publishOut,
+    brief: briefOut, editor: editorOut, skeptic: skepticOut, seo: seoOut, connector: connectorOut, publish: publishOut, amplifier: amplifierOut,
     variants: (publishOut && publishOut.variants) || null,
     inlineCitations: (publishOut && publishOut.inlineCitations) || 0,
     metrics: metrics,
@@ -534,7 +597,7 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'pdf generation failed' });
     }
   }
-  if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/content with {topic, audience?, voice?, keyword?, wordCount?, stream?} — 5 agents (research → draft → edit → seo → publish) run real tools with RAG grounding.' });
+  if (req.method === 'GET') return res.json({ ok: true, mode: process.env.GROQ_API_KEY ? 'ai' : 'template', message: 'POST /api/content with {topic, audience?, voice?, keyword?, wordCount?, stream?} — 9 agents (strategist → researcher → writer → editor → skeptic → seo → connector → publisher → amplifier) run real tools with RAG grounding.' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   let b = {};
